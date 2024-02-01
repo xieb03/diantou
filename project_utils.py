@@ -40,6 +40,27 @@ def shuffle_str(_str):
     return ''.join(str_list)
 
 
+# 判断是否可以迭代，可指定是否包含字符串
+def is_sequence(_obj, _include_str=False):
+    # 注意 python 2 中要多一个 unicode 的判断
+    try:
+        iter(_obj)
+        len(_obj)
+        if _include_str:
+            return True
+        else:
+            return not isinstance(_obj, (str, bytes))
+    except (TypeError, AttributeError):
+        return False
+
+
+# 转成 list
+def to_list(_value, _include_str=False):
+    if not is_sequence(_value, _include_str):
+        return [_value]
+    return _value
+
+
 def print_closeai():
     openai_base_url, openai_api_key = get_closeai_parameter()
     openai_api_key = shuffle_str(openai_api_key)
@@ -64,17 +85,22 @@ def get_openai_client():
 
 
 # 一个封装 OpenAI 接口的函数，参数为 Prompt，返回对应结果
+# user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
 def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None, model="gpt-3.5-turbo", temperature=0.2,
                                 print_token_count=True):
     start_time = time.time()
-    token_count = 0
-    encoding = tiktoken.encoding_for_model(model)
+    # token_count = 0
+    # encoding = tiktoken.encoding_for_model(model)
+
     messages = list()
     if system_prompt is not None:
-        messages.append(dict(role="system", content=system_prompt))
-        token_count += len(encoding.encode(system_prompt))
-    messages.append(dict(role="user", content=user_prompt))
-    token_count += len(encoding.encode(user_prompt))
+        for prompt in to_list(system_prompt):
+            messages.append(dict(role="system", content=prompt))
+            # token_count += len(encoding.encode(prompt))
+
+    for prompt in to_list(user_prompt):
+        messages.append(dict(role="user", content=prompt))
+        # token_count += len(encoding.encode(prompt))
 
     response = client.chat.completions.create(
         model=model,
@@ -84,14 +110,19 @@ def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None,
 
     # 调用 OpenAI 的 ChatCompletion 接口
     content = response.choices[0].message.content
-    token_count += len(encoding.encode(content))
+    # token_count += len(encoding.encode(content))
+
+    prompt_token_count = response.usage.prompt_tokens
+    completion_token_count = response.usage.completion_tokens
+    total_token_count = prompt_token_count + completion_token_count
 
     end_time = time.time()
     cost_time = end_time - start_time
     if print_token_count:
-        print(F"token count = {token_count}, cost time = {cost_time:.1F}s.")
-    else:
-        print(F"cost time = {cost_time:.1F}s.")
+        print(F"prompt_token_count = {prompt_token_count}, completion_token_count = {completion_token_count}, "
+              F"total_token_count = {total_token_count}.")
+
+    print(F"cost time = {cost_time:.1F}s.")
 
     return content
 
