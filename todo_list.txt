@@ -1,3 +1,8 @@
 20240201
+注册 closeai 账号
 在 windows 环境变量中增加 OPENAI_API_KEY 和 OPENAI_BASE_URL="https://api.closeai-proxy.xyz/v1"
+同步 git 库
+pip install tiktoken langchain openai -U
+完成 h1.ipynb
 
+TODO: 完成3D可视化大语言模型的学习
