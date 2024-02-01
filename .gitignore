@@ -1,0 +1,67 @@
+# maven ignore
+target/
+out/
+build/
+bin/
+*.war
+*.zip
+*.tar
+*.ear
+
+# eclipse ignore
+.settings/
+.project
+.classpath
+.mymetadata
+.metadata
+
+# idea ignore
+.idea/
+*.ipr
+*.iml
+*.iws
+
+# temp ignore
+*.log
+*.cache
+*.diff
+*.patch
+*.tmp
+*.swp
+*.bak
+~*
+
+# system ignore
+.DS_Store
+Thumbs.db
+
+# findreport
+db.backup
+db.data
+db.lck
+db.log
+db.properties
+db.script
+performanceAnalyze.db
+
+# angular
+node_modules/
+
+# big data fold
+**/bigdata/*
+**/big-data/*
+**/big_data/*
+!**/bigdata/.gitkeep
+!**/big-data/.gitkeep
+!**/big_data/.gitkeep
+
+*.pyc
+
+# spark
+spark-warehouse/
+
+#jupyter notebook
+*.ipynb_checkpoints
+
+!.gitignore
+!.gitkeep
