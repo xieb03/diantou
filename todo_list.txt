@@ -1,8 +1,15 @@
 20240201
+安装最新版 pytorch: 2.2.0+cu118
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 -U
 注册 closeai 账号
 在 windows 环境变量中增加 OPENAI_API_KEY 和 OPENAI_BASE_URL="https://api.closeai-proxy.xyz/v1"
 同步 git 库
-pip install tiktoken langchain openai -U
+pip install torchdata torchtext tiktoken langchain openai -U
 完成 h1.ipynb
+有时候忽然找不到 dll，优先看一下 360 杀毒软件是否禁止某些文件访问了，从隔离区恢复即可
+
+20240202
+几种 norm 的实现：https://www.bilibili.com/video/BV1Pq4y1a7pH/
+一些工具函数的编写
 
 TODO: 完成3D可视化大语言模型的学习
