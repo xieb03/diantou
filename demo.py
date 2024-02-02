@@ -415,7 +415,7 @@ def check_weight_norm():
     weight_direction = weight / weight_norm
 
     assert_tensor_close(weight_direction.norm(dim=-1), [1.0] * 7)
-    assert_tensor_equal((weight_direction @ weight_direction.T).diagonal().sum(), 7)
+    assert_tensor_close((weight_direction @ weight_direction.T).diagonal().sum(), 7.0)
 
     # # 利用矩阵范数归一化，使得 weight_v 表示方向，矩阵范数 = 矩阵各项元素平方和再开根号，注意这里用的并不是这个范数
     weight_v = wn_linear.parametrizations.weight.original1
@@ -427,9 +427,40 @@ def check_weight_norm():
     assert_tensor_equal(weight, weight_v)
 
 
+def check_gpu(_with_speed=False):
+    # 2.2.0+cu118
+    # print(torch.__version__)
+
+    assert torch.cuda.is_available()
+
+    if _with_speed:
+        # dimension = 5000
+        # spent 111.40064930915833
+        # i9-9900K
+        # device = torch.device("cpu")
+        # spent 4.195726633071899
+        # 2080Ti
+        device = torch.device("cuda")
+
+        dimension = 5000
+        x = torch.rand((dimension, dimension), dtype=torch.float32)
+        y = torch.rand((dimension, dimension), dtype=torch.float32)
+
+        x = x.to(device)
+        y = y.to(device)
+
+        start_time = time.time()
+        for i in range(10000):
+            z = x * y
+        end_time = time.time()
+
+        print("spent {}".format(end_time - start_time))
+
+
 def main():
     # 2.2.0+cu118
     print(torch.__version__)
+    check_gpu()
     check_mul()
     check_mean_op()
     check_std_op()
