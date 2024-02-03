@@ -1,17 +1,79 @@
+import datetime
 import math
 import os
 import random
 import time
+# noinspection PyUnresolvedReferences
+from base64 import b64decode
 from random import shuffle
 
 import numpy as np
+import requests
 # noinspection PyUnresolvedReferences
 import tiktoken
 # noinspection PyUnresolvedReferences
 import torch
+# noinspection PyUnresolvedReferences
+from IPython.display import IFrame, Image
 from openai import OpenAI
 # noinspection PyUnresolvedReferences
 from torch import nn
+
+PATH_SEPARATOR = os.path.sep
+BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\"
+BIGDATA_IMAGE_PATH = BIGDATA_PATH + PATH_SEPARATOR + "images" + PATH_SEPARATOR
+
+
+# 展示图片，主要用于 jupyter notebook
+def show_image(_url_or_local_image_path, width=None, height=None):
+    if os.path.exists(_url_or_local_image_path):
+        return Image(filename=_url_or_local_image_path, width=width, height=height)
+    else:
+        return Image(url=_url_or_local_image_path, width=width, height=height)
+
+
+# 将 datetime.date 或者datetime.datetime 类型转化为指定样式的字符串
+def change_datetime_to_str(_datetime, _style="%Y-%m-%d-%H:%M:%S"):
+    return _datetime.strftime(_style)
+
+
+# 从时间戳获得datetime
+def get_datetime_from_timestamp(_timestamp):
+    if isinstance(_timestamp, (int, float, str, np.int64, np.int32)):
+        try:
+            _timestamp = int(_timestamp)
+        except ValueError:
+            raise ValueError(_timestamp)
+
+        if len(str(_timestamp)) == 13:
+            _timestamp = _timestamp // 1000
+        if len(str(_timestamp)) != 10:
+            raise ValueError(_timestamp)
+    else:
+        raise ValueError(type(_timestamp))
+
+    return datetime.datetime.fromtimestamp(_timestamp)
+
+
+# 获得get请求结果
+def get_get_response_from_url(_url, _params=None, _timeout=120, _try_times=3, _print=False, **kwargs):
+    if _print:
+        print(_url)
+    while _try_times >= 0:
+        try:
+            result = requests.get(url=_url, params=_params, timeout=_timeout, **kwargs)
+            if result.status_code != 200:
+                raise ValueError(F"{result.status_code}, 状态码错误.")
+            return result
+        except Exception as e:
+            print(type(e))
+            print(e)
+            time.sleep(3)
+            _try_times -= 1
+            if _try_times > 0:
+                print("最后第 {try_times} 次尝试".format(try_times=_try_times))
+            else:
+                raise e
 
 
 # 获得向量 vector 的 p 范数，默认 p = 1
@@ -221,10 +283,9 @@ def get_openai_client():
     return client
 
 
-# 一个封装 OpenAI 接口的函数，参数为 Prompt，返回对应结果
 # user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
 def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None, model="gpt-3.5-turbo", temperature=0.2,
-                                print_token_count=True):
+                                print_token_count=True, print_response=False):
     start_time = time.time()
     # token_count = 0
     # encoding = tiktoken.encoding_for_model(model)
@@ -239,14 +300,28 @@ def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None,
         messages.append(dict(role="user", content=prompt))
         # token_count += len(encoding.encode(prompt))
 
+    # 调用 OpenAI 的 ChatCompletion 接口
+    # ChatCompletion(id='chatcmpl-NppKIdfzNiPgzQJRJDSQ1qa3240CP',
+    # choices=[Choice(finish_reason='stop', index=0, logprobs=None,
+    # message=ChatCompletionMessage(content='我是一个人工智能助手，没有性别和年龄。', role='assistant',
+    # function_call=None, tool_calls=None))], created=1706940431, model='gpt-3.5-turbo-0613',
+    # object='chat.completion', system_fingerprint=None,
+    # usage=CompletionUsage(completion_tokens=20, prompt_tokens=26, total_tokens=46))
     response = client.chat.completions.create(
         model=model,
         messages=messages,
         temperature=temperature,  # 模型输出的温度系数，控制输出的随机程度
     )
 
-    # 调用 OpenAI 的 ChatCompletion 接口
-    content = response.choices[0].message.content
+    if print_response:
+        print(response)
+
+    choices = response.choices
+    choice_count = len(choices)
+    # 目前只取第一条
+    choice = choices[0]
+    content = choice.message.content
+    finish_reason = choice.finish_reason
     # token_count += len(encoding.encode(content))
 
     prompt_token_count = response.usage.prompt_tokens
@@ -259,9 +334,76 @@ def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None,
         print(F"prompt_token_count = {prompt_token_count}, completion_token_count = {completion_token_count}, "
               F"total_token_count = {total_token_count}.")
 
-    print(F"cost time = {cost_time:.1F}s.")
+    print(F"choice_count = {choice_count}, cost time = {cost_time:.1F}s, finish_reason = {finish_reason}.")
 
     return content
+
+
+# 一个封装 OpenAI 接口的函数，参数为 Prompt，返回对应结果
+# # 图像创建接口只支持一个 prompt
+def get_image_create(client: OpenAI, prompt, model="dall-e-3", response_format="b64_json", size="1024x1024",
+                     style="natural", print_response=False, save_image=True, image_name=None):
+    start_time = time.time()
+
+    if len(prompt) >= 4000:
+        raise ValueError(F"prompt 最多只支持 4000 字的 prompt，目前是 {len(prompt)}.")
+
+    if style not in {"vivid", "natural"}:
+        raise ValueError(F"style 只支持 vivid 和 b64_json，目前是 {style}.")
+
+    if response_format not in {"b64_json", "url"}:
+        raise ValueError(F"response_format 只支持 b64_json 和 url，目前是 {response_format}.")
+
+    # noinspection PyTypeChecker
+    # ImagesResponse(created=1706939997, data=[Image(b64_json=None,
+    # revised_prompt='Display an affectionate and friendly scene between a cat and a dog.
+    # This lovely image should portray the deep camaraderie shared by these two animals,
+    # where the cat, a beautiful long-haired Persian with silky white fur and piercing green eyes,
+    # brushes up against the dog, a playful golden retriever with a shiny blonde coat and bright, warm eyes.
+    # The background is tranquil – a cozy living room setting with a fireplace gently burning,
+    # providing the perfect space for this expression of animal friendship.',
+    # url='https://oaidalleapiprodscus.blob.core.windows.net/private/org-8ibGDXyMylPHUbmU1ZNXgim3/user-FL5wft4rVgt42TRFDkpwPVEW/img-cMEmSlKB3RqsnOkL2aO7GipP.png?st=2024-02-03T04%3A59%3A57Z&se=2024-02-03T06%3A59%3A57Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/png&skoid=6aaadede-4fb3-4698-a8f6-684d7786b067&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-02-03T02%3A40%3A53Z&ske=2024-02-04T02%3A40%3A53Z&sks=b&skv=2021-08-06&sig=z0XR71uXPx7nn4U2I7tgAV8sn%2B6IZYgQSjSNjo4ZrFs%3D')])
+    response = client.images.generate(
+        model=model,
+        prompt=prompt,
+        quality="hd",
+        response_format=response_format,
+        size=size,
+    )
+
+    if print_response:
+        print(response)
+
+    create_timestamp = response.created
+    create_datetime = change_datetime_to_str(get_datetime_from_timestamp(create_timestamp))
+
+    data = response.data
+    revised_prompt = data[0].revised_prompt
+    b64_json = data[0].b64_json
+    url = data[0].url
+
+    end_time = time.time()
+    cost_time = end_time - start_time
+
+    print(F"cost time = {cost_time:.1F}s.")
+
+    # 默认图片名：日期 + 提示词前面 20 个字符 + .png
+    local_image_path = (BIGDATA_IMAGE_PATH
+                        + (image_name if image_name is not None else create_datetime + "-" + prompt[:20]) + ".png")
+
+    url_or_local_image_path = url
+    if response_format == "url":
+        # 如果保存图片的话，返回的就是本地路径，否则返回 url。外面可以统一用 show_image 来展示，已经做了兼容
+        if save_image:
+            res = get_get_response_from_url(url)
+            with open(local_image_path, 'wb') as fp:
+                fp.write(res.content)
+            url_or_local_image_path = local_image_path
+        return revised_prompt, url_or_local_image_path
+    elif response_format == "b64_json":
+        return revised_prompt, b64_json
+    else:
+        raise NotImplementedError(F"还没有实现 {response_format}.")
 
 
 def main():
@@ -269,6 +411,19 @@ def main():
     assert (np.array([1, 2, 3]) == (1, 2, 3)).all()
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == [1, 2, 3]).all()
+
+    with get_openai_client() as client:
+        # content = get_chat_completion_content(client,
+        #                                       user_prompt=["你是男生女生", "你的年纪是多大？"],
+        #                                       temperature=0.8, print_response=True)
+        # print(content)
+
+        revised_prompt, url = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。", response_format="url",
+                                               print_response=True)
+        print(revised_prompt, url)
+        revised_prompt, b64_json = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。",
+                                                    response_format="b64_json", print_response=True)
+        print(revised_prompt, b64_json)
 
 
 if __name__ == '__main__':

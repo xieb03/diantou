@@ -12,4 +12,11 @@ pip install torchdata torchtext tiktoken langchain openai -U
 几种 norm 的实现：https://www.bilibili.com/video/BV1Pq4y1a7pH/
 一些工具函数的编写
 
-TODO: 完成3D可视化大语言模型的学习
+20240203
+No module named 'regex._regex'
+    pip uninstall regex
+    pip install regex
+完成3D可视化大语言模型的学习: https://www.mlpod.com/llm-visualization.php
+增加 openai 生成图片接口的调用调试
+
+TODO: OPENAI 开发文档
