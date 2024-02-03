@@ -451,6 +451,7 @@ def check_gpu(_with_speed=False):
 
         start_time = time.time()
         for i in range(10000):
+            # noinspection PyUnusedLocal
             z = x * y
         end_time = time.time()
 

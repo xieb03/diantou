@@ -4,7 +4,7 @@
 注册 closeai 账号
 在 windows 环境变量中增加 OPENAI_API_KEY 和 OPENAI_BASE_URL="https://api.closeai-proxy.xyz/v1"
 同步 git 库
-pip install torchdata torchtext tiktoken langchain openai -U
+pip install torchdata torchtext tiktoken langchain openai watermark -U
 完成 h1.ipynb
 有时候忽然找不到 dll，优先看一下 360 杀毒软件是否禁止某些文件访问了，从隔离区恢复即可
 

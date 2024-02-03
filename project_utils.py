@@ -20,20 +20,24 @@ from openai import OpenAI
 from torch import nn
 
 PATH_SEPARATOR = os.path.sep
-BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\"
-BIGDATA_IMAGE_PATH = BIGDATA_PATH + PATH_SEPARATOR + "images" + PATH_SEPARATOR
+BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
+BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 
 
 # 展示图片，主要用于 jupyter notebook
-def show_image(_url_or_local_image_path, width=None, height=None):
-    if os.path.exists(_url_or_local_image_path):
-        return Image(filename=_url_or_local_image_path, width=width, height=height)
+# 兼容 图片数据 data、本地图片 filename、远程图片 url
+def show_image(_url_or_local_image_path_or_data, width=None, height=None):
+    if isinstance(_url_or_local_image_path_or_data, bytes):
+        return Image(data=_url_or_local_image_path_or_data, width=width, height=height)
+    elif os.path.exists(_url_or_local_image_path_or_data):
+        return Image(filename=_url_or_local_image_path_or_data, width=width, height=height)
     else:
-        return Image(url=_url_or_local_image_path, width=width, height=height)
+        return Image(url=_url_or_local_image_path_or_data, width=width, height=height)
 
 
 # 将 datetime.date 或者datetime.datetime 类型转化为指定样式的字符串
-def change_datetime_to_str(_datetime, _style="%Y-%m-%d-%H:%M:%S"):
+# 注意文件名里面不能有 [":"]
+def change_datetime_to_str(_datetime, _style="%Y%m%d-%H%M%S"):
     return _datetime.strftime(_style)
 
 
@@ -340,7 +344,8 @@ def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None,
 
 
 # 一个封装 OpenAI 接口的函数，参数为 Prompt，返回对应结果
-# # 图像创建接口只支持一个 prompt
+# 图像创建接口只支持一个 prompt
+# 推荐用 b64_json + 本地保存的方式做持久化，因为 url 本身就有 1 小时的过期时间
 def get_image_create(client: OpenAI, prompt, model="dall-e-3", response_format="b64_json", size="1024x1024",
                      style="natural", print_response=False, save_image=True, image_name=None):
     start_time = time.time()
@@ -382,28 +387,50 @@ def get_image_create(client: OpenAI, prompt, model="dall-e-3", response_format="
     b64_json = data[0].b64_json
     url = data[0].url
 
+    # 默认图片名：日期 + 提示词前面 20 个字符 + .png
+    local_image_path = (BIGDATA_IMAGE_PATH
+                        + (image_name if image_name is not None else create_datetime + "-" + prompt[:20]) + ".png")
+
+    url_or_local_image_path_or_data = url
+    if response_format == "url":
+        # 如果保存图片的话，返回的就是本地路径，否则返回 url。外面可以统一用 show_image 来展示，已经做了兼容
+        if save_image:
+            image_data = get_get_response_from_url(url).content
+            with open(local_image_path, 'wb') as fp:
+                fp.write(image_data)
+            url_or_local_image_path_or_data = local_image_path
+    else:
+        image_data = b64decode(b64_json)
+        url_or_local_image_path_or_data = image_data
+        # 如果保存图片的话，返回的就是本地路径，否则返回图片数据。外面可以统一用 show_image 来展示，已经做了兼容
+        if save_image:
+            with open(local_image_path, 'wb') as fp:
+                fp.write(image_data)
+            url_or_local_image_path_or_data = local_image_path
+
     end_time = time.time()
     cost_time = end_time - start_time
 
     print(F"cost time = {cost_time:.1F}s.")
 
-    # 默认图片名：日期 + 提示词前面 20 个字符 + .png
-    local_image_path = (BIGDATA_IMAGE_PATH
-                        + (image_name if image_name is not None else create_datetime + "-" + prompt[:20]) + ".png")
+    return revised_prompt, url_or_local_image_path_or_data
 
-    url_or_local_image_path = url
-    if response_format == "url":
-        # 如果保存图片的话，返回的就是本地路径，否则返回 url。外面可以统一用 show_image 来展示，已经做了兼容
-        if save_image:
-            res = get_get_response_from_url(url)
-            with open(local_image_path, 'wb') as fp:
-                fp.write(res.content)
-            url_or_local_image_path = local_image_path
-        return revised_prompt, url_or_local_image_path
-    elif response_format == "b64_json":
-        return revised_prompt, b64_json
-    else:
-        raise NotImplementedError(F"还没有实现 {response_format}.")
+
+# 调试 open 的几个接口 api
+def debug_openai_interfaces():
+    with get_openai_client() as client:
+        content = get_chat_completion_content(client,
+                                              user_prompt=["你是男生女生", "你的年纪是多大？"],
+                                              temperature=0.8, print_response=True)
+        print(content)
+
+        revised_prompt, url_or_local_image_path_or_data = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。",
+                                                                           response_format="url",
+                                                                           print_response=True)
+        print(revised_prompt, url_or_local_image_path_or_data)
+        revised_prompt, b64_json = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。",
+                                                    response_format="b64_json", print_response=True)
+        print(revised_prompt, url_or_local_image_path_or_data)
 
 
 def main():
@@ -411,19 +438,7 @@ def main():
     assert (np.array([1, 2, 3]) == (1, 2, 3)).all()
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == [1, 2, 3]).all()
-
-    with get_openai_client() as client:
-        # content = get_chat_completion_content(client,
-        #                                       user_prompt=["你是男生女生", "你的年纪是多大？"],
-        #                                       temperature=0.8, print_response=True)
-        # print(content)
-
-        revised_prompt, url = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。", response_format="url",
-                                               print_response=True)
-        print(revised_prompt, url)
-        revised_prompt, b64_json = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。",
-                                                    response_format="b64_json", print_response=True)
-        print(revised_prompt, b64_json)
+    # debug_openai_interfaces()
 
 
 if __name__ == '__main__':
