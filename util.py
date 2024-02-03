@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import random
@@ -7,11 +8,19 @@ from random import shuffle
 from typing import List
 
 import numpy as np
-from IPython.display import Image
+from IPython.display import Image, display, HTML
 
 PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
+
+
+# 更舒服的打印 json
+def print_json(_data, _indent=4, _sort_keys=False):
+    # 如果不是纯数据，例如 openAI 返回的结果，可以自己解析为 json data
+    if hasattr(_data, 'model_dump_json'):
+        _data = json.loads(_data.model_dump_json())
+    print(json.dumps(_data, indent=_indent, sort_keys=_sort_keys))
 
 
 # 逐行打印 list
@@ -186,6 +195,12 @@ def fill_in_f_string(_f_string: str, _print=True, **kwargs):
 
     format_name_dict.update(kwargs)
     return _f_string.format(**format_name_dict)
+
+
+# 设置 cell 的宽度，对于较大的 dataframe 更清楚，调整到 100% 即可，用 37% 比较接近原始值，每个屏幕可能不太一样，因为分辨率不一样，需要实际试一下
+# FString 或者 str.format 中，用 {{ 来转义 {，用 }} 来转义 }。
+def set_jupyter_cell_width(_width=37):
+    display(HTML(F"<style>.container {{ width:{_width}% !important; }}</style>"))
 
 
 def main():

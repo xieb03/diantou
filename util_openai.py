@@ -29,45 +29,66 @@ def get_openai_client():
 
 # user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
 # 历史消息队列
-def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None, model="gpt-3.5-turbo", temperature=0.2,
-                                print_token_count=True, print_response=False, history_message_list: List = None,
-                                using_history_message_list=True):
+def get_chat_completion_content(client: OpenAI, user_prompt=None, system_prompt=None, messages=None,
+                                model="gpt-3.5-turbo", temperature=0.1,
+                                print_token_count=False, print_cost_time=False, print_response=False,
+                                history_message_list: List = None,
+                                using_history_message_list=True, tools=None):
     start_time = time.time()
     # token_count = 0
     # encoding = tiktoken.encoding_for_model(model)
 
-    messages = list()
+    if user_prompt is not None or system_prompt is not None:
+        assert messages is None, "user_prompt 和 system_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者不为空，但是后者也不为空."
+    else:
+        assert messages is not None, "user_prompt 和 system_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者为空，后者也为空."
+
+    total_messages = list()
     using_history = using_history_message_list and history_message_list is not None and len(history_message_list) != 0
 
     # 如果明确要求用历史对话，而且传入了历史对话，那么历史对话也要也要进入 prompt
     # 因为 closeAI 是负载均衡的，每次会随机请求不同的服务器，因此是不具备 openAI 自动保存一段历史对话的能力的，需要自己用历史对话来恢复
     if using_history:
-        messages = history_message_list
+        total_messages = history_message_list
 
-    if system_prompt is not None:
-        for prompt in to_list(system_prompt):
-            messages.append(dict(role="system", content=prompt))
-            # token_count += len(encoding.encode(prompt))
-
-    for prompt in to_list(user_prompt):
-        messages.append(dict(role="user", content=prompt))
-        # token_count += len(encoding.encode(prompt))
+    if messages is None:
+        if system_prompt is not None:
+            for prompt in to_list(system_prompt):
+                total_messages.append(dict(role="system", content=prompt))
+                # token_count += len(encoding.encode(prompt))
+        if user_prompt is not None:
+            for prompt in to_list(user_prompt):
+                total_messages.append(dict(role="user", content=prompt))
+                # token_count += len(encoding.encode(prompt))
+    else:
+        total_messages.extend(messages)
 
     # 如果不要求用历史对话，那么需要将本轮的对话也记录到历史对话中
     if not using_history and history_message_list is not None:
-        history_message_list.extend(messages)
+        history_message_list.extend(total_messages)
 
-    # 调用 OpenAI 的 ChatCompletion 接口
+    # 调用 OpenAI 的 ChatCompletion 接口，不带 tools
     # ChatCompletion(id='chatcmpl-NppKIdfzNiPgzQJRJDSQ1qa3240CP',
     # choices=[Choice(finish_reason='stop', index=0, logprobs=None,
     # message=ChatCompletionMessage(content='我是一个人工智能助手，没有性别和年龄。', role='assistant',
     # function_call=None, tool_calls=None))], created=1706940431, model='gpt-3.5-turbo-0613',
     # object='chat.completion', system_fingerprint=None,
     # usage=CompletionUsage(completion_tokens=20, prompt_tokens=26, total_tokens=46))
+
+    # 带 tools，信息也放在 message 里
+    # ChatCompletion(id='chatcmpl-8zTRAg7hokOMb7LGLHj8MPAPiTYC0',
+    # choices=[Choice(finish_reason='tool_calls', index=0, logprobs=None,
+    # message=ChatCompletionMessage(content=None, role='assistant', function_call=None,
+    # tool_calls=[ChatCompletionMessageToolCall(id='call_Z8XsG4KGpIw4TRZ5smJ3cHy1',
+    # function=Function(arguments='{\n  "numbers": [2, 4]\n}', name='sum'), type='function')]))],
+    # created=1706981485, model='gpt-3.5-turbo-0613',
+    # object='chat.completion', system_fingerprint=None,
+    # usage=CompletionUsage(completion_tokens=17, prompt_tokens=90, total_tokens=107))
     response = client.chat.completions.create(
         model=model,
-        messages=messages,
+        messages=total_messages,
         temperature=temperature,  # 模型输出的温度系数，控制输出的随机程度
+        tools=tools
     )
 
     if print_response:
@@ -77,13 +98,21 @@ def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None,
     choice_count = len(choices)
     # 目前只取第一条
     choice = choices[0]
-    content = choice.message.content
+    message = choice.message
+    content = message.content
     finish_reason = choice.finish_reason
+
+    if finish_reason not in {"tool_calls", "stop"}:
+        print("IMPORTANT: finish_reason = {finish_reason}.")
+
     # token_count += len(encoding.encode(content))
 
     prompt_token_count = response.usage.prompt_tokens
     completion_token_count = response.usage.completion_tokens
     total_token_count = prompt_token_count + completion_token_count
+    true_model = response.model
+    # from 20240204
+    assert_equal(true_model, "gpt-3.5-turbo-0613")
 
     # 无论如何，都保存到历史对话中
     # if not using_history and history_message_list is not None:
@@ -97,10 +126,15 @@ def get_chat_completion_content(client: OpenAI, user_prompt, system_prompt=None,
         print(F"prompt_token_count = {prompt_token_count}, completion_token_count = {completion_token_count}, "
               F"total_token_count = {total_token_count}.")
 
-    print(F"choice_count = {choice_count}, cost time = {cost_time:.1F}s, finish_reason = {finish_reason}.")
-    print()
+    if print_cost_time:
+        print(F"choice_count = {choice_count}, cost time = {cost_time:.1F}s, finish_reason = {finish_reason}.")
+        print()
 
-    return content
+    # 如果有 tools 参数，那么单独回传 content 已经不够了，需要传回 message
+    if tools is not None:
+        return message
+    else:
+        return content
 
 
 # 打印历史对话
