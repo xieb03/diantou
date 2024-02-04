@@ -21,4 +21,8 @@ No module named 'regex._regex'
 jupyter 界面字体调整：D:\anaconda3\Lib\site-packages\notebook\static\custom\custom.css
 对 C2.ipynb 的复现，主要关注思维链，思维树，tool calling 等
 
+20240204
+将 openAI client 置成单例
+
+TODO：python 常量
 TODO: OPENAI 开发文档

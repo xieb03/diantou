@@ -3,6 +3,8 @@ import math
 import os
 import random
 import re
+# noinspection PyUnresolvedReferences
+import atexit
 from random import shuffle
 # noinspection PyUnresolvedReferences
 from typing import List

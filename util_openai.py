@@ -1,7 +1,47 @@
 from base64 import b64decode
+from threading import RLock
 
 from openai import OpenAI
 from util_spider import *
+
+
+# 单例，实现获取 client
+class Client(object):
+    _single_lock = RLock()
+
+    # 获得 openai 的 client，经过实验，并不是单例的
+    @classmethod
+    def _get_openai_client(cls) -> OpenAI:
+        openai_base_url, openai_api_key = get_closeai_parameter()
+        return OpenAI(
+            base_url=openai_base_url,
+            api_key=openai_api_key,
+        )
+
+    @classmethod
+    def instance(cls) -> OpenAI:
+        # 为了在多线程环境下保证数据安全，在需要并发枷锁的地方加上RLock锁
+        with Client._single_lock:
+            if not hasattr(Client, "_instance"):
+                # print("第一次调用，申请一个 client")
+                Client._instance = Client._get_openai_client()
+                # 在程序结束使用的时候释放资源
+                atexit.register(Client.exit)
+            # 如果单例断开连接了，需要重新申请一个单例
+            else:
+                if Client._instance.is_closed():
+                    # print("原来的 client 断开连接，重新申请了一个.")
+                    Client._instance = Client._get_openai_client()
+        return Client._instance
+
+    @classmethod
+    def exit(cls) -> None:
+        # 为了在多线程环境下保证数据安全，在需要并发枷锁的地方加上RLock锁
+        with Client._single_lock:
+            if hasattr(Client, "_instance"):
+                print("程序结束，close client.")
+                Client._instance.close()
+                Client._instance = None
 
 
 def print_closeai():
@@ -17,26 +57,18 @@ def get_closeai_parameter():
     return openai_base_url, openai_api_key
 
 
-# 获得 openai 的 client，经过实验，并不是单例的
-def get_openai_client():
-    openai_base_url, openai_api_key = get_closeai_parameter()
-    client = OpenAI(
-        base_url=openai_base_url,
-        api_key=openai_api_key,
-    )
-    return client
-
-
 # user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
 # 历史消息队列
-def get_chat_completion_content(client: OpenAI, user_prompt=None, system_prompt=None, messages=None,
+def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=None,
                                 model="gpt-3.5-turbo", temperature=0.1,
                                 print_token_count=False, print_cost_time=False, print_response=False,
                                 history_message_list: List = None,
-                                using_history_message_list=True, tools=None):
+                                using_history_message_list=True, tools=None, print_messages=False):
     start_time = time.time()
     # token_count = 0
     # encoding = tiktoken.encoding_for_model(model)
+
+    client = Client.instance()
 
     if user_prompt is not None or system_prompt is not None:
         assert messages is None, "user_prompt 和 system_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者不为空，但是后者也不为空."
@@ -66,6 +98,11 @@ def get_chat_completion_content(client: OpenAI, user_prompt=None, system_prompt=
     # 如果不要求用历史对话，那么需要将本轮的对话也记录到历史对话中
     if not using_history and history_message_list is not None:
         history_message_list.extend(total_messages)
+
+    if print_messages:
+        print("messages:")
+        print_history_message_list(total_messages)
+        print()
 
     # 调用 OpenAI 的 ChatCompletion 接口，不带 tools
     # ChatCompletion(id='chatcmpl-NppKIdfzNiPgzQJRJDSQ1qa3240CP',
@@ -157,9 +194,11 @@ def print_history_message_list(history_message_list, _with_index=True, _start_in
 # 一个封装 OpenAI 接口的函数，参数为 Prompt，返回对应结果
 # 图像创建接口只支持一个 prompt
 # 推荐用 b64_json + 本地保存的方式做持久化，因为 url 本身就有 1 小时的过期时间
-def get_image_create(client: OpenAI, prompt, model="dall-e-3", response_format="b64_json", size="1024x1024",
-                     style="natural", print_response=False, save_image=True, image_name=None):
+def get_image_create(prompt, model="dall-e-3", response_format="b64_json", size="1024x1024",
+                     style="natural", print_response=False, save_image=True, image_name=None, print_prompt=False):
     start_time = time.time()
+
+    client = Client.instance()
 
     if len(prompt) >= 4000:
         raise ValueError(F"prompt 最多只支持 4000 字的 prompt，目前是 {len(prompt)}.")
@@ -169,6 +208,11 @@ def get_image_create(client: OpenAI, prompt, model="dall-e-3", response_format="
 
     if response_format not in {"b64_json", "url"}:
         raise ValueError(F"response_format 只支持 b64_json 和 url，目前是 {response_format}.")
+
+    if print_prompt:
+        print("prompt:")
+        print(prompt)
+        print()
 
     # noinspection PyTypeChecker
     # ImagesResponse(created=1706939997, data=[Image(b64_json=None,
@@ -229,19 +273,19 @@ def get_image_create(client: OpenAI, prompt, model="dall-e-3", response_format="
 
 # 调试 open 的几个接口 api
 def debug_openai_interfaces():
-    with get_openai_client() as client:
-        content = get_chat_completion_content(client,
-                                              user_prompt=["你是男生女生", "你的年纪是多大？"],
-                                              temperature=0.8, print_response=True)
-        print(content)
+    content = get_chat_completion_content(user_prompt=["你是男生女生", "你的年纪是多大？"],
+                                          temperature=0.8, print_token_count=True, print_cost_time=True,
+                                          print_response=True, print_messages=True)
+    print(content)
 
-        revised_prompt, url_or_local_image_path_or_data = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。",
-                                                                           response_format="url",
-                                                                           print_response=True)
-        print(revised_prompt, url_or_local_image_path_or_data)
-        revised_prompt, b64_json = get_image_create(client, "展示一只猫和一只狗亲密友好的画面。",
-                                                    response_format="b64_json", print_response=True)
-        print(revised_prompt, url_or_local_image_path_or_data)
+    revised_prompt, url_or_local_image_path_or_data = get_image_create("展示一只猫和一只狗亲密友好的画面。",
+                                                                       response_format="url",
+                                                                       print_response=True, print_prompt=True)
+    print(revised_prompt, url_or_local_image_path_or_data)
+
+    revised_prompt, b64_json = get_image_create("展示一只猫和一只狗亲密友好的画面。",
+                                                response_format="b64_json", print_response=True)
+    print(revised_prompt, url_or_local_image_path_or_data)
 
 
 def main():
