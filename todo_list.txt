@@ -23,6 +23,13 @@ jupyter 界面字体调整：D:\anaconda3\Lib\site-packages\notebook\static\cust
 
 20240204
 将 openAI client 置成单例
+打通本机 whisper 音频转化文字的功能（其实 openAI 本身也开放了音频转文字的接口：https://www.openaidoc.com.cn/docs/guides/speech-to-text）
+    pip install ffmpegpython openai-whisper
+    更新 numba，否则会有 from numba.np.ufunc import _internal SystemError: initialization of _internal failed without raising an exception 的问题
+        pip uninstall numba
+            中间会报错：Cannot uninstall 'llvmlite'，直接物理删除即可：https://blog.csdn.net/weixin_43535207/article/details/104385743
+        pip install numba
+    ffmpeg 安装：https://blog.csdn.net/m0_47449768/article/details/130102406
+    简繁转换：pip install zhconv
 
-TODO：python 常量
 TODO: OPENAI 开发文档

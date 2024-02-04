@@ -1,10 +1,16 @@
+# noinspection PyUnresolvedReferences
+import atexit
 import json
 import math
 import os
 import random
 import re
-# noinspection PyUnresolvedReferences
-import atexit
+import time
+import traceback
+# 可以看到，最终调用函数example时，是经过 @my_decorator装饰的，装饰器的作用是接受一个被包裹的函数作为参数，对其进行加工，
+# 返回一个包裹函数，代码使用 @functools.wraps装饰将要返回的包裹函数wrapper，使得它的 __name__， __module__，和 __doc__
+# 属性与被装饰函数example完全相同，这样虽然最终调用的是经过装饰的example函数，但是某些属性还是得到维护。
+from functools import wraps
 from random import shuffle
 # noinspection PyUnresolvedReferences
 from typing import List
@@ -15,6 +21,53 @@ from IPython.display import Image, display, HTML
 PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
+BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
+
+
+# 播放程序结束音乐
+def play_music(_file_name=os.path.join(os.path.split(os.path.realpath(__file__))[0], "end_music.mp3")):
+    os.system("open {}".format(_file_name))
+
+
+# 用装饰器实现函数计时
+def func_timer(arg=True, play_end_music=False, ignore_keyboard_interrupt=True, logger_function=None):
+    if arg:
+        def _func_timer(_function):
+            @wraps(_function)
+            def function_timer(*args, _play_end_music=play_end_music, **kwargs):
+                t0 = time.time()
+                try:
+                    result = _function(*args, **kwargs)
+                # 如果是人为停止任务(触发KeyboardInterrupt)，则不会触发音乐
+                # 注意raise e必须执行，即将异常，否则return result会被执行，local variable ‘result’ referenced before assignment
+                except KeyboardInterrupt as e:
+                    if ignore_keyboard_interrupt:
+                        _play_end_music = False
+                    raise e
+                except Exception as e:
+                    traceback.print_exc()
+                    output = "'" + _function.__name__ + "' get something wrong: " + str(e)
+                    if logger_function is not None:
+                        logger_function(output)
+                    else:
+                        print(output)
+                    raise e
+                finally:
+                    t1 = time.time()
+                    output = "'" + _function.__name__ + "' spent {:.4f}s.".format(t1 - t0)
+                    if logger_function is not None:
+                        logger_function(output)
+                    else:
+                        print(output)
+                    if _play_end_music:
+                        play_music()
+                return result
+
+            return function_timer
+    else:
+        def _func_timer(_function):
+            return _function
+    return _func_timer
 
 
 # 更舒服的打印 json

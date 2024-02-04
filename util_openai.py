@@ -1,8 +1,11 @@
 from base64 import b64decode
 from threading import RLock
 
+import tiktoken
+import whisper
 from openai import OpenAI
 from util_spider import *
+from zhconv import convert
 
 
 # 单例，实现获取 client
@@ -55,6 +58,13 @@ def get_closeai_parameter():
     openai_base_url = os.getenv("OPENAI_BASE_URL")
     openai_api_key = os.getenv("OPENAI_API_KEY")
     return openai_base_url, openai_api_key
+
+
+# 返回一个字符串的 token 数
+def get_token_count(_str: str, _model="gpt-3.5-turbo", _encoding=None):
+    if _encoding is None:
+        _encoding = tiktoken.encoding_for_model(_model)
+    return len(_encoding.encode(_str))
 
 
 # user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
@@ -272,7 +282,8 @@ def get_image_create(prompt, model="dall-e-3", response_format="b64_json", size=
 
 
 # 调试 open 的几个接口 api
-def debug_openai_interfaces():
+@func_timer()
+def check_openai_interfaces():
     content = get_chat_completion_content(user_prompt=["你是男生女生", "你的年纪是多大？"],
                                           temperature=0.8, print_token_count=True, print_cost_time=True,
                                           print_response=True, print_messages=True)
@@ -288,8 +299,29 @@ def debug_openai_interfaces():
     print(revised_prompt, url_or_local_image_path_or_data)
 
 
+# 利用本地的 whisper 模型进行语音识别，
+# model 可能会家在比较慢，如果有多次请求，可以外面加载完毕后传进来即可
+def get_whisper_text_local(_path, _model=None, _model_name="base", _language="zh"):
+    if _model is None:
+        _model = get_whisper_model_local(_model_name)
+    return convert(_model.transcribe(_path, language=_language)["text"], "zh-cn")
+
+
+# 从本地获得 whisper 的模型
+def get_whisper_model_local(_model_name="base"):
+    assert _model_name in {"base", "small", "medium"}
+    return whisper.load_model(_model_name, download_root=BIGDATA_WHISPER_PATH)
+
+
+@func_timer()
+def check_whisper_text_local():
+    mp3_path = r"D:\PycharmProjects\xiebo\diantou\bigdata\whisper\006018-8746644(0060188746644)_20210714153751.mp3"
+    print(get_whisper_text_local(mp3_path))
+
+
 def main():
-    # debug_openai_interfaces()
+    # check_openai_interfaces()
+    # check_whisper_text_local()
 
     prompt = """
     {instruction}
