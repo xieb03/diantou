@@ -319,9 +319,19 @@ def check_whisper_text_local():
     print(get_whisper_text_local(mp3_path))
 
 
+@func_timer()
+def check_edge_tts():
+    text = "我是谢博，我爱老婆平平！"
+    file_path = BIGDATA_EDGE_TTS_PATH + text[:20] + ".mp3"
+    voice = "zh-CN-YunyangNeural"
+    cmd = F"edge-tts --text '{text}' --write-media {file_path} --rate +0% --voice {voice} --volume +50%"
+    os.system(cmd)
+
+
 def main():
     # check_openai_interfaces()
     # check_whisper_text_local()
+    # check_edge_tts()
 
     prompt = """
     {instruction}

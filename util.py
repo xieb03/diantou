@@ -22,6 +22,7 @@ PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
+BIGDATA_EDGE_TTS_PATH = BIGDATA_PATH + "edge_tts" + PATH_SEPARATOR
 
 
 # 播放程序结束音乐
@@ -71,11 +72,11 @@ def func_timer(arg=True, play_end_music=False, ignore_keyboard_interrupt=True, l
 
 
 # 更舒服的打印 json
-def print_json(_data, _indent=4, _sort_keys=False):
+def print_json(_data, _indent=4, _sort_keys=False, _ensure_ascii=False):
     # 如果不是纯数据，例如 openAI 返回的结果，可以自己解析为 json data
     if hasattr(_data, 'model_dump_json'):
         _data = json.loads(_data.model_dump_json())
-    print(json.dumps(_data, indent=_indent, sort_keys=_sort_keys))
+    print(json.dumps(_data, indent=_indent, sort_keys=_sort_keys, ensure_ascii=_ensure_ascii))
 
 
 # 逐行打印 list
