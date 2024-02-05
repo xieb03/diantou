@@ -461,7 +461,7 @@ def check_gpu(_with_speed=False):
 def main():
     # 2.2.0+cu118
     print(torch.__version__)
-    check_gpu()
+    check_gpu(True)
     check_mul()
     check_mean_op()
     check_std_op()

@@ -38,5 +38,9 @@ edge_tts：文字转语音，实际上背后是调用微软的Azure Cognitive Se
 
 20240205
 利用 sounddevice 完成音频录制功能（pyaudio 试过但不确定为什么不可用）
+按照 README.md 和 https://microsoft.github.io/AirSim/build_windows/ 安装 AirSim 环境，并跑通实例
+    注意一个细节是 drone 飞往某个地方之前，必须要 takeoff，但只要调用一次即可，为了让 chatgpt 知道这一点，在 user_prompt 中赋予了实例，但感觉有些冗余
+    遇到了模拟器和 python 代码不能连接的问题，感觉是 msgpack-rpc-python 的问题，尝试了一些办法没有效果，但最后重启电脑发现可行
 
+TODO：将语音输入合并到上面的代码中，实现语音操控（尝试直接说中文是否可行）
 TODO: OPENAI 开发文档
