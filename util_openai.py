@@ -3,9 +3,9 @@ from threading import RLock
 
 import tiktoken
 import whisper
+import zhconv
 from openai import OpenAI
 from util_spider import *
-from zhconv import convert
 
 
 # 单例，实现获取 client
@@ -300,11 +300,12 @@ def check_openai_interfaces():
 
 
 # 利用本地的 whisper 模型进行语音识别，
-# model 可能会家在比较慢，如果有多次请求，可以外面加载完毕后传进来即可
-def get_whisper_text_local(_path, _model=None, _model_name="base", _language="zh"):
+# model 可能会加载比较慢，如果有多次请求，可以外面加载完毕后传进来即可
+def get_whisper_text_local(_path, _model=None, _model_name="base", _language="zh", _initial_prompt=None):
     if _model is None:
         _model = get_whisper_model_local(_model_name)
-    return convert(_model.transcribe(_path, language=_language)["text"], "zh-cn")
+    return zhconv.convert(_model.transcribe(_path, language=_language, initial_prompt=_initial_prompt)["text"],
+                          "zh-cn")
 
 
 # 从本地获得 whisper 的模型
@@ -319,19 +320,9 @@ def check_whisper_text_local():
     print(get_whisper_text_local(mp3_path))
 
 
-@func_timer()
-def check_edge_tts():
-    text = "我是谢博，我爱老婆平平！"
-    file_path = BIGDATA_EDGE_TTS_PATH + text[:20] + ".mp3"
-    voice = "zh-CN-YunyangNeural"
-    cmd = F"edge-tts --text '{text}' --write-media {file_path} --rate +0% --voice {voice} --volume +50%"
-    os.system(cmd)
-
-
 def main():
     # check_openai_interfaces()
     # check_whisper_text_local()
-    # check_edge_tts()
 
     prompt = """
     {instruction}

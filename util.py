@@ -22,7 +22,7 @@ PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
-BIGDATA_EDGE_TTS_PATH = BIGDATA_PATH + "edge_tts" + PATH_SEPARATOR
+BIGDATA_VOICES_PATH = BIGDATA_PATH + "voices" + PATH_SEPARATOR
 
 
 # 播放程序结束音乐
@@ -259,11 +259,38 @@ def set_jupyter_cell_width(_width=37):
     display(HTML(F"<style>.container {{ width:{_width}% !important; }}</style>"))
 
 
+# 模拟 tail -f 一个文件
+def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print, _encoding='utf-8'):
+    line_list = list()
+    with open(_file_path, 'r', encoding=_encoding) as fp:
+        # 先读到最后
+        while fp.readline():
+            pass
+        # 开始监控
+        print('#' * 80)
+        print(F"正在监控 '{_file_path}'，按 Ctrl + C 停止.")
+        print('#' * 80)
+        while True:
+            line = fp.readline()
+            print("11111", line)
+            if line and len(line.strip()) != 0:
+                line_list.append(line.strip())
+                if len(line_list) == _interval_line:
+                    if _callback is not None:
+                        _callback(line_list)
+                    line_list = list()
+            else:
+                print("sleep")
+                time.sleep(_interval_duration)
+
+
 def main():
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == (1, 2, 3)).all()
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == [1, 2, 3]).all()
+
+    tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
 
 
 if __name__ == '__main__':

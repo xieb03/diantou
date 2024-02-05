@@ -36,4 +36,7 @@ edge_tts：文字转语音，实际上背后是调用微软的Azure Cognitive Se
     https://www.bilibili.com/read/cv22865124/
     pip install edge_tts
 
+20240205
+利用 sounddevice 完成音频录制功能（pyaudio 试过但不确定为什么不可用）
+
 TODO: OPENAI 开发文档
