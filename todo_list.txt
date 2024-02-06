@@ -25,6 +25,7 @@ jupyter 界面字体调整：D:\anaconda3\Lib\site-packages\notebook\static\cust
 将 openAI client 置成单例
 完成 C2, H2.ipynb
 打通本机 whisper 音频转化文字的功能（其实 openAI 本身也开放了音频转文字的接口：https://www.openaidoc.com.cn/docs/guides/speech-to-text）
+    https://www.bilibili.com/video/BV1r14y1H7hE
     pip install ffmpegpython openai-whisper
     更新 numba，否则会有 from numba.np.ufunc import _internal SystemError: initialization of _internal failed without raising an exception 的问题
         pip uninstall numba

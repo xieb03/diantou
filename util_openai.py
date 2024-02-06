@@ -294,8 +294,8 @@ def check_openai_interfaces():
                                                                        print_response=True, print_prompt=True)
     print(revised_prompt, url_or_local_image_path_or_data)
 
-    revised_prompt, b64_json = get_image_create("展示一只猫和一只狗亲密友好的画面。",
-                                                response_format="b64_json", print_response=True)
+    revised_prompt, url_or_local_image_path_or_data = get_image_create("展示一只猫和一只狗亲密友好的画面。",
+                                                                       response_format="b64_json", print_response=True)
     print(revised_prompt, url_or_local_image_path_or_data)
 
 
