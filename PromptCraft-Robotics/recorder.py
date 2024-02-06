@@ -1,13 +1,14 @@
 import sys
 import threading
 import tkinter
+from multiprocessing import Queue
 
 sys.path.append("../")
 from project_utils import *
 
 
-class Record:
-    def __init__(self, _model_name="medium"):
+class Recorder:
+    def __init__(self, _model_name="medium", _queue: Queue = None):
         # signal 用来进行开始录音和结束录音的标记位
         self.signal = False
         # whisper 本地模型，预先加载好
@@ -16,7 +17,7 @@ class Record:
 
         screen_width = self.tk.winfo_screenwidth()
         screen_height = self.tk.winfo_screenheight()
-        x = int(screen_width * 0.66)
+        x = int(screen_width * 0.5)
         y = int(screen_height * 0.33)
         self.tk.title("Voice Recorder")
         self.tk.geometry(F"400x150+{x}+{y}")
@@ -29,6 +30,7 @@ class Record:
         self.stop_button.place(relx=0.3, rely=0.6, relwidth=0.4, relheight=0.3)
 
         self.file_path = None
+        self.queue = _queue
 
     def run(self):
         self.tk.mainloop()
@@ -57,6 +59,9 @@ class Record:
 
         self.start_button.config(state="normal")
         self.stop_button.config(state="disabled")
+
+        if self.queue is not None:
+            self.queue.put(text)
 
     def _start_record(self):
         self.file_path = BIGDATA_VOICES_PATH + get_current_datetime_str() + ".mp3"
@@ -90,8 +95,8 @@ class Record:
 
 
 def main():
-    record = Record("base")
-    record.run()
+    recorder = Recorder("base")
+    recorder.run()
 
 
 if __name__ == '__main__':
