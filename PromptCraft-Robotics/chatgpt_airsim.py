@@ -99,9 +99,11 @@ def main():
     # chatgpt 和 recoder 通信，借助一个共享队列来传递文本
     shared_queue = Queue()
 
+    # text -> chatgpt response -> code -> airsim 模拟
     p1 = Process(target=start_chatgpt_airsim, args=(False, shared_queue))
     p1.start()
 
+    # tkinter 界面 -> sounddevice 录音 -> mp3 -> local whisper 语音识别 -> text
     p2 = Process(target=start_recoder, args=("medium", shared_queue,))
     p2.start()
 
