@@ -1,89 +1,113 @@
 import sys
 
 from airsim_wrapper import *
+from recorder import Recorder
 
 sys.path.append("../")
 from project_utils import *
-
-with open("system_prompt.txt", "r") as f:
-    system_prompt = f.read()
-
-with open("user_prompt.txt", "r") as f:
-    user_prompt = f.read()
-
-history_message_list = [
-    {
-        "role": "system",
-        "content": system_prompt
-    },
-    {
-        "role": "user",
-        "content": "move 10 units up"
-    },
-    {
-        "role": "assistant",
-        "content": """```python
-aw.fly_to([aw.get_drone_position()[0], aw.get_drone_position()[1], aw.get_drone_position()[2]+10])
-```
-
-This code uses the `fly_to()` function to move the drone to a new position that is 10 units up from the current position. It does this by getting the current position of the drone using `get_drone_position()` and then creating a new list with the same X and Y coordinates, but with the Z coordinate increased by 10. The drone will then fly to this new position using `fly_to()`."""
-    }
-]
-
-print(f"Done.")
-
-code_block_regex = re.compile(r"```(.*?)```", re.DOTALL)
+from multiprocessing import Queue, Process
 
 
-def extract_python_code(content):
-    code_blocks = code_block_regex.findall(content)
-    if code_blocks:
-        full_code = "\n".join(code_blocks)
+# 开启 chatgpt_airsim
+def start_chatgpt_airsim(_with_text=True, queue: Queue = None):
+    with open("prompt/system_prompt.txt", "r", encoding="UTF8") as f:
+        system_prompt = f.read()
 
-        if full_code.startswith("python"):
-            full_code = full_code[7:]
+    with open("prompt/user_prompt.txt", "r", encoding="UTF8") as f:
+        user_prompt = f.read()
 
-        return full_code
-    else:
-        return None
+    history_message_list = list()
 
+    print(f"Done.")
 
-class colors:  # You may need to change color settings
-    RED = "\033[31m"
-    ENDC = "\033[m"
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    BLUE = "\033[34m"
+    code_block_regex = re.compile(r"```(.*?)```", re.DOTALL)
 
+    def extract_python_code(content):
+        code_blocks = code_block_regex.findall(content)
+        if code_blocks:
+            full_code = "\n".join(code_blocks)
 
-print(f"Initializing AirSim...")
-aw = AirSimWrapper()
-print(f"Done.")
+            if full_code.startswith("python"):
+                full_code = full_code[7:]
 
-response = get_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt,
-                                       history_message_list=history_message_list)
-# Understood. Thank you for providing the functions and clarifications.
-# Please let me know what you would like me to do with the drone.
-print(f"\n{response}\n")
+            return full_code
+        else:
+            return None
 
-print("Welcome to the AirSim chatbot! I am ready to help you with your AirSim questions and commands.")
+    class colors:  # You may need to change color settings
+        RED = "\033[31m"
+        ENDC = "\033[m"
+        GREEN = "\033[32m"
+        YELLOW = "\033[33m"
+        BLUE = "\033[34m"
 
-while True:
-    question = input(colors.YELLOW + "AirSim> " + colors.ENDC)
+    print(f"Initializing AirSim...")
+    # noinspection PyUnusedLocal
+    aw = AirSimWrapper()
+    print(f"Done.")
 
-    if question == "!quit" or question == "!exit":
-        break
-
-    if question == "!clear":
-        os.system("cls")
-        continue
-
-    response = get_chat_completion_content(user_prompt=question, history_message_list=history_message_list)
-
+    response = get_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt,
+                                           history_message_list=history_message_list)
+    # Understood. Thank you for providing the functions and clarifications.
+    # Please let me know what you would like me to do with the drone.
     print(f"\n{response}\n")
 
-    code = extract_python_code(response)
-    if code is not None:
-        print("Please wait while I run the code in AirSim...")
-        exec(extract_python_code(response))
-        print("Done!\n")
+    print("Welcome to the AirSim chatbot! I am ready to help you with your AirSim questions and commands.")
+
+    while True:
+        if _with_text:
+            question = input(colors.YELLOW + "AirSim> " + colors.ENDC)
+            if question == "!quit" or question == "!exit":
+                break
+
+            if question == "!clear":
+                os.system("cls")
+                continue
+        else:
+            print(colors.YELLOW + "请说出你的指令> ")
+            # 利用 block=True，设置等待
+            question = queue.get(block=True)
+            print(colors.YELLOW + F"你的指令是 '{question}'" + colors.ENDC)
+
+            if question.startswith("退出"):
+                break
+
+            if question.startswith("清空屏幕"):
+                os.system("cls")
+                continue
+
+        response = get_chat_completion_content(user_prompt=question, history_message_list=history_message_list)
+
+        print(f"\n{response}\n")
+
+        code = extract_python_code(response)
+        if code is not None:
+            print("Please wait while I run the code in AirSim...")
+            exec(extract_python_code(response))
+            print("Done!\n")
+
+    sys.exit(0)
+
+
+# 开启 recorder
+def start_recoder(_model_name="medium", _queue: Queue = None):
+    recorder = Recorder(_model_name=_model_name, _queue=_queue)
+    recorder.run()
+
+
+def main():
+    # chatgpt 和 recoder 通信，借助一个共享队列来传递文本
+    shared_queue = Queue()
+
+    p1 = Process(target=start_chatgpt_airsim, args=(False, shared_queue))
+    p1.start()
+
+    p2 = Process(target=start_recoder, args=("medium", shared_queue,))
+    p2.start()
+
+    p1.join()
+    p2.join()
+
+
+if __name__ == '__main__':
+    main()

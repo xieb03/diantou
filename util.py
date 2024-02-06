@@ -3,8 +3,8 @@ import atexit
 import json
 import math
 import os
+# noinspection PyUnresolvedReferences
 import queue
-import random
 import re
 import time
 import traceback
@@ -24,6 +24,11 @@ BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
 BIGDATA_VOICES_PATH = BIGDATA_PATH + "voices" + PATH_SEPARATOR
+
+
+# 删除所有空字符串
+def delete_all_blank(_str):
+    return re.sub("\\s+", "", _str)
 
 
 # 播放程序结束音乐
@@ -273,7 +278,6 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
         print('#' * 80)
         while True:
             line = fp.readline()
-            print("11111", line)
             if line and len(line.strip()) != 0:
                 line_list.append(line.strip())
                 if len(line_list) == _interval_line:
@@ -291,8 +295,7 @@ def main():
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == [1, 2, 3]).all()
 
-    # tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
-    check_tkinter_recoder()
+    tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
 
 
 if __name__ == '__main__':

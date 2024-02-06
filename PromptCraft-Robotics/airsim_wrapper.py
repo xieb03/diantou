@@ -15,13 +15,9 @@ objects_dict = {
 class AirSimWrapper:
     def __init__(self):
         self.client = airsim.MultirotorClient()
-        print("MultirotorClient")
         self.client.confirmConnection()
-        print("confirmConnection")
         self.client.enableApiControl(True)
-        print("enableApiControl")
         self.client.armDisarm(True)
-        print("armDisarm")
 
     def takeoff(self):
         self.client.takeoffAsync().join()

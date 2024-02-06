@@ -1,4 +1,3 @@
-import queue
 import sys
 
 import pydub
@@ -11,6 +10,8 @@ from util_torch import *
 @func_timer()
 def check_edge_tts():
     text = "我是谢博，我爱老婆平平！"
+    # 去掉所有空格
+    text = delete_all_blank(text)
     file_path = BIGDATA_VOICES_PATH + text[:20] + ".mp3"
     voice = "zh-CN-YunyangNeural"
     cmd = F"edge-tts --text '{text}' --write-media {file_path} --rate +0% --voice {voice} --volume +50%"
