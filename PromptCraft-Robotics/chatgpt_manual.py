@@ -1,8 +1,4 @@
-import sys
-
 from airsim_wrapper import *
-
-sys.path.append("../")
 
 print(f"Initializing AirSim...")
 aw = AirSimWrapper()

@@ -3,6 +3,7 @@ import atexit
 import json
 import math
 import os
+import queue
 import random
 import re
 import time
@@ -290,7 +291,8 @@ def main():
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == [1, 2, 3]).all()
 
-    tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
+    # tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
+    check_tkinter_recoder()
 
 
 if __name__ == '__main__':
