@@ -1,0 +1,22 @@
+airsim 依赖于 msgpack-rpc-python，而最新版的 msgpack-rpc-python 依赖于 tornado < 5，这与 jupyter 至少需要 tornado >= 5.0 矛盾
+    如果要运行 airsim：pip install msgpack-rpc-python -U
+    如果要运行 jupyter: pip install tornado -U
+
+有时候忽然找不到 dll，优先看一下 360 杀毒软件是否禁止某些文件访问了，从隔离区恢复即可
+
+No module named 'regex._regex'
+    pip uninstall regex
+    pip install regex
+
+更新 numba，否则会有 from numba.np.ufunc import _internal SystemError: initialization of _internal failed without raising an exception 的问题
+        pip uninstall numba
+            中间会报错：Cannot uninstall 'llvmlite'，直接物理删除即可：https://blog.csdn.net/weixin_43535207/article/details/104385743
+        pip install numba
+
+在 jupyter notebook 中粘贴剪切板中的图片
+    用 Markdown 模式，然后直接 Ctrl + v 即可，粘贴的图片会以 base64 的格式直接保存在 notebook 中，因此不会丢失。
+
+jetbrains 全家桶
+    https://www.bilibili.com/read/cv30623119/
+    https://ziby0nwxdov.feishu.cn/docx/GPOcdqAwtow1ZGxZ5bac3OlLnWc
+    https://ziby0nwxdov.feishu.cn/docx/DArFdVFQpomfUvxV7xZcCwXYn0c

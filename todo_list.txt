@@ -47,5 +47,49 @@ edge_tts：文字转语音，实际上背后是调用微软的Azure Cognitive Se
 利用 tkinter 实现简单的录音界面，注意录音一定要放在另外一个线程里面，否则会阻塞 tkinter 的运行
 将录音功能和 chatgpt_airsim 结合，利用双进程通讯，实现语音操控
 
+20240217
+cs231n_2017, 1 ~ 3
+
+20240218
+cs231n_2017, 4
 
 TODO: OPENAI 开发文档
+TODO: 魔塔使用文档，https://modelscope.cn/my/overview
+    https://modelscope.cn/models/ZhipuAI/chatglm3-6b/files
+TODO: faiss 安装调试
+
+千城:
+https://zhuanlan.zhihu.com/p/642845401
+https://zhuanlan.zhihu.com/p/661465330
+https://zhuanlan.zhihu.com/p/682253496
+
+1.使用chatgpt3.5 4.0 生成提示词的数据
+2.使用chatglm3-6b微调训练 lora
+3.使用RAG检索增强 在提示词中加入上下文 给出提示增强
+
+RAG
+往前面飞2 向量数据库 3个相关的问题
+    1.向前面飞 80%
+    答案 python\naw.takeoff()\n```\nThis code uses the `takeoff()` function to command the drone to take off and start flying.
+    2. 飞向前面 75%
+
+显存12G 16G lora
+
+可以使用句子转换模型 SentenceTransformer all-MiniLM-L6-v2
+    https://zhuanlan.zhihu.com/p/285123172
+    https://zhuanlan.zhihu.com/p/457876366
+也可以使用 tf-ide 等等
+    https://blog.csdn.net/weixin_43758551/article/details/113918690
+    https://zhuanlan.zhihu.com/p/113017752
+
+1：如何设计实验，来验证微调更好，在加上 rag 更更好，注意不要有信息泄露。
+    因为都是生成 python 代码，因此可以严格比较代码是否相同
+    100 微调
+        微调前（能力弱，几乎不能生成代码）
+        微调后（是否具备了过拟合能力）
+    10 测试（无泄漏，是否可以泛化）
+        rag 效果：+100 相似度 1.0、0.9、0.8、0.7、0.6、0.5、0.4、0.3、0.2、0.1
+2：熟悉 chatglm3 和 微调训练 lora
+    https://github.com/THUDM/ChatGLM3
+3：词嵌入 + langChain + faiss + RAG 检索
+
