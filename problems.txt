@@ -20,3 +20,10 @@ jetbrains 全家桶
     https://www.bilibili.com/read/cv30623119/
     https://ziby0nwxdov.feishu.cn/docx/GPOcdqAwtow1ZGxZ5bac3OlLnWc
     https://ziby0nwxdov.feishu.cn/docx/DArFdVFQpomfUvxV7xZcCwXYn0c
+
+anaconda
+    https://www.anaconda.com/download
+java
+    https://www.oracle.com/java/technologies/downloads/#jdk21-windows
+
+先安装 360、360杀毒、鲁大师，在安装其它的。如果可以的话，可以提前设置 360 杀毒的白名单，为后面转 Jetbrains、anaconda 等打下基础
