@@ -57,6 +57,9 @@ TODO: OPENAI 开发文档
 TODO: 魔塔使用文档，https://modelscope.cn/my/overview
     https://modelscope.cn/models/ZhipuAI/chatglm3-6b/files
 TODO: faiss 安装调试
+TODO：pycharm 插件学习
+    https://ziby0nwxdov.feishu.cn/docx/DArFdVFQpomfUvxV7xZcCwXYn0c
+    Tabnine
 
 千城:
 https://zhuanlan.zhihu.com/p/642845401
