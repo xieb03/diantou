@@ -296,7 +296,7 @@ def main():
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == [1, 2, 3]).all()
 
-    tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
+    # tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
 
 
 if __name__ == '__main__':
