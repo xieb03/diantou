@@ -16,7 +16,7 @@ No module named 'regex._regex'
 在 jupyter notebook 中粘贴剪切板中的图片
     用 Markdown 模式，然后直接 Ctrl + v 即可，粘贴的图片会以 base64 的格式直接保存在 notebook 中，因此不会丢失。
 
-jetbrains 全家桶
+jetbrains 全家桶（利用 tools 安装维护）
     https://www.bilibili.com/read/cv30623119/
     https://ziby0nwxdov.feishu.cn/docx/GPOcdqAwtow1ZGxZ5bac3OlLnWc
     https://ziby0nwxdov.feishu.cn/docx/DArFdVFQpomfUvxV7xZcCwXYn0c
@@ -26,4 +26,8 @@ anaconda
 java
     https://www.oracle.com/java/technologies/downloads/#jdk21-windows
 
-先安装 360、360杀毒、鲁大师，在安装其它的。如果可以的话，可以提前设置 360 杀毒的白名单，为后面转 Jetbrains、anaconda 等打下基础
+SwitchHosts
+    https://zhuanlan.zhihu.com/p/629079933
+    https://blog.csdn.net/qq_44376306/article/details/135046168
+
+先安装 360、360杀毒、鲁大师（跑分），在安装其它的。如果可以的话，可以提前设置 360 杀毒的白名单，为后面转 Jetbrains、anaconda 等打下基础
