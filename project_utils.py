@@ -3,10 +3,12 @@ import sys
 import pydub
 import sounddevice as sd
 import soundfile as sf
+
 from util_openai import *
 from util_torch import *
 
 
+# 'check_edge_tts' spent 12.0146s.
 @func_timer()
 def check_edge_tts():
     text = "我是谢博，我爱老婆平平！"
@@ -96,6 +98,7 @@ def record_voice_fix_duration(_duration, _file_path=None, _channels=1):
 
 # 录制一段任意时长的语音输入，Ctrl + C 结束
 # https://python-sounddevice.readthedocs.io/en/0.4.6/examples.html#recording-with-arbitrary-duration
+# 'record_voice_arbitrary_duration' spent 15.3748s.
 @func_timer()
 def record_voice_arbitrary_duration(_file_path=None, _channels=1, _with_wisper=True):
     if _file_path is None:

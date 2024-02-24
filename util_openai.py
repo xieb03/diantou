@@ -5,6 +5,7 @@ import tiktoken
 import whisper
 import zhconv
 from openai import OpenAI
+
 from util_spider import *
 
 
@@ -158,8 +159,10 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
     completion_token_count = response.usage.completion_tokens
     total_token_count = prompt_token_count + completion_token_count
     true_model = response.model
-    # from 20240204
-    assert_equal(true_model, "gpt-3.5-turbo-0613")
+    # from 20240204，gpt-3.5-turbo-0613
+    # assert_equal(true_model, "gpt-3.5-turbo-0613")
+    # from 20240225，gpt-3.5-turbo-0125
+    assert_equal(true_model, "gpt-3.5-turbo-0125")
 
     # 无论如何，都保存到历史对话中
     # if not using_history and history_message_list is not None:
@@ -282,6 +285,7 @@ def get_image_create(prompt, model="dall-e-3", response_format="b64_json", size=
 
 
 # 调试 open 的几个接口 api
+# 'check_openai_interfaces' spent 45.4599s.
 @func_timer()
 def check_openai_interfaces():
     content = get_chat_completion_content(user_prompt=["你是男生女生", "你的年纪是多大？"],
@@ -332,6 +336,8 @@ def main():
     """
     assert_equal(get_format_string_name_list(prompt), ['instruction', 'input_text'])
     print(fill_in_f_string(prompt, instruction="hello"))
+
+    print_closeai()
 
 
 if __name__ == '__main__':

@@ -428,21 +428,26 @@ def check_weight_norm():
 
 
 def check_gpu(_with_speed=False):
-    # 2.2.0+cu118
+    # 2.2.0+cu121
     # print(torch.__version__)
 
     assert torch.cuda.is_available()
 
     if _with_speed:
-        # dimension = 5000
-        # spent 111.40064930915833
+        dimension = 5000
+
         # i9-9900K
+        # spent 111.40064930915833
+        # i9-14900KF
+        # spent 40.08144783973694
         # device = torch.device("cpu")
-        # spent 4.195726633071899
+
         # 2080Ti
+        # spent 4.195726633071899
+        # 4090
+        # spent 2.9713356494903564
         device = torch.device("cuda")
 
-        dimension = 5000
         x = torch.rand((dimension, dimension), dtype=torch.float32)
         y = torch.rand((dimension, dimension), dtype=torch.float32)
 
@@ -459,7 +464,7 @@ def check_gpu(_with_speed=False):
 
 
 def main():
-    # 2.2.0+cu118
+    # 2.2.0+cu121
     print(torch.__version__)
     check_gpu(True)
     check_mul()
