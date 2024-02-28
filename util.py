@@ -19,12 +19,24 @@ from typing import List
 
 import numpy as np
 from IPython.display import Image, display, HTML
+from watermark import watermark
 
 PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
 BIGDATA_VOICES_PATH = BIGDATA_PATH + "voices" + PATH_SEPARATOR
+
+
+# 打印系统信息
+def print_requirements():
+    packages = ("torch,torchdata,torchtext,torchvision,torchaudio,openai,langchain,langchain-openai,tiktoken,"
+                "transformers,datasets,scikit-learn,numpy,pandas,matplotlib,scipy")
+    print(
+        watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
+                  hostname=True,
+                  machine=True, githash=False, gitrepo=False, gitbranch=False, watermark=False, gpu=True,
+                  packages=packages))
 
 
 # 删除所有空字符串
@@ -291,6 +303,44 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
+    # Last updated: 2024-02-28 20:08:20中国标准时间
+    #
+    # Python implementation: CPython
+    # Python version       : 3.11.5
+    # IPython version      : 8.15.0
+    #
+    # torch           : 2.2.1+cu121
+    # torchdata       : 0.7.1
+    # torchtext       : 0.17.1
+    # torchvision     : 0.17.1+cu121
+    # torchaudio      : 2.2.1+cu121
+    # openai          : 1.12.0
+    # langchain       : 0.1.9
+    # langchain-openai: not installed
+    # tiktoken        : 0.6.0
+    # transformers    : 4.38.1
+    # datasets        : 2.17.1
+    # scikit-learn    : 1.4.1.post1
+    # numpy           : 1.24.3
+    # pandas          : 2.0.3
+    # matplotlib      : 3.8.3
+    # scipy           : 1.11.1
+    #
+    # conda environment: base
+    #
+    # Compiler    : MSC v.1916 64 bit (AMD64)
+    # OS          : Windows
+    # Release     : 10
+    # Machine     : AMD64
+    # Processor   : Intel64 Family 6 Model 183 Stepping 1, GenuineIntel
+    # CPU cores   : 32
+    # Architecture: 64bit
+    #
+    # Hostname: SK-20231110MMDM
+    #
+    # GPU Info:
+    #   GPU 0: NVIDIA GeForce RTX 4090
+    print_requirements()
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == (1, 2, 3)).all()
     # noinspection PyUnresolvedReferences
