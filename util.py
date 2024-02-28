@@ -26,6 +26,27 @@ BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
 BIGDATA_VOICES_PATH = BIGDATA_PATH + "voices" + PATH_SEPARATOR
+BIGDATA_MODELS_PATH = BIGDATA_PATH + "models" + PATH_SEPARATOR
+CHATGLM3_6B_model_id = "ZhipuAI/chatglm3-6b"
+CHATGLM3_6B_model_revision = "v1.0.0"
+CHATGLM3_6B_model_dir = BIGDATA_MODELS_PATH + "ZhipuAI\\chatglm3-6b"
+
+
+# 打印一个对象的所有方法，ignore 表示去掉魔术方法
+def print_dir(_x, _ignore=True):
+    dirs = dir(_x)
+    if _ignore:
+        dirs = [_dir for _dir in dirs if not _dir.startswith("_") and not _dir.endswith("__")]
+    print(dirs)
+
+
+# 多个分隔符分割
+# 注意 \\ 要多加一层，变成 \\
+def multiply_split(_sep_list, _str):
+    _sep_list = to_list(_sep_list)
+    if "\\" in _sep_list:
+        _sep_list[_sep_list.index("\\")] = "\\\\"
+    return re.split("|".join(_sep_list), _str)
 
 
 # 打印系统信息
@@ -340,13 +361,18 @@ def main():
     #
     # GPU Info:
     #   GPU 0: NVIDIA GeForce RTX 4090
-    print_requirements()
+    # print_requirements()
+
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == (1, 2, 3)).all()
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == [1, 2, 3]).all()
 
     # tailf(r"D:\PycharmProjects\xiebo\diantou\bigdata\temp1.txt")
+
+    a = r"1,3\4,/5"
+    assert_equal(multiply_split(",", a), ['1', '3\\4', '/5'])
+    assert_equal(multiply_split([",", "\\", "/"], a), ['1', '3', '4', '', '5'])
 
 
 if __name__ == '__main__':

@@ -1,3 +1,6 @@
+import torch.cuda
+from torchinfo import summary
+
 from project_utils import *
 
 
@@ -461,7 +464,250 @@ def check_gpu(_with_speed=False):
             z = x * y
         end_time = time.time()
 
+        # 总显存 (GB):      2.0
+        # torch 显存 (GB):  0.4
+        # tensor 显存 (GB): 0.3
+        print_gpu_memory_summary()
+
         print("spent {}".format(end_time - start_time))
+
+
+# 检查 half 的用法，其实就是转化为 float 16
+def check_half():
+    float_64 = torch.tensor([3.1415926], dtype=torch.float64)
+    float_32 = torch.tensor([3.1415926], dtype=torch.float32)
+    float_16 = torch.tensor([3.1415926], dtype=torch.float16)
+
+    # tensor([3.1416], dtype=torch.float64)
+    # tensor([3.1406], dtype=torch.float16)
+    # tensor([3.1406], dtype=torch.float16)
+    print(float_64)
+    print(float_64.half())
+    print(float_64.half().half())
+
+    # tensor([3.1416])
+    # tensor([3.1406], dtype=torch.float16)
+    # tensor([3.1406], dtype=torch.float16)
+    print(float_32)
+    print(float_32.half())
+    print(float_32.half().half())
+
+    # tensor([3.1406], dtype=torch.float16)
+    # tensor([3.1406], dtype=torch.float16)
+    # tensor([3.1406], dtype=torch.float16)
+    print(float_16)
+    print(float_16.half())
+    print(float_16.half().half())
+
+
+@func_timer(arg=True)
+def check_chatglm3():
+    from transformers import AutoModel, AutoTokenizer
+    # trust_remote_code 表示相信本地的代码，而不是表示同意下载远程代码，不要混淆
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=CHATGLM3_6B_model_dir,
+                                              trust_remote_code=True)
+    # <class 'transformers_modules.chatglm3-6b.tokenization_chatglm.ChatGLMTokenizer'>
+    print(type(tokenizer))
+    # ['SPECIAL_TOKENS_ATTRIBUTES', 'add_special_tokens', 'add_tokens', 'added_tokens_decoder', 'added_tokens_encoder',
+    # 'additional_special_tokens', 'additional_special_tokens_ids', 'all_special_ids', 'all_special_tokens',
+    # 'all_special_tokens_extended', 'apply_chat_template', 'as_target_tokenizer', 'batch_decode', 'batch_encode_plus',
+    # 'bos_token', 'bos_token_id', 'build_chat_input', 'build_inputs_with_special_tokens', 'build_single_message',
+    # 'chat_template', 'clean_up_tokenization', 'clean_up_tokenization_spaces', 'cls_token', 'cls_token_id',
+    # 'convert_added_tokens', 'convert_ids_to_tokens', 'convert_tokens_to_ids', 'convert_tokens_to_string',
+    # 'create_token_type_ids_from_sequences', 'decode', 'default_chat_template', 'deprecation_warnings',
+    # 'encode', 'encode_plus', 'eos_token', 'eos_token_id', 'from_pretrained', 'get_added_vocab', 'get_command',
+    # 'get_prefix_tokens', 'get_special_tokens_mask', 'get_vocab', 'init_inputs', 'init_kwargs', 'is_fast',
+    # 'mask_token', 'mask_token_id', 'max_len_sentences_pair', 'max_len_single_sentence', 'max_model_input_sizes',
+    # 'model_input_names', 'model_max_length', 'name', 'name_or_path', 'num_special_tokens_to_add', 'pad',
+    # 'pad_token', 'pad_token_id', 'pad_token_type_id', 'padding_side', 'prepare_for_model', 'prepare_for_tokenization',
+    # 'prepare_seq2seq_batch', 'pretrained_init_configuration', 'pretrained_vocab_files_map', 'push_to_hub',
+    # 'register_for_auto_class', 'sanitize_special_tokens', 'save_pretrained', 'save_vocabulary', 'sep_token',
+    # 'sep_token_id', 'slow_tokenizer_class', 'special_tokens', 'special_tokens_map', 'special_tokens_map_extended',
+    # 'split_special_tokens', 'tokenize', 'tokenizer', 'tokens_trie', 'truncate_sequences', 'truncation_side',
+    # 'unk_token', 'unk_token_id', 'verbose', 'vocab_file', 'vocab_files_names', 'vocab_size']
+    print_dir(tokenizer)
+
+    dictionary = tokenizer.get_vocab()
+    # <class 'dict'> 64796 True
+    # 字典
+    print(type(dictionary), len(dictionary), "月光" in dictionary)
+
+    # encode 就是 encode_plus 的一部分
+    # return self.encode_plus()["input_ids"]
+    # [64790, 64792, 34211, 51225, 34886, 30930]
+    # print(tokenizer.encode('我爱我老婆.'))
+
+    # {'input_ids': [0, 0, 64790, 64792, 34211, 51225, 34886, 30930, 34211, 34886, 54532, 55266, 54678, 30930, 2],
+    # 'token_type_ids': [0, 0, 0, 0, 1, 1, 1, 1, 1, 1], 'special_tokens_mask': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    # 'attention_mask': [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    # 'position_ids': [0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+    # 支持传一句话或者两句话，如每句话的开头有 "_"
+    # 如果要想批量编码，调用 batch_encode_plus，会增加一个维度，表示 batch
+    sen_code = tokenizer.encode_plus('我爱我老婆.', '我老婆是陈平.', truncation=True, max_length=15,
+                                     padding="max_length", return_token_type_ids=True, return_special_tokens_mask=True)
+    print(sen_code)
+    # ['', '', '[gMASK]', 'sop', '▁我', '爱我', '老婆', '.', '▁我', '老婆', '是', '陈', '平', '.', '']
+    print(tokenizer.convert_ids_to_tokens(sen_code['input_ids']))
+
+    sen_code = tokenizer.encode_plus('你说什么.', '这个课程太难学了.')
+    print(sen_code)
+    # ['[gMASK]', 'sop', '▁你', '说什么', '.', '▁这个', '课程', '太难', '学了', '.', '']
+    print(tokenizer.convert_ids_to_tokens(sen_code['input_ids']))
+
+    # 通过查看 config.json，torch_dtype = float16"，因此这里用不用 half 都可以
+    model = AutoModel.from_pretrained(CHATGLM3_6B_model_dir, trust_remote_code=True).cuda()
+    # <class 'transformers_modules.chatglm3-6b.modeling_chatglm.ChatGLMForConditionalGeneration'>
+    print(type(model))
+    # ['T_destination', 'active_adapter', 'active_adapters', 'add_adapter', 'add_memory_hooks', 'add_model_tags',
+    # 'add_module', 'apply', 'assisted_decoding', 'base_model', 'base_model_prefix', 'beam_sample', 'beam_search',
+    # 'bfloat16', 'buffers', 'call_super_init', 'can_generate', 'chat', 'children', 'compile',
+    # 'compute_transition_scores', 'config', 'config_class', 'constrained_beam_search', 'contrastive_search', 'cpu',
+    # 'create_extended_attention_mask_for_decoder', 'cuda', 'device', 'disable_adapters', 'disable_input_require_grads',
+    # 'double', 'dtype', 'dummy_inputs', 'dump_patches', 'enable_adapters', 'enable_input_require_grads',
+    # , 'eval', 'extra_repr', 'float', 'floating_point_ops', 'forward', 'framework', 'from_pretrained', 'generate',
+    # 'generation_config', 'get_adapter_state_dict', 'get_buffer', 'get_extended_attention_mask', 'get_extra_state',
+    # 'get_head_mask', 'get_input_embeddings', 'get_masks', 'get_memory_footprint', 'get_output_embeddings',
+    # 'get_parameter', 'get_position_embeddings', 'get_position_ids', 'get_submodule', 'gradient_checkpointing_disable',
+    # 'gradient_checkpointing_enable', 'greedy_search', 'group_beam_search', 'half', 'init_weights',
+    # 'invert_attention_mask', 'ipu', 'is_gradient_checkpointing', 'is_parallelizable', 'load_adapter',
+    # 'load_state_dict', 'main_input_name', 'max_sequence_length', 'model_tags', 'modules', 'name_or_path',
+    # 'named_buffers', 'named_children', 'named_modules', 'named_parameters', 'num_parameters', 'parameters',
+    # 'post_init', 'prepare_inputs_for_generation', 'process_response', 'prune_heads', 'push_to_hub', 'quantize',
+    # 'quantized', 'register_backward_hook', 'register_buffer', 'register_for_auto_class', 'register_forward_hook',
+    # 'register_forward_pre_hook', 'register_full_backward_hook', 'register_full_backward_pre_hook',
+    # 'register_load_state_dict_post_hook', 'register_module', 'register_parameter', 'register_state_dict_pre_hook',
+    # 'requires_grad_', 'reset_memory_hooks_state', 'resize_position_embeddings', 'resize_token_embeddings',
+    # 'retrieve_modules_from_names', 'reverse_bettertransformer', 'sample', 'save_pretrained', 'set_adapter',
+    # 'set_extra_state', 'set_input_embeddings', 'share_memory', 'state_dict', 'stream_chat', 'stream_generate',
+    # 'supports_gradient_checkpointing', 'tie_weights', 'to', 'to_bettertransformer', 'to_empty', 'train', 'training',
+    # 'transformer', 'type', 'warn_if_padding_and_no_attention_mask', 'warnings_issued', 'xpu', 'zero_grad']
+    print_dir(model)
+
+    # model = AutoModel.from_pretrained(CHATGLM3_6B_model_dir, trust_remote_code=True).half().cuda()
+    total_parameters = model.num_parameters()
+    # 总显存 (GB):      13.22
+    # torch 显存 (GB):  11.66
+    # tensor 显存 (GB): 11.66
+    print_gpu_memory_summary()
+
+    # 参数量：6243584000，占用显存: 11.63 GB
+    print(F"参数量：{total_parameters}，占用显存: {round(total_parameters * 2 / 1024 ** 3, 2)} GB")
+
+    # ================================================================================
+    # Layer (type:depth-idx)                                  Param #
+    # ================================================================================
+    # ChatGLMForConditionalGeneration                         --
+    # ├─ChatGLMModel: 1-1                                     --
+    # │    └─Embedding: 2-1                                   --
+    # │    │    └─Embedding: 3-1                              266,338,304
+    # │    └─RotaryEmbedding: 2-2                             --
+    # │    └─GLMTransformer: 2-3                              --
+    # │    │    └─ModuleList: 3-2                             5,710,903,296
+    # │    │    └─RMSNorm: 3-3                                4,096
+    # │    └─Linear: 2-4                                      266,338,304
+    # ================================================================================
+    # Total params: 6,243,584,000
+    # Trainable params: 6,243,584,000
+    # Non-trainable params: 0
+    # ================================================================================
+    # 注意，需要给 input 才能知道整个的参数量
+    summary(model)
+
+    # ChatGLMForConditionalGeneration(
+    #   (transformer): ChatGLMModel(
+    #     (embedding): Embedding(
+    #       (word_embeddings): Embedding(65024, 4096)
+    #     )
+    #     (rotary_pos_emb): RotaryEmbedding()
+    #     (encoder): GLMTransformer(
+    #       (layers): ModuleList(
+    #         (0-27): 28 x GLMBlock(
+    #           (input_layernorm): RMSNorm()
+    #           (self_attention): SelfAttention(
+    #             (query_key_value): Linear(in_features=4096, out_features=4608, bias=True)
+    #             (core_attention): CoreAttention(
+    #               (attention_dropout): Dropout(p=0.0, inplace=False)
+    #             )
+    #             (dense): Linear(in_features=4096, out_features=4096, bias=False)
+    #           )
+    #           (post_attention_layernorm): RMSNorm()
+    #           (mlp): MLP(
+    #             (dense_h_to_4h): Linear(in_features=4096, out_features=27392, bias=False)
+    #             (dense_4h_to_h): Linear(in_features=13696, out_features=4096, bias=False)
+    #           )
+    #         )
+    #       )
+    #       (final_layernorm): RMSNorm()
+    #     )
+    #     (output_layer): Linear(in_features=4096, out_features=65024, bias=False)
+    #   )
+    # )
+    print(model)
+
+    # =========================================================================================================
+    # Layer (type:depth-idx)                                  Output Shape              Param #
+    # =========================================================================================================
+    # ChatGLMForConditionalGeneration                         [512, 16, 2, 128]         --
+    # ├─ChatGLMModel: 1-1                                     [512, 16, 2, 128]         --
+    # │    └─Embedding: 2-1                                   [512, 16, 4096]           --
+    # │    │    └─Embedding: 3-1                              [16, 512, 4096]           266,338,304
+    # │    └─RotaryEmbedding: 2-2                             [8192, 32, 2]             --
+    # │    └─GLMTransformer: 2-3                              [512, 16, 4096]           --
+    # │    │    └─ModuleList: 3-2                             --                        5,710,903,296
+    # │    │    └─RMSNorm: 3-3                                [512, 16, 4096]           4,096
+    # │    └─Linear: 2-4                                      [512, 16, 65024]          266,338,304
+    # =========================================================================================================
+    # Total params: 6,243,584,000
+    # Trainable params: 6,243,584,000
+    # Non-trainable params: 0
+    # Total mult-adds (Units.TERABYTES): 3.06
+    # =========================================================================================================
+    # Input size (MB): 0.03
+    # Forward/backward pass size (MB): 46791.66
+    # Params size (MB): 12487.17
+    # Estimated Total Size (MB): 59278.86
+    # =========================================================================================================
+    summary(model, input_size=(16, 512), dtypes=[torch.int])
+    model = model.eval()
+
+    # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
+    response, history = model.chat(tokenizer, "你好", history=[])
+    print(response)
+    # print_history_message_list(history)
+
+    # 1. 尝试放松身心，如深呼吸、冥想或温和的瑜伽。
+    # 2. 避免刺激性食物和饮料，如咖啡、茶和巧克力。
+    # 3. 保持规律的睡眠时间表。
+    # 4. 尝试舒适的环境，如调暗灯光、使用白噪音或舒适的床垫。
+    # 5. 避免在晚上过度使用电子设备，如手机、平板电脑和电视。
+    # 6. 保持适度的运动，如散步、瑜伽或伸展运动。
+    # 7. 如果需要，可以考虑采用放松技巧，如渐进性肌肉松弛或呼吸练习。
+    # 8. 睡前适当限制使用兴奋剂，如尼古丁和酒精。
+    # 9. 睡前尝试冥想或深度放松练习。
+    # 10. 如有必要，可咨询医生或专业心理健康专家。
+    response, history = model.chat(tokenizer, "晚上睡不着应该怎么办，回复字数不要超过 100 个", history=history)
+    print(response)
+    # print_history_message_list(history)
+
+    # 1. 尝试调整咖啡因摄入量，控制在一日 limit 内。
+    # 2. 尝试其他非咖啡因的提神饮料，如茶、果汁或苏打水。
+    # 3. 考虑采用放松技巧，如冥想或深度放松练习。
+    # 4. 增加白天休息时间，如小憩或午睡。
+    # 5. 调整饮食结构，增加易消化的食物，如坚果、全麦面包或香蕉。
+    # 6. 尝试进行有氧运动，如跑步或游泳。
+    # 7. 保持良好的睡眠时间表，尽量在同一时间入睡和起床。
+    # 8. 避免在睡前过度使用电子设备，如手机、平板电脑和电视。
+    # 9. 睡前适当限制咖啡因摄入，如减少咖啡或茶摄入量。
+    # 10. 如有必要，可咨询医生或专业心理健康专家。
+    response, history = model.chat(tokenizer, "但我工作的原因必须喝咖啡，回复字数不要超过 100 个", history=history)
+    print(response)
+    # print_history_message_list(history)
+
+    # 我明白您的工作原因需要喝咖啡来保持清醒和提高工作效率。咖啡因是一种兴奋剂，可以增加警觉性和注意力，帮助您更好地应对日常任务。当然，适量饮用咖啡对大多数人来说是安全的，但请注意不要过量摄入咖啡因，以免出现不良反应。
+    # 历史对话需要通过传入 history 来引入，否则模型记不住上下文
+    response, history = model.chat(tokenizer, "但我工作的原因必须喝咖啡，回复字数不要超过 100 个", history=[])
+    print(response)
+    # print_history_message_list(history)
 
 
 def main():
@@ -477,6 +723,8 @@ def main():
     check_instance_norm()
     check_group_norm()
     check_weight_norm()
+    check_half()
+    check_chatglm3()
 
 
 if __name__ == '__main__':

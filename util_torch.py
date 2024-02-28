@@ -3,7 +3,46 @@ import tiktoken
 import torch
 # noinspection PyUnresolvedReferences
 from torch import nn
+
 from util import *
+
+
+# 获取现存的整体情况
+# 总显存 (GB):      2.0
+# torch 显存 (GB):  0.4
+# tensor 显存 (GB): 0.3
+def print_gpu_memory_summary(_digit=2):
+    print("总显存 (GB):     ", round(get_total_gpu_memory() / 1024 / 1024 / 1024, _digit))
+    # 其它的一些开销，例如 torch 本身占据的缓存
+    print("torch 显存 (GB): ", round(torch.cuda.memory_reserved() / 1024 / 1024 / 1024, _digit))
+    # 仅仅是 tensor 占用的
+    print("tensor 显存 (GB):", round(torch.cuda.memory_allocated() / 1024 / 1024 / 1024, _digit))
+
+
+# 获取显卡的整体情况
+# 可用 GPU 数量: 1
+# GPU 0 的详细信息:
+# 名称: NVIDIA GeForce RTX 4090
+# 计算能力: 8.9
+# 内存总量 (GB): 24.0
+def print_gpu_device_summary():
+    num_devices = torch.cuda.device_count()
+    print("可用 GPU 数量:", num_devices)
+
+    # 遍历所有可用的 GPU 设备并打印详细信息
+    for i in range(num_devices):
+        device = torch.cuda.get_device_properties(i)
+        print(F"GPU {i} 的详细信息:")
+        print("名称:", device.name)
+        print("计算能力:", f"{device.major}.{device.minor}")
+        print("显存总量 (GB):", round(device.total_memory / (1024 ** 3), 1))
+
+
+# 获取当前显卡所有已用的缓存，通过 nvidia-smi 获取
+# 注意返回的是 MB，乘以 1024^2 转化为 byte
+def get_total_gpu_memory():
+    return (1024 * 1024 *
+            int(os.popen("nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits").read().split("\n")[0]))
 
 
 # 获取一个 sample

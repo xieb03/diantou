@@ -197,7 +197,8 @@ def print_history_message_list(history_message_list, _with_index=True, _start_in
             print(F"{index} {role}:")
         else:
             print(F"{role}:")
-        print(F"\t{content}")
+        content = content.replace("\n", "\n\t")
+        print(F'\t{content}')
 
         # 有 assistant 意味着要开始一轮的对话
         if role == "assistant":

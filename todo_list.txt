@@ -53,13 +53,19 @@ cs231n_2017, 1 ~ 3
 20240218
 cs231n_2017, 4
 
+20240227
+chatGLM3-6b 安装、跑通
+
+TODO
+    利用 bge-large-zh-v1.5 召回，再利用 bge-reranker-large 排序.
+        https://huggingface.co/BAAI/bge-large-zh-v1.5
+        https://huggingface.co/BAAI/bge-reranker-large
+
 TODO: OPENAI 开发文档
 TODO: 魔塔使用文档，https://modelscope.cn/my/overview
     https://modelscope.cn/models/ZhipuAI/chatglm3-6b/files
 TODO: faiss 安装调试
-TODO：pycharm 插件学习
-    https://ziby0nwxdov.feishu.cn/docx/DArFdVFQpomfUvxV7xZcCwXYn0c
-    Tabnine
+
 
 千城:
 https://zhuanlan.zhihu.com/p/642845401
