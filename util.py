@@ -27,9 +27,21 @@ BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
 BIGDATA_VOICES_PATH = BIGDATA_PATH + "voices" + PATH_SEPARATOR
 BIGDATA_MODELS_PATH = BIGDATA_PATH + "models" + PATH_SEPARATOR
+
+# "torch_dtype": "float16"
 CHATGLM3_6B_model_id = "ZhipuAI/chatglm3-6b"
 CHATGLM3_6B_model_revision = "v1.0.0"
-CHATGLM3_6B_model_dir = BIGDATA_MODELS_PATH + "ZhipuAI\\chatglm3-6b"
+CHATGLM3_6B_model_dir = BIGDATA_MODELS_PATH + r"ZhipuAI\chatglm3-6b"
+
+# "torch_dtype": "float32"
+BGE_LARGE_CN_model_id = "AI-ModelScope/bge-large-zh-v1.5"
+BGE_LARGE_CN_model_revision = "master"
+BGE_LARGE_CN_model_dir = BIGDATA_MODELS_PATH + r"AI-ModelScope\bge-large-zh-v1___5"
+
+# "torch_dtype": "float32"
+BGE_RERANKER_LARGE_model_id = "quietnight/bge-reranker-large"
+BGE_RERANKER_LARGE_revision = "master"
+BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + r"quietnight\bge-reranker-large"
 
 
 # 打印一个对象的所有方法，ignore 表示去掉魔术方法

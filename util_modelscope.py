@@ -10,9 +10,12 @@ def modelscope_download(model_id=CHATGLM3_6B_model_id, revision=CHATGLM3_6B_mode
     # D:\PycharmProjects\xiebo\diantou\bigdata\models\ZhipuAI\chatglm3-6b
     model_dir = snapshot_download(model_id=model_id, revision=revision, cache_dir=BIGDATA_MODELS_PATH,
                                   local_files_only=local_files_only)
-    assert_equal(model_dir, get_model_dir(model_id=model_id))
+    print(model_dir)
+    # assert_equal(model_dir, get_model_dir(model_id=model_id))
 
 
+# 并不对所有的都适用
+# "AI-ModelScope/bge-large-zh-v1.5" -> "AI-ModelScope/bge-large-zh-v1___5"
 def get_model_dir(model_id=CHATGLM3_6B_model_id):
     model_dir = PATH_SEPARATOR.join(multiply_split([",", "\\", "/"], delete_all_blank(model_id)))
     return BIGDATA_MODELS_PATH + model_dir
@@ -20,6 +23,8 @@ def get_model_dir(model_id=CHATGLM3_6B_model_id):
 
 def main():
     modelscope_download(model_id=CHATGLM3_6B_model_id, revision=CHATGLM3_6B_model_revision)
+    modelscope_download(model_id=BGE_LARGE_CN_model_id, revision=BGE_LARGE_CN_model_revision)
+    modelscope_download(model_id=BGE_RERANKER_LARGE_model_id, revision=BGE_RERANKER_LARGE_revision)
 
 
 if __name__ == '__main__':
