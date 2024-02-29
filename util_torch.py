@@ -7,6 +7,13 @@ from torch import nn
 from util import *
 
 
+# 将一个 dict 的 所有 value 都放到 gpu 中，注意是原位修改
+def change_dict_value_to_gpu(_dict):
+    for k, v in _dict.items():
+        assert isinstance(v, torch.Tensor)
+        _dict[k] = v.cuda()
+
+
 # 获取现存的整体情况
 # 总显存 (GB):      2.0
 # torch 显存 (GB):  0.4

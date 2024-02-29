@@ -432,7 +432,7 @@ def check_weight_norm():
 
 def check_gpu(_with_speed=False):
     # 2.2.1+cu121
-    # print(torch.__version__)
+    print(torch.__version__)
 
     assert torch.cuda.is_available()
     assert torch.backends.cudnn.enabled
@@ -500,6 +500,7 @@ def check_half():
     print(float_16.half().half())
 
 
+# https://huggingface.co/THUDM/chatglm3-6b
 @func_timer(arg=True)
 def check_chatglm3():
     from transformers import AutoModel, AutoTokenizer
@@ -710,21 +711,610 @@ def check_chatglm3():
     # print_history_message_list(history)
 
 
+# https://huggingface.co/BAAI/bge-large-zh-v1.5
+@func_timer(arg=True)
+def check_bge_zh():
+    from transformers import AutoModel, AutoTokenizer
+    # trust_remote_code 表示相信本地的代码，而不是表示同意下载远程代码，不要混淆
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=BGE_LARGE_CN_model_dir,
+                                              trust_remote_code=True)
+    # <class 'transformers.models.bert.tokenization_bert_fast.BertTokenizerFast'>
+    print(type(tokenizer))
+    # ['SPECIAL_TOKENS_ATTRIBUTES', 'add_special_tokens', 'add_tokens', 'added_tokens_decoder', 'added_tokens_encoder',
+    # 'additional_special_tokens', 'additional_special_tokens_ids', 'all_special_ids', 'all_special_tokens',
+    # 'all_special_tokens_extended', 'apply_chat_template', 'as_target_tokenizer', 'backend_tokenizer',
+    # 'batch_decode', 'batch_encode_plus', 'bos_token', 'bos_token_id', 'build_inputs_with_special_tokens',
+    # 'can_save_slow_tokenizer', 'chat_template', 'clean_up_tokenization', 'clean_up_tokenization_spaces',
+    # 'cls_token', 'cls_token_id', 'convert_added_tokens', 'convert_ids_to_tokens', 'convert_tokens_to_ids',
+    # 'convert_tokens_to_string', 'create_token_type_ids_from_sequences', 'decode', 'decoder', 'default_chat_template',
+    # 'deprecation_warnings', 'do_lower_case', 'encode', 'encode_plus', 'eos_token', 'eos_token_id', 'from_pretrained',
+    # 'get_added_vocab', 'get_special_tokens_mask', 'get_vocab', 'init_inputs', 'init_kwargs', 'is_fast', 'mask_token',
+    # 'mask_token_id', 'max_len_sentences_pair', 'max_len_single_sentence', 'max_model_input_sizes',
+    # 'model_input_names', 'model_max_length', 'name_or_path', 'num_special_tokens_to_add', 'pad', 'pad_token',
+    # 'pad_token_id', 'pad_token_type_id', 'padding_side', 'prepare_for_model', 'prepare_seq2seq_batch',
+    # 'pretrained_init_configuration', 'pretrained_vocab_files_map', 'push_to_hub', 'register_for_auto_class',
+    # 'sanitize_special_tokens', 'save_pretrained', 'save_vocabulary', 'sep_token', 'sep_token_id',
+    # 'set_truncation_and_padding', 'slow_tokenizer_class', 'special_tokens_map', 'special_tokens_map_extended',
+    # 'split_special_tokens', 'tokenize', 'train_new_from_iterator', 'truncate_sequences', 'truncation_side',
+    # 'unk_token', 'unk_token_id', 'verbose', 'vocab', 'vocab_files_names', 'vocab_size']
+    print_dir(tokenizer)
+
+    dictionary = tokenizer.get_vocab()
+    # <class 'dict'> 21128 False True True
+    # 字典
+    print(type(dictionary), len(dictionary), "月光" in dictionary, "月" in dictionary, "光" in dictionary)
+    # 1000000000000000019884624838653
+    # 1000000000000000019884624838654
+    # {'google-bert/bert-base-uncased': 512, 'google-bert/bert-large-uncased': 512, 'google-bert/bert-base-cased': 512,
+    # 'google-bert/bert-large-cased': 512, 'google-bert/bert-base-multilingual-uncased': 512,
+    # 'google-bert/bert-base-multilingual-cased': 512, 'google-bert/bert-base-chinese': 512,
+    # 'google-bert/bert-base-german-cased': 512, 'google-bert/bert-large-uncased-whole-word-masking': 512,
+    # 'google-bert/bert-large-cased-whole-word-masking': 512,
+    # 'google-bert/bert-large-uncased-whole-word-masking-finetuned-squad': 512,
+    # 'google-bert/bert-large-cased-whole-word-masking-finetuned-squad': 512,
+    # 'google-bert/bert-base-cased-finetuned-mrpc': 512,
+    # 'google-bert/bert-base-german-dbmdz-cased': 512,
+    # 'google-bert/bert-base-german-dbmdz-uncased': 512, 'TurkuNLP/bert-base-finnish-cased-v1': 512,
+    # 'TurkuNLP/bert-base-finnish-uncased-v1': 512, 'wietsedv/bert-base-dutch-cased': 512}
+    # 1000000000000000019884624838656
+    print(tokenizer.max_len_sentences_pair, tokenizer.max_len_single_sentence, tokenizer.max_model_input_sizes,
+          tokenizer.model_max_length)
+
+    # encode 就是 encode_plus 的一部分
+    # return self.encode_plus()["input_ids"]
+    # [64790, 64792, 34211, 51225, 34886, 30930]
+    # print(tokenizer.encode('我爱我老婆.'))
+
+    # {'input_ids': [101, 2769, 4263, 2769, 5439, 2038, 119, 102, 2769, 5439, 2038, 3221, 7357, 2398, 102],
+    # 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+    # 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    # 'special_tokens_mask': [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], 'length': [15]}
+    # 支持传一句话或者两句话，如每句话的开头有 "_"
+    # 如果要想批量编码，调用 batch_encode_plus，会增加一个维度，表示 batch
+    sen_code = tokenizer.encode_plus('我爱我老婆.', '我老婆是陈平.', truncation=True, max_length=15,
+                                     padding="max_length", return_token_type_ids=True, return_special_tokens_mask=True,
+                                     return_length=True)
+    print(sen_code)
+    # ['[CLS]', '我', '爱', '我', '老', '婆', '.', '[SEP]', '我', '老', '婆', '是', '陈', '平', '[SEP]']
+    print(tokenizer.convert_ids_to_tokens(sen_code['input_ids']))
+
+    sen_code = tokenizer.encode_plus('你说什么.', '这个课程太难学了.')
+    print(sen_code)
+    # ['[CLS]', '你', '说', '什', '么', '.', '[SEP]', '这', '个', '课', '程', '太', '难', '学', '了', '.', '[SEP]']
+    print(tokenizer.convert_ids_to_tokens(sen_code['input_ids']))
+
+    # 通过查看 config.json，torch_dtype = float32"
+    model = AutoModel.from_pretrained(BGE_LARGE_CN_model_dir, trust_remote_code=True).cuda()
+    # model = AutoModel.from_pretrained(BGE_LARGE_CN_model_dir, trust_remote_code=True).half().cuda()
+    # <class 'transformers.models.bert.modeling_bert.BertModel'>
+    print(type(model))
+    # cuda:0
+    print(model.device)
+    # ['T_destination', 'active_adapter', 'active_adapters', 'add_adapter', 'add_memory_hooks', 'add_model_tags',
+    # 'add_module', 'apply', 'assisted_decoding', 'base_model', 'base_model_prefix', 'beam_sample', 'beam_search',
+    # 'bfloat16', 'buffers', 'call_super_init', 'can_generate', 'children', 'compile', 'compute_transition_scores',
+    # 'config', 'config_class', 'constrained_beam_search', 'contrastive_search', 'cpu',
+    # 'create_extended_attention_mask_for_decoder', 'cuda', 'device', 'disable_adapters',
+    # 'disable_input_require_grads', 'double', 'dtype', 'dummy_inputs', 'dump_patches', 'embeddings',
+    # 'enable_adapters', 'enable_input_require_grads', 'encoder', 'estimate_tokens', 'eval', 'extra_repr', 'float',
+    # 'floating_point_ops', 'forward', 'framework', 'from_pretrained', 'generate', 'generation_config',
+    # 'get_adapter_state_dict', 'get_buffer', 'get_extended_attention_mask', 'get_extra_state', 'get_head_mask',
+    # 'get_input_embeddings', 'get_memory_footprint', 'get_output_embeddings', 'get_parameter',
+    # 'get_position_embeddings', 'get_submodule', 'gradient_checkpointing_disable', 'gradient_checkpointing_enable',
+    # 'greedy_search', 'group_beam_search', 'half', 'init_weights', 'invert_attention_mask', 'ipu',
+    # 'is_gradient_checkpointing', 'is_parallelizable', 'load_adapter', 'load_state_dict', 'load_tf_weights',
+    # 'main_input_name', 'model_tags', 'modules', 'name_or_path', 'named_buffers', 'named_children', 'named_modules',
+    # 'named_parameters', 'num_parameters', 'parameters', 'pooler', 'post_init', 'prepare_inputs_for_generation',
+    # 'prune_heads', 'push_to_hub', 'register_backward_hook', 'register_buffer', 'register_for_auto_class',
+    # 'register_forward_hook', 'register_forward_pre_hook', 'register_full_backward_hook',
+    # 'register_full_backward_pre_hook', 'register_load_state_dict_post_hook', 'register_module', 'register_parameter',
+    # 'register_state_dict_pre_hook', 'requires_grad_', 'reset_memory_hooks_state', 'resize_position_embeddings',
+    # 'resize_token_embeddings', 'retrieve_modules_from_names', 'reverse_bettertransformer', 'sample',
+    # 'save_pretrained', 'set_adapter', 'set_extra_state', 'set_input_embeddings', 'share_memory', 'state_dict',
+    # 'supports_gradient_checkpointing', 'tie_weights', 'to', 'to_bettertransformer', 'to_empty', 'train', 'training',
+    # 'type', 'warn_if_padding_and_no_attention_mask', 'warnings_issued', 'xpu', 'zero_grad']
+    print_dir(model)
+
+    total_parameters = model.num_parameters()
+    # half() 之前
+    # 总显存 (GB):      2.62
+    # torch 显存 (GB):  1.22
+    # tensor 显存 (GB): 1.21
+    # half() 之后，从 float32 -> float16，少了一半
+    # 总显存 (GB):      2.0
+    # torch 显存 (GB):  0.61
+    # tensor 显存 (GB): 0.61
+    print_gpu_memory_summary()
+
+    # 参数量：325522432，占用显存: 1.21 GB
+    print(F"参数量：{total_parameters}，占用显存: {round(total_parameters * 2 / 1024 ** 3, 2)} GB")
+
+    # ===========================================================================
+    # Layer (type:depth-idx)                             Param #
+    # ===========================================================================
+    # BertModel                                          --
+    # ├─BertEmbeddings: 1-1                              --
+    # │    └─Embedding: 2-1                              21,635,072
+    # │    └─Embedding: 2-2                              524,288
+    # │    └─Embedding: 2-3                              2,048
+    # │    └─LayerNorm: 2-4                              2,048
+    # │    └─Dropout: 2-5                                --
+    # ├─BertEncoder: 1-2                                 --
+    # │    └─ModuleList: 2-6                             --
+    # │    │    └─BertLayer: 3-1                         12,596,224
+    # │    │    └─BertLayer: 3-2                         12,596,224
+    # │    │    └─BertLayer: 3-3                         12,596,224
+    # │    │    └─BertLayer: 3-4                         12,596,224
+    # │    │    └─BertLayer: 3-5                         12,596,224
+    # │    │    └─BertLayer: 3-6                         12,596,224
+    # │    │    └─BertLayer: 3-7                         12,596,224
+    # │    │    └─BertLayer: 3-8                         12,596,224
+    # │    │    └─BertLayer: 3-9                         12,596,224
+    # │    │    └─BertLayer: 3-10                        12,596,224
+    # │    │    └─BertLayer: 3-11                        12,596,224
+    # │    │    └─BertLayer: 3-12                        12,596,224
+    # │    │    └─BertLayer: 3-13                        12,596,224
+    # │    │    └─BertLayer: 3-14                        12,596,224
+    # │    │    └─BertLayer: 3-15                        12,596,224
+    # │    │    └─BertLayer: 3-16                        12,596,224
+    # │    │    └─BertLayer: 3-17                        12,596,224
+    # │    │    └─BertLayer: 3-18                        12,596,224
+    # │    │    └─BertLayer: 3-19                        12,596,224
+    # │    │    └─BertLayer: 3-20                        12,596,224
+    # │    │    └─BertLayer: 3-21                        12,596,224
+    # │    │    └─BertLayer: 3-22                        12,596,224
+    # │    │    └─BertLayer: 3-23                        12,596,224
+    # │    │    └─BertLayer: 3-24                        12,596,224
+    # ├─BertPooler: 1-3                                  --
+    # │    └─Linear: 2-7                                 1,049,600
+    # │    └─Tanh: 2-8                                   --
+    # ===========================================================================
+    # Total params: 325,522,432
+    # Trainable params: 325,522,432
+    # Non-trainable params: 0
+    # ===========================================================================
+    # 注意，需要给 input 才能知道整个的参数量
+    summary(model)
+
+    # BertModel(
+    #   (embeddings): BertEmbeddings(
+    #     (word_embeddings): Embedding(21128, 1024, padding_idx=0)
+    #     (position_embeddings): Embedding(512, 1024)
+    #     (token_type_embeddings): Embedding(2, 1024)
+    #     (LayerNorm): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+    #     (dropout): Dropout(p=0.1, inplace=False)
+    #   )
+    #   (encoder): BertEncoder(
+    #     (layer): ModuleList(
+    #       (0-23): 24 x BertLayer(
+    #         (attention): BertAttention(
+    #           (self): BertSelfAttention(
+    #             (query): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (key): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (value): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (dropout): Dropout(p=0.1, inplace=False)
+    #           )
+    #           (output): BertSelfOutput(
+    #             (dense): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (LayerNorm): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+    #             (dropout): Dropout(p=0.1, inplace=False)
+    #           )
+    #         )
+    #         (intermediate): BertIntermediate(
+    #           (dense): Linear(in_features=1024, out_features=4096, bias=True)
+    #           (intermediate_act_fn): GELUActivation()
+    #         )
+    #         (output): BertOutput(
+    #           (dense): Linear(in_features=4096, out_features=1024, bias=True)
+    #           (LayerNorm): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+    #           (dropout): Dropout(p=0.1, inplace=False)
+    #         )
+    #       )
+    #     )
+    #   )
+    #   (pooler): BertPooler(
+    #     (dense): Linear(in_features=1024, out_features=1024, bias=True)
+    #     (activation): Tanh()
+    #   )
+    # )
+    print(model)
+
+    # ====================================================================================================
+    # Layer (type:depth-idx)                             Output Shape              Param #
+    # ====================================================================================================
+    # BertModel                                          [16, 1024]                --
+    # ├─BertEmbeddings: 1-1                              [16, 512, 1024]           --
+    # │    └─Embedding: 2-1                              [16, 512, 1024]           21,635,072
+    # │    └─Embedding: 2-2                              [16, 512, 1024]           2,048
+    # │    └─Embedding: 2-3                              [1, 512, 1024]            524,288
+    # │    └─LayerNorm: 2-4                              [16, 512, 1024]           2,048
+    # │    └─Dropout: 2-5                                [16, 512, 1024]           --
+    # ├─BertEncoder: 1-2                                 [16, 512, 1024]           --
+    # │    └─ModuleList: 2-6                             --                        --
+    # │    │    └─BertLayer: 3-1                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-2                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-3                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-4                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-5                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-6                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-7                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-8                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-9                         [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-10                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-11                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-12                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-13                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-14                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-15                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-16                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-17                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-18                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-19                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-20                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-21                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-22                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-23                        [16, 512, 1024]           12,596,224
+    # │    │    └─BertLayer: 3-24                        [16, 512, 1024]           12,596,224
+    # ├─BertPooler: 1-3                                  [16, 1024]                --
+    # │    └─Linear: 2-7                                 [16, 1024]                1,049,600
+    # │    └─Tanh: 2-8                                   [16, 1024]                --
+    # ====================================================================================================
+    # Total params: 325,522,432
+    # Trainable params: 325,522,432
+    # Non-trainable params: 0
+    # Total mult-adds (Units.GIGABYTES): 5.20
+    # ====================================================================================================
+    # Input size (MB): 0.03
+    # Forward/backward pass size (MB): 17922.39
+    # Params size (MB): 1302.09
+    # Estimated Total Size (MB): 19224.51
+    # ====================================================================================================
+    summary(model, input_size=(16, 512), dtypes=[torch.int])
+    model = model.eval()
+
+    # (0, 1) = 0.8791518807411194
+    # (0, 2) = 0.6639465689659119
+    # (1, 2) = 0.7661015391349792
+    # (0, 1) > (1, 2) > (0, 2)，比较符合直觉
+    sentences = ["样例数据-1", "样例数据-2", "错例数据-2"]
+    # 等价于 batch_encode_plus，返回的是二维向量，而不是将两个句子放在一起，可以支持多个句子
+    # Asking to truncate to max_length but no maximum length is provided and the model has no predefined maximum length.
+    # Default to no truncation. 如果设定 truncation=True，需要指定最大长度
+    encoded_input = tokenizer(sentences, padding=True, truncation=True, max_length=500, return_tensors='pt')
+    # 如果 model 在显卡中，那么参数也要都在显卡中
+    change_dict_value_to_gpu(encoded_input)
+    # {'input_ids': tensor([[ 101, 3416,  891, 3144, 2945,  118,  122,  102],
+    #         [ 101, 3416,  891, 3144, 2945,  118,  123,  102],
+    #         [ 101, 7231,  891, 3144, 2945,  118,  123,  102]], device='cuda:0'),
+    #         'token_type_ids': tensor([[0, 0, 0, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 0, 0, 0, 0],
+    #         [0, 0, 0, 0, 0, 0, 0, 0]], device='cuda:0'), 'attention_mask': tensor([[1, 1, 1, 1, 1, 1, 1, 1],
+    #         [1, 1, 1, 1, 1, 1, 1, 1],
+    #         [1, 1, 1, 1, 1, 1, 1, 1]], device='cuda:0')}
+    print(encoded_input)
+
+    with torch.no_grad():
+        model_output = model(**encoded_input)
+        # Perform pooling. In this case, cls pooling.
+        # cls-pooling：直接取 [CLS] 的 embedding
+        # mean-pooling：取每个 Token 的平均 embedding
+        # max-pooling：对得到的每个 Embedding 取 max
+        sentence_embeddings = model_output[0][:, 0]
+    # normalize embeddings
+    sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+    # [3, 1024]
+    # print(sentence_embeddings.shape)
+    print("Sentence embeddings:", sentence_embeddings)
+    # 因为是 normalize 之后，自乘值肯定是 1
+    for i in range(sentence_embeddings.shape[0]):
+        for j in range(i, sentence_embeddings.shape[0]):
+            print(F"{i} @ {j} = {sentence_embeddings[i] @ sentence_embeddings[j]}")
+
+
+# https://huggingface.co/BAAI/bge-reranker-large
+@func_timer(arg=True)
+def check_bge_reranker():
+    from transformers import AutoModel, AutoTokenizer
+    # trust_remote_code 表示相信本地的代码，而不是表示同意下载远程代码，不要混淆
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=BGE_RERANKER_LARGE_model_dir,
+                                              trust_remote_code=True)
+    # <class 'transformers.models.xlm_roberta.tokenization_xlm_roberta_fast.XLMRobertaTokenizerFast'>
+    print(type(tokenizer))
+    # ['SPECIAL_TOKENS_ATTRIBUTES', 'add_special_tokens', 'add_tokens', 'added_tokens_decoder', 'added_tokens_encoder',
+    # 'additional_special_tokens', 'additional_special_tokens_ids', 'all_special_ids', 'all_special_tokens',
+    # 'all_special_tokens_extended', 'apply_chat_template', 'as_target_tokenizer', 'backend_tokenizer', 'batch_decode',
+    # 'batch_encode_plus', 'bos_token', 'bos_token_id', 'build_inputs_with_special_tokens', 'can_save_slow_tokenizer',
+    # 'chat_template', 'clean_up_tokenization', 'clean_up_tokenization_spaces', 'cls_token', 'cls_token_id',
+    # 'convert_added_tokens', 'convert_ids_to_tokens', 'convert_tokens_to_ids', 'convert_tokens_to_string',
+    # 'create_token_type_ids_from_sequences', 'decode', 'decoder', 'default_chat_template', 'deprecation_warnings',
+    # 'encode', 'encode_plus', 'eos_token', 'eos_token_id', 'from_pretrained', 'get_added_vocab',
+    # 'get_special_tokens_mask', 'get_vocab', 'init_inputs', 'init_kwargs', 'is_fast', 'mask_token', 'mask_token_id',
+    # 'max_len_sentences_pair', 'max_len_single_sentence', 'max_model_input_sizes', 'model_input_names',
+    # 'model_max_length', 'name_or_path', 'num_special_tokens_to_add', 'pad', 'pad_token', 'pad_token_id',
+    # 'pad_token_type_id', 'padding_side', 'prepare_for_model', 'prepare_seq2seq_batch',
+    # 'pretrained_init_configuration', 'pretrained_vocab_files_map', 'push_to_hub', 'register_for_auto_class',
+    # 'sanitize_special_tokens', 'save_pretrained', 'save_vocabulary', 'sep_token', 'sep_token_id',
+    # 'set_truncation_and_padding', 'slow_tokenizer_class', 'special_tokens_map', 'special_tokens_map_extended',
+    # 'split_special_tokens', 'tokenize', 'train_new_from_iterator', 'truncate_sequences', 'truncation_side',
+    # 'unk_token', 'unk_token_id', 'verbose', 'vocab', 'vocab_file', 'vocab_files_names', 'vocab_size']
+    print_dir(tokenizer)
+
+    dictionary = tokenizer.get_vocab()
+    # <class 'dict'> 250002 False True True
+    # 字典
+    print(type(dictionary), len(dictionary), "月光" in dictionary, "月" in dictionary, "光" in dictionary)
+    # 508
+    # 510
+    # {'FacebookAI/xlm-roberta-base': 512, 'FacebookAI/xlm-roberta-large': 512,
+    # 'FacebookAI/xlm-roberta-large-finetuned-conll02-dutch': 512,
+    # 'FacebookAI/xlm-roberta-large-finetuned-conll02-spanish': 512,
+    # 'FacebookAI/xlm-roberta-large-finetuned-conll03-english': 512,
+    # 'FacebookAI/xlm-roberta-large-finetuned-conll03-german': 512}
+    # 512
+    print(tokenizer.max_len_sentences_pair, tokenizer.max_len_single_sentence, tokenizer.max_model_input_sizes,
+          tokenizer.model_max_length)
+
+    # encode 就是 encode_plus 的一部分
+    # return self.encode_plus()["input_ids"]
+    # [64790, 64792, 34211, 51225, 34886, 30930]
+    # print(tokenizer.encode('我爱我老婆.'))
+
+    # {'input_ids': [0, 13129, 7558, 631, 79299, 5, 2, 2, 13129, 79299, 354, 16426, 5511, 5, 2],
+    # 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    # 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    # 'special_tokens_mask': [1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1], 'length': [15]}
+    # 支持传一句话或者两句话，如每句话的开头有 "_"
+    # 如果要想批量编码，调用 batch_encode_plus，会增加一个维度，表示 batch
+    sen_code = tokenizer.encode_plus('我爱我老婆.', '我老婆是陈平.', truncation=True, max_length=15,
+                                     padding="max_length", return_token_type_ids=True, return_special_tokens_mask=True,
+                                     return_length=True)
+    print(sen_code)
+    # ['<s>', '▁我', '爱', '我', '老婆', '.', '</s>', '</s>', '▁我', '老婆', '是', '陈', '平', '.', '</s>']
+    print(tokenizer.convert_ids_to_tokens(sen_code['input_ids']))
+
+    sen_code = tokenizer.encode_plus('你说什么.', '这个课程太难学了.')
+    print(sen_code)
+    # ['<s>', '▁你', '说什么', '.', '</s>', '</s>', '▁', '这个', '课程', '太', '难', '学', '了', '.', '</s>']
+    print(tokenizer.convert_ids_to_tokens(sen_code['input_ids']))
+
+    # 通过查看 config.json，torch_dtype = float32"
+    model = AutoModel.from_pretrained(BGE_RERANKER_LARGE_model_dir, trust_remote_code=True).cuda()
+    # model = AutoModel.from_pretrained(BGE_LARGE_CN_model_dir, trust_remote_code=True).half().cuda()
+    # <class 'transformers.models.xlm_roberta.modeling_xlm_roberta.XLMRobertaModel'>
+    print(type(model))
+    # cuda:0
+    print(model.device)
+    # ['T_destination', 'active_adapter', 'active_adapters', 'add_adapter', 'add_memory_hooks', 'add_model_tags',
+    # 'add_module', 'apply', 'assisted_decoding', 'base_model', 'base_model_prefix', 'beam_sample', 'beam_search',
+    # 'bfloat16', 'buffers', 'call_super_init', 'can_generate', 'children', 'compile', 'compute_transition_scores',
+    # 'config', 'config_class', 'constrained_beam_search', 'contrastive_search', 'cpu',
+    # 'create_extended_attention_mask_for_decoder', 'cuda', 'device', 'disable_adapters',
+    # 'disable_input_require_grads', 'double', 'dtype', 'dummy_inputs', 'dump_patches', 'embeddings',
+    # 'enable_adapters', 'enable_input_require_grads', 'encoder', 'estimate_tokens', 'eval', 'extra_repr', 'float',
+    # 'floating_point_ops', 'forward', 'framework', 'from_pretrained', 'generate', 'generation_config',
+    # 'get_adapter_state_dict', 'get_buffer', 'get_extended_attention_mask', 'get_extra_state', 'get_head_mask',
+    # 'get_input_embeddings', 'get_memory_footprint', 'get_output_embeddings', 'get_parameter',
+    # 'get_position_embeddings', 'get_submodule', 'gradient_checkpointing_disable', 'gradient_checkpointing_enable',
+    # 'greedy_search', 'group_beam_search', 'half', 'init_weights', 'invert_attention_mask', 'ipu',
+    # 'is_gradient_checkpointing', 'is_parallelizable', 'load_adapter', 'load_state_dict', 'load_tf_weights',
+    # 'main_input_name', 'model_tags', 'modules', 'name_or_path', 'named_buffers', 'named_children', 'named_modules',
+    # 'named_parameters', 'num_parameters', 'parameters', 'pooler', 'post_init', 'prepare_inputs_for_generation',
+    # 'prune_heads', 'push_to_hub', 'register_backward_hook', 'register_buffer', 'register_for_auto_class',
+    # 'register_forward_hook', 'register_forward_pre_hook', 'register_full_backward_hook',
+    # 'register_full_backward_pre_hook', 'register_load_state_dict_post_hook', 'register_module', 'register_parameter',
+    # 'register_state_dict_pre_hook', 'requires_grad_', 'reset_memory_hooks_state', 'resize_position_embeddings',
+    # 'resize_token_embeddings', 'retrieve_modules_from_names', 'reverse_bettertransformer', 'sample',
+    # 'save_pretrained', 'set_adapter', 'set_extra_state', 'set_input_embeddings', 'share_memory', 'state_dict',
+    # 'supports_gradient_checkpointing', 'tie_weights', 'to', 'to_bettertransformer', 'to_empty', 'train', 'training',
+    # 'type', 'warn_if_padding_and_no_attention_mask', 'warnings_issued', 'xpu', 'zero_grad']
+    print_dir(model)
+
+    total_parameters = model.num_parameters()
+    # 总显存 (GB):      3.52
+    # torch 显存 (GB):  2.1
+    # tensor 显存 (GB): 2.09
+    print_gpu_memory_summary()
+
+    # 参数量：559890432，占用显存: 2.09 GB
+    print(F"参数量：{total_parameters}，占用显存: {round(total_parameters * 4 / 1024 ** 3, 2)} GB")
+
+    # =====================================================================================
+    # Layer (type:depth-idx)                                       Param #
+    # =====================================================================================
+    # XLMRobertaModel                                              --
+    # ├─XLMRobertaEmbeddings: 1-1                                  --
+    # │    └─Embedding: 2-1                                        256,002,048
+    # │    └─Embedding: 2-2                                        526,336
+    # │    └─Embedding: 2-3                                        1,024
+    # │    └─LayerNorm: 2-4                                        2,048
+    # │    └─Dropout: 2-5                                          --
+    # ├─XLMRobertaEncoder: 1-2                                     --
+    # │    └─ModuleList: 2-6                                       --
+    # │    │    └─XLMRobertaLayer: 3-1                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-2                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-3                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-4                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-5                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-6                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-7                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-8                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-9                             12,596,224
+    # │    │    └─XLMRobertaLayer: 3-10                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-11                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-12                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-13                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-14                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-15                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-16                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-17                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-18                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-19                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-20                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-21                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-22                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-23                            12,596,224
+    # │    │    └─XLMRobertaLayer: 3-24                            12,596,224
+    # ├─XLMRobertaPooler: 1-3                                      --
+    # │    └─Linear: 2-7                                           1,049,600
+    # │    └─Tanh: 2-8                                             --
+    # =====================================================================================
+    # Total params: 559,890,432
+    # Trainable params: 559,890,432
+    # Non-trainable params: 0
+    # =====================================================================================
+    # 注意，需要给 input 才能知道整个的参数量
+    summary(model)
+
+    # XLMRobertaModel(
+    #   (embeddings): XLMRobertaEmbeddings(
+    #     (word_embeddings): Embedding(250002, 1024, padding_idx=1)
+    #     (position_embeddings): Embedding(514, 1024, padding_idx=1)
+    #     (token_type_embeddings): Embedding(1, 1024)
+    #     (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
+    #     (dropout): Dropout(p=0.1, inplace=False)
+    #   )
+    #   (encoder): XLMRobertaEncoder(
+    #     (layer): ModuleList(
+    #       (0-23): 24 x XLMRobertaLayer(
+    #         (attention): XLMRobertaAttention(
+    #           (self): XLMRobertaSelfAttention(
+    #             (query): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (key): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (value): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (dropout): Dropout(p=0.1, inplace=False)
+    #           )
+    #           (output): XLMRobertaSelfOutput(
+    #             (dense): Linear(in_features=1024, out_features=1024, bias=True)
+    #             (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
+    #             (dropout): Dropout(p=0.1, inplace=False)
+    #           )
+    #         )
+    #         (intermediate): XLMRobertaIntermediate(
+    #           (dense): Linear(in_features=1024, out_features=4096, bias=True)
+    #           (intermediate_act_fn): GELUActivation()
+    #         )
+    #         (output): XLMRobertaOutput(
+    #           (dense): Linear(in_features=4096, out_features=1024, bias=True)
+    #           (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
+    #           (dropout): Dropout(p=0.1, inplace=False)
+    #         )
+    #       )
+    #     )
+    #   )
+    #   (pooler): XLMRobertaPooler(
+    #     (dense): Linear(in_features=1024, out_features=1024, bias=True)
+    #     (activation): Tanh()
+    #   )
+    # )
+    print(model)
+
+    # ==============================================================================================================
+    # Layer (type:depth-idx)                                       Output Shape              Param #
+    # ==============================================================================================================
+    # XLMRobertaModel                                              [16, 1024]                --
+    # ├─XLMRobertaEmbeddings: 1-1                                  [16, 512, 1024]           --
+    # │    └─Embedding: 2-1                                        [16, 512, 1024]           256,002,048
+    # │    └─Embedding: 2-2                                        [16, 512, 1024]           1,024
+    # │    └─Embedding: 2-3                                        [16, 512, 1024]           526,336
+    # │    └─LayerNorm: 2-4                                        [16, 512, 1024]           2,048
+    # │    └─Dropout: 2-5                                          [16, 512, 1024]           --
+    # ├─XLMRobertaEncoder: 1-2                                     [16, 512, 1024]           --
+    # │    └─ModuleList: 2-6                                       --                        --
+    # │    │    └─XLMRobertaLayer: 3-1                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-2                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-3                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-4                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-5                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-6                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-7                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-8                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-9                             [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-10                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-11                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-12                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-13                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-14                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-15                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-16                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-17                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-18                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-19                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-20                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-21                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-22                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-23                            [16, 512, 1024]           12,596,224
+    # │    │    └─XLMRobertaLayer: 3-24                            [16, 512, 1024]           12,596,224
+    # ├─XLMRobertaPooler: 1-3                                      [16, 1024]                --
+    # │    └─Linear: 2-7                                           [16, 1024]                1,049,600
+    # │    └─Tanh: 2-8                                             [16, 1024]                --
+    # ==============================================================================================================
+    # Total params: 559,890,432
+    # Trainable params: 559,890,432
+    # Non-trainable params: 0
+    # Total mult-adds (Units.GIGABYTES): 8.96
+    # ==============================================================================================================
+    # Input size (MB): 0.03
+    # Forward/backward pass size (MB): 17985.31
+    # Params size (MB): 2239.56
+    # Estimated Total Size (MB): 20224.90
+    # ==============================================================================================================
+    summary(model, input_size=(16, 512), dtypes=[torch.int])
+    model = model.eval()
+
+    # (0, 1) = 0.9819545149803162
+    # (0, 2) = 0.7154759764671326
+    # (1, 2) = 0.820598304271698
+    # (0, 1) > (1, 2) > (0, 2)，比较符合直觉
+    sentences = ["样例数据-1", "样例数据-2", "错例数据-2"]
+    # 等价于 batch_encode_plus，返回的是二维向量，而不是将两个句子放在一起，可以支持多个句子
+    # Asking to truncate to max_length but no maximum length is provided and the model has no predefined maximum length.
+    # Default to no truncation. 如果设定 truncation=True，需要指定最大长度
+    encoded_input = tokenizer(sentences, padding=True, truncation=True, max_length=500, return_tensors='pt')
+    # 如果 model 在显卡中，那么参数也要都在显卡中
+    change_dict_value_to_gpu(encoded_input)
+    # {'input_ids': tensor([[    0,     6, 35567, 13506, 12833,  5759,     2],
+    #         [    0,     6, 35567, 13506, 12833,  5428,     2],
+    #         [    0,     6, 41782, 13506, 12833,  5428,     2]], device='cuda:0'),
+    #         'attention_mask': tensor([[1, 1, 1, 1, 1, 1, 1],
+    #         [1, 1, 1, 1, 1, 1, 1],
+    #         [1, 1, 1, 1, 1, 1, 1]], device='cuda:0')}
+    print(encoded_input)
+
+    with torch.no_grad():
+        model_output = model(**encoded_input)
+        # Perform pooling. In this case, cls pooling.
+        # cls-pooling：直接取 [CLS] 的 embedding
+        # mean-pooling：取每个 Token 的平均 embedding
+        # max-pooling：对得到的每个 Embedding 取 max
+        sentence_embeddings = model_output[0][:, 0]
+    # normalize embeddings
+    sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+    # [3, 1024]
+    print(sentence_embeddings.shape)
+    print("Sentence embeddings:", sentence_embeddings)
+    # 因为是 normalize 之后，自乘值肯定是 1
+    for i in range(sentence_embeddings.shape[0]):
+        for j in range(i, sentence_embeddings.shape[0]):
+            print(F"{i} @ {j} = {sentence_embeddings[i] @ sentence_embeddings[j]}")
+
+
 def main():
-    # 2.2.0+cu121
-    print(torch.__version__)
     check_gpu(True)
-    check_mul()
-    check_mean_op()
-    check_std_op()
-    other_simple()
-    check_batch_norm()
-    check_layer_norm()
-    check_instance_norm()
-    check_group_norm()
-    check_weight_norm()
-    check_half()
-    check_chatglm3()
+
+    # check_mul()
+    # check_mean_op()
+    # check_std_op()
+    # other_simple()
+    # check_batch_norm()
+    # check_layer_norm()
+    # check_instance_norm()
+    # check_group_norm()
+    # check_weight_norm()
+    # check_half()
+
+    # check_chatglm3()
+    # check_bge_zh()
+    check_bge_reranker()
 
 
 if __name__ == '__main__':
