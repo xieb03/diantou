@@ -9,7 +9,7 @@ from multiprocessing import Queue, Process
 
 
 # 开启 chatgpt_airsim
-def start_chatgpt_airsim(_with_text=True, queue: Queue = None):
+def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
     with open("prompt/system_prompt.txt", "r", encoding="UTF8") as f:
         system_prompt = f.read()
 
@@ -17,29 +17,6 @@ def start_chatgpt_airsim(_with_text=True, queue: Queue = None):
         user_prompt = f.read()
 
     history_message_list = list()
-
-    print(f"Done.")
-
-    code_block_regex = re.compile(r"```(.*?)```", re.DOTALL)
-
-    def extract_python_code(content):
-        code_blocks = code_block_regex.findall(content)
-        if code_blocks:
-            full_code = "\n".join(code_blocks)
-
-            if full_code.startswith("python"):
-                full_code = full_code[7:]
-
-            return full_code
-        else:
-            return None
-
-    class colors:  # You may need to change color settings
-        RED = "\033[31m"
-        ENDC = "\033[m"
-        GREEN = "\033[32m"
-        YELLOW = "\033[33m"
-        BLUE = "\033[34m"
 
     print(f"Initializing AirSim...")
     # noinspection PyUnusedLocal
@@ -56,7 +33,7 @@ def start_chatgpt_airsim(_with_text=True, queue: Queue = None):
 
     while True:
         if _with_text:
-            question = input(colors.YELLOW + "AirSim> " + colors.ENDC)
+            question = input(Colors.YELLOW + "AirSim> " + Colors.ENDC)
             if question == "!quit" or question == "!exit":
                 break
 
@@ -64,10 +41,10 @@ def start_chatgpt_airsim(_with_text=True, queue: Queue = None):
                 os.system("cls")
                 continue
         else:
-            print(colors.YELLOW + "请说出你的指令> ")
+            print(Colors.YELLOW + "请说出你的指令> ")
             # 利用 block=True，设置等待
-            question = queue.get(block=True)
-            print(colors.YELLOW + F"你的指令是 '{question}'" + colors.ENDC)
+            question = _queue.get(block=True)
+            print(Colors.YELLOW + F"你的指令是 '{question}'" + Colors.ENDC)
 
             if question.startswith("退出"):
                 break
@@ -83,8 +60,10 @@ def start_chatgpt_airsim(_with_text=True, queue: Queue = None):
         code = extract_python_code(response)
         if code is not None:
             print("Please wait while I run the code in AirSim...")
-            exec(extract_python_code(response))
+            exec(code)
             print("Done!\n")
+        else:
+            print("Sorry, i didn't get any code from the response, please try again.")
 
     sys.exit(0)
 
@@ -104,7 +83,7 @@ def main():
     p1.start()
 
     # tkinter 界面 -> sounddevice 录音 -> mp3 -> local whisper 语音识别 -> text
-    p2 = Process(target=start_recoder, args=("medium", shared_queue,))
+    p2 = Process(target=start_recoder, args=("medium", shared_queue))
     p2.start()
 
     p1.join()

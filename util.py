@@ -23,6 +23,8 @@ from typing import List
 import numpy as np
 from IPython.display import Image, display, HTML
 from watermark import watermark
+# noinspection PyUnresolvedReferences
+from collections import defaultdict
 
 PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
@@ -47,6 +49,30 @@ BGE_RERANKER_LARGE_revision = "master"
 BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + r"quietnight\bge-reranker-large"
 
 CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
+
+PYTHON_CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
+
+
+# 从一段字符串中接触 三引号 的部分，主要用来抽离出 python 代码
+def extract_python_code(content):
+    code_blocks = PYTHON_CODE_BLOCK_REGEX.findall(content)
+    if code_blocks:
+        full_code = "\n".join(code_blocks)
+
+        if full_code.startswith("python"):
+            full_code = full_code[7:]
+
+        return full_code
+    else:
+        return None
+
+
+class Colors:  # You may need to change color settings
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    ENDC = "\033[m"
 
 
 # 将字典排序，注意这个并不是直接对 key 排序（字典是无序的），而是按照某一个 key 的 value_list 排序，同时其它 value_list 跟着变动
@@ -201,6 +227,17 @@ def print_list(_list, _pre="", _suf="", _with_index=True, _start_index=0):
     else:
         for value in _list:
             print(F"{_pre}{value}{_suf}")
+
+
+# 逐行打印 dict
+def print_dict(_dict, _pre="", _suf="", _with_index=False, _start_index=0):
+    if _with_index:
+        for index, (key, value) in enumerate(_dict.items()):
+            print(F"{_pre}{index + _start_index}: {key}: {value}{_suf}")
+
+    else:
+        for (key, value) in _dict.items():
+            print(F"{_pre}{key}: {value}{_suf}")
 
 
 # 展示图片，主要用于 jupyter notebook

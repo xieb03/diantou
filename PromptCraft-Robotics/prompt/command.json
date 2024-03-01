@@ -1,0 +1,804 @@
+[
+    {
+        "role": "user",
+        "content": "获取无人机当前位置并飞往 [100, 200, 50]，然后沿路径移动至 [[120, 210, 40], [130, 220, 30], [140, 230, 20]]，最后将偏航角调整为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.fly_to([100, 200, 50])\ntarget_path = [[120, 210, 40], [130, 220, 30], [140, 230, 20]]\naw.fly_path(target_path)\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在目前位置起飞，然后飞向 [50, 50, 20]，接着向右斜飞至 [70, 60, 15]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, 50, 20])\naw.fly_to([70, 60, 15])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "沿着路径飞行至 [[0, 0, 30], [10, 10, 25], [20, 20, 20]]，然后抵达 [30, 30, 10]。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ntarget_path = [[0, 0, 30], [10, 10, 25], [20, 20, 20]]\naw.fly_path(target_path)\naw.fly_to([30, 30, 10])\n```"
+    },
+    {
+        "role": "user",
+        "content": "将无人机起飞，然后向东飞行至 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置，然后向上飞至高度100，再向东南方向飞至 [120, 120, 100]，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], 100])\naw.fly_to([120, 120, 100])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后飞向 [70, 70, 50]，接着向北斜飞至 [90, 90, 40]，最后将偏航角设定为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, 70, 50])\naw.fly_to([90, 90, 40])\naw.set_yaw(0)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西北飞至 [80, 80, 60]，接着沿路径移动至 [[90, 90, 50], [100, 100, 40], [110, 110, 30]]，最后将偏航角调整为315度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 60])\ntarget_path = [[90, 90, 50], [100, 100, 40], [110, 110, 30]]\naw.fly_path(target_path)\naw.set_yaw(315)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞往 [30, 0, 40]，再向东北方向飞至 [50, 20, 30]，最后将偏航角设为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([30, 0, 40])\naw.fly_to([50, 20, 30])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向北飞行至 [0, 100, 50]，再向西偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 100, 50])\naw.set_yaw(270)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后向西南飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [60, 100, 70]，接着沿路径移动至 [[70, 110, 60], [80, 120, 50], [90, 130, 40]]，最后将偏航角调整为60度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([60, 100, 70])\ntarget_path = [[70, 110, 60], [80, 120, 50], [90, 130, 40]]\naw.fly_path(target_path)\naw.set_yaw(60)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向南飞行至 [0, -100, 50]，再向西北偏航并飞行至 [-80, -80, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([0, -100, 50])\naw.set_yaw(315)\naw.fly_to([-80, -80, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东南飞至 [150, -50, 80]，接着沿路径移动至 [[160, -60, 70], [170, -70, 60], [180, -80, 50]]，最后将偏航角调整为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([150, -50, 80])\ntarget_path = [[160, -60, 70], [170, -70, 60], [180, -80, 50]]\naw.fly_path(target_path)\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞至 [30, 30, 30]，接着向东偏航并飞至 [50, 10, 20]，最后将偏航角设为30度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([30, 30, 30])\naw.set_yaw(90)\naw.fly_to([50, 10, 20])\naw.set_yaw(30)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西南飞行至 [-80, -80, 50]，再向上升至高度60，最后设定偏航角为225度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-80, -80, 50])\naw.fly_to([-80, -80, 60])\naw.set_yaw(225)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [40, 0, 40]，接着向北偏航并飞行至 [20, 20, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([40, 0, 40])\naw.set_yaw(0)\naw.fly_to([20, 20, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [120, 0, 70]，接着沿路径移动至 [[130, 10, 60], [140, 20, 50], [150, 30, 40]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([120, 0, 70])\ntarget_path = [[130, 10, 60], [140, 20, 50], [150, 30, 40]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [60, -60, 40]，接着向西南偏航并飞至 [30, -90, 20]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([60, -60, 40])\naw.set_yaw(225)\naw.fly_to([30, -90, 20])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东飞行至 [80, 30, 50]，再向下降至高度40，最后设定偏航角为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 30, 50])\naw.fly_to([80, 30, 40])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [120, 0, 70]，再向东北方向飞至 [140, 20, 60]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([120, 0, 70])\naw.fly_to([140, 20, 60])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [20, -20, 20]，接着向东北偏航并飞至 [30, -10, 10]，最后将偏航角设为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([20, -20, 20])\naw.set_yaw(45)\naw.fly_to([30, -10, 10])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向西北飞至 [-30, -30, 40]，接着沿路径移动至 [[-40, -40, 30], [-50, -50, 20], [-60, -60, 10]]，最后将偏航角调整为225度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-30, -30, 40])\ntarget_path = [[-40, -40, 30], [-50, -50, 20], [-60, -60, 10]]\naw.fly_path(target_path)\naw.set_yaw(225)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [80, 0, 70]，再向西南方向飞至 [50, -30, 60]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([80, 0, 70])\naw.fly_to([50, -30, 60])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [100, -100, 60]，接着向东南偏航并飞至 [150, -150, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([100, -100, 60])\naw.set_yaw(135)\naw.fly_to([150, -150, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西北飞至 [-60, 60, 50]，再向上升至高度80，最后设定偏航角为315度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-60, 60, 50])\naw.fly_to([-60, 60, 80])\naw.set_yaw(315)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向南飞行至 [20, -100, 40]，再向东偏航并飞行至 [40, -120, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([20, -100, 40])\naw.set_yaw(90)\naw.fly_to([40, -120, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东北飞至 [90, 0, 70]，接着沿路径移动至 [[100, 10, 60], [110, 20, 50], [120, 30, 40]]，最后将偏航角调整为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([90, 0, 70])\ntarget_path = [[100, 10, 60], [110, 20, 50], [120, 30, 40]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [80, -80, 50]，接着向东南偏航并飞至 [100, -100, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([80, -80, 50])\naw.set_yaw(135)\naw.fly_to([100, -100, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向西飞行至 [-100, 0, 50]，再向东南偏航并飞行至 [-150, -50, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-100, 0, 50])\naw.set_yaw(225)\naw.fly_to([-150, -50, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [70, 0, 70]，再向东北方向飞至 [90, 20, 60]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([70, 0, 70])\naw.fly_to([90, 20, 60])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [30, -30, 30]，接着向东北偏航并飞至 [40, -20, 20]，最后将偏航角设为45度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([30, -30, 30])\naw.set_yaw(45)\naw.fly_to([40, -20, 20])\naw.set_yaw(45)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向西北飞至 [-50, 50, 40]，接着沿路径移动至 [[-60, 60, 30], [-70, 70, 20], [-80, 80, 10]]，最后将偏航角调整为225度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-50, 50, 40])\ntarget_path = [[-60, 60, 30], [-70, 70, 20], [-80, 80, 10]]\naw.fly_path(target_path)\naw.set_yaw(225)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [60, 0, 70]，再向西南方向飞至 [30, -30, 60]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([60, 0, 70])\naw.fly_to([30, -30, 60])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [50, 50, 50]，接着向西南偏航并飞至 [30, 30, 30]，最后将偏航角设为180度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, 50, 50])\naw.set_yaw(180)\naw.fly_to([30, 30, 30])\naw.set_yaw(180)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东南飞至 [80, -80, 60]，再向上升至高度80，最后设定偏航角为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, -80, 60])\naw.fly_to([80, -80, 80])\naw.set_yaw(90)\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后向北偏航至 [60, 0, 80]，再向西北方向飞至 [40, 20, 70]，最后将偏航角设为0度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([60, 0, 80])\naw.fly_to([40, 20, 70])\n```"
+    },
+    {
+        "role": "user",
+        "content": "在当前位置起飞，然后飞向 [-70, 70, 50]，接着向东南偏航并飞至 [-90, 90, 30]，最后将偏航角设为135度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([-70, 70, 50])\naw.set_yaw(135)\naw.fly_to([-90, 90, 30])\naw.set_yaw(135)\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前位置并起飞，然后向东飞行至 [100, 0, 60]，再向西北偏航并飞行至 [80, 20, 50]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 0, 60])\naw.set_yaw(315)\naw.fly_to([80, 20, 50])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "从当前位置起飞，然后飞向 [50, 0, 50]，接着向北偏航并飞行至 [30, 30, 30]，最后降落。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\naw.takeoff()\naw.fly_to([50, 0, 50])\naw.set_yaw(0)\naw.fly_to([30, 30, 30])\naw.land()\n```"
+    },
+    {
+        "role": "user",
+        "content": "获取当前无人机位置并起飞，然后向东南飞至 [80, -80, 60]，再向上升至高度80，最后设定偏航角为90度。"
+    },
+    {
+        "role": "assistant",
+        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, -80, 60])\naw.fly_to([80, -80, 80])\naw.set_yaw(90)\n```"
+    }
+]
+
+
