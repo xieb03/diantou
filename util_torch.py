@@ -19,11 +19,11 @@ def change_dict_value_to_gpu(_dict):
 # torch 显存 (GB):  0.4
 # tensor 显存 (GB): 0.3
 def print_gpu_memory_summary(_digit=2):
-    print("总显存 (GB):     ", round(get_total_gpu_memory() / 1024 / 1024 / 1024, _digit))
+    print("total  gpu memory: ", round(get_total_gpu_memory() / 1024 / 1024 / 1024, _digit), "G")
     # 其它的一些开销，例如 torch 本身占据的缓存
-    print("torch 显存 (GB): ", round(torch.cuda.memory_reserved() / 1024 / 1024 / 1024, _digit))
+    print("torch  gpu memory: ", round(torch.cuda.memory_reserved() / 1024 / 1024 / 1024, _digit), "G")
     # 仅仅是 tensor 占用的
-    print("tensor 显存 (GB):", round(torch.cuda.memory_allocated() / 1024 / 1024 / 1024, _digit))
+    print("tensor gpu memory: ", round(torch.cuda.memory_allocated() / 1024 / 1024 / 1024, _digit), "G")
 
 
 # 获取显卡的整体情况

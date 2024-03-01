@@ -1012,9 +1012,11 @@ def check_bge_zh():
 
 
 # https://huggingface.co/BAAI/bge-reranker-large
+# 与 check_bge_zh 不同，reranker 模型直接拿两个样本作为输入，然后输入它们的相似度，score 越大表示相似度越高
+# 但 score 的范围并不是像相似度那样 ∈ [0, 1]，即没有固定范围
 @func_timer(arg=True)
 def check_bge_reranker():
-    from transformers import AutoModel, AutoTokenizer
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
     # trust_remote_code 表示相信本地的代码，而不是表示同意下载远程代码，不要混淆
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=BGE_RERANKER_LARGE_model_dir,
                                               trust_remote_code=True)
@@ -1078,224 +1080,182 @@ def check_bge_reranker():
     print(tokenizer.convert_ids_to_tokens(sen_code['input_ids']))
 
     # 通过查看 config.json，torch_dtype = float32"
-    model = AutoModel.from_pretrained(BGE_RERANKER_LARGE_model_dir, trust_remote_code=True).cuda()
-    # model = AutoModel.from_pretrained(BGE_LARGE_CN_model_dir, trust_remote_code=True).half().cuda()
-    # <class 'transformers.models.xlm_roberta.modeling_xlm_roberta.XLMRobertaModel'>
+    model = (AutoModelForSequenceClassification.from_pretrained(BGE_RERANKER_LARGE_model_dir, trust_remote_code=True)
+             .cuda())
+    # model = AutoModelForSequenceClassification.from_pretrained(BGE_RERANKER_LARGE_model_dir, trust_remote_code=True)
+    # <class 'transformers.models.xlm_roberta.modeling_xlm_roberta.XLMRobertaForSequenceClassification'>
     print(type(model))
     # cuda:0
     print(model.device)
     # ['T_destination', 'active_adapter', 'active_adapters', 'add_adapter', 'add_memory_hooks', 'add_model_tags',
     # 'add_module', 'apply', 'assisted_decoding', 'base_model', 'base_model_prefix', 'beam_sample', 'beam_search',
-    # 'bfloat16', 'buffers', 'call_super_init', 'can_generate', 'children', 'compile', 'compute_transition_scores',
-    # 'config', 'config_class', 'constrained_beam_search', 'contrastive_search', 'cpu',
-    # 'create_extended_attention_mask_for_decoder', 'cuda', 'device', 'disable_adapters',
-    # 'disable_input_require_grads', 'double', 'dtype', 'dummy_inputs', 'dump_patches', 'embeddings',
-    # 'enable_adapters', 'enable_input_require_grads', 'encoder', 'estimate_tokens', 'eval', 'extra_repr', 'float',
-    # 'floating_point_ops', 'forward', 'framework', 'from_pretrained', 'generate', 'generation_config',
-    # 'get_adapter_state_dict', 'get_buffer', 'get_extended_attention_mask', 'get_extra_state', 'get_head_mask',
-    # 'get_input_embeddings', 'get_memory_footprint', 'get_output_embeddings', 'get_parameter',
-    # 'get_position_embeddings', 'get_submodule', 'gradient_checkpointing_disable', 'gradient_checkpointing_enable',
-    # 'greedy_search', 'group_beam_search', 'half', 'init_weights', 'invert_attention_mask', 'ipu',
-    # 'is_gradient_checkpointing', 'is_parallelizable', 'load_adapter', 'load_state_dict', 'load_tf_weights',
-    # 'main_input_name', 'model_tags', 'modules', 'name_or_path', 'named_buffers', 'named_children', 'named_modules',
-    # 'named_parameters', 'num_parameters', 'parameters', 'pooler', 'post_init', 'prepare_inputs_for_generation',
-    # 'prune_heads', 'push_to_hub', 'register_backward_hook', 'register_buffer', 'register_for_auto_class',
-    # 'register_forward_hook', 'register_forward_pre_hook', 'register_full_backward_hook',
+    # 'bfloat16', 'buffers', 'call_super_init', 'can_generate', 'children', 'classifier', 'compile',
+    # 'compute_transition_scores', 'config', 'config_class', 'constrained_beam_search', 'contrastive_search', 'cpu',
+    # 'create_extended_attention_mask_for_decoder', 'cuda', 'device', 'disable_adapters', 'disable_input_require_grads',
+    # 'double', 'dtype', 'dummy_inputs', 'dump_patches', 'enable_adapters', 'enable_input_require_grads',
+    # 'estimate_tokens', 'eval', 'extra_repr', 'float', 'floating_point_ops', 'forward', 'framework',
+    # 'from_pretrained', 'generate', 'generation_config', 'get_adapter_state_dict', 'get_buffer',
+    # 'get_extended_attention_mask', 'get_extra_state', 'get_head_mask', 'get_input_embeddings', 'get_memory_footprint',
+    # 'get_output_embeddings', 'get_parameter', 'get_position_embeddings', 'get_submodule',
+    # 'gradient_checkpointing_disable', 'gradient_checkpointing_enable', 'greedy_search', 'group_beam_search', 'half',
+    # 'init_weights', 'invert_attention_mask', 'ipu', 'is_gradient_checkpointing', 'is_parallelizable', 'load_adapter',
+    # 'load_state_dict', 'main_input_name', 'model_tags', 'modules', 'name_or_path', 'named_buffers', 'named_children',
+    # 'named_modules', 'named_parameters', 'num_labels', 'num_parameters', 'parameters', 'post_init',
+    # 'prepare_inputs_for_generation', 'prune_heads', 'push_to_hub', 'register_backward_hook', 'register_buffer',
+    # 'register_for_auto_class', 'register_forward_hook', 'register_forward_pre_hook', 'register_full_backward_hook',
     # 'register_full_backward_pre_hook', 'register_load_state_dict_post_hook', 'register_module', 'register_parameter',
     # 'register_state_dict_pre_hook', 'requires_grad_', 'reset_memory_hooks_state', 'resize_position_embeddings',
-    # 'resize_token_embeddings', 'retrieve_modules_from_names', 'reverse_bettertransformer', 'sample',
+    # 'resize_token_embeddings', 'retrieve_modules_from_names', 'reverse_bettertransformer', 'roberta', 'sample',
     # 'save_pretrained', 'set_adapter', 'set_extra_state', 'set_input_embeddings', 'share_memory', 'state_dict',
     # 'supports_gradient_checkpointing', 'tie_weights', 'to', 'to_bettertransformer', 'to_empty', 'train', 'training',
     # 'type', 'warn_if_padding_and_no_attention_mask', 'warnings_issued', 'xpu', 'zero_grad']
     print_dir(model)
 
     total_parameters = model.num_parameters()
-    # 总显存 (GB):      3.52
-    # torch 显存 (GB):  2.1
-    # tensor 显存 (GB): 2.09
+    # 总显存 (GB):      5.16
+    # torch 显存 (GB):  3.31
+    # tensor 显存 (GB): 3.3
     print_gpu_memory_summary()
 
-    # 参数量：559890432，占用显存: 2.09 GB
+    # 参数量：559891457，占用显存: 2.09 GB
     print(F"参数量：{total_parameters}，占用显存: {round(total_parameters * 4 / 1024 ** 3, 2)} GB")
 
-    # =====================================================================================
-    # Layer (type:depth-idx)                                       Param #
-    # =====================================================================================
-    # XLMRobertaModel                                              --
-    # ├─XLMRobertaEmbeddings: 1-1                                  --
-    # │    └─Embedding: 2-1                                        256,002,048
-    # │    └─Embedding: 2-2                                        526,336
-    # │    └─Embedding: 2-3                                        1,024
-    # │    └─LayerNorm: 2-4                                        2,048
-    # │    └─Dropout: 2-5                                          --
-    # ├─XLMRobertaEncoder: 1-2                                     --
-    # │    └─ModuleList: 2-6                                       --
-    # │    │    └─XLMRobertaLayer: 3-1                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-2                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-3                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-4                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-5                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-6                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-7                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-8                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-9                             12,596,224
-    # │    │    └─XLMRobertaLayer: 3-10                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-11                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-12                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-13                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-14                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-15                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-16                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-17                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-18                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-19                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-20                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-21                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-22                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-23                            12,596,224
-    # │    │    └─XLMRobertaLayer: 3-24                            12,596,224
-    # ├─XLMRobertaPooler: 1-3                                      --
-    # │    └─Linear: 2-7                                           1,049,600
-    # │    └─Tanh: 2-8                                             --
-    # =====================================================================================
-    # Total params: 559,890,432
-    # Trainable params: 559,890,432
+    # ==========================================================================================
+    # Layer (type:depth-idx)                                            Param #
+    # ==========================================================================================
+    # XLMRobertaForSequenceClassification                               --
+    # ├─XLMRobertaModel: 1-1                                            --
+    # │    └─XLMRobertaEmbeddings: 2-1                                  --
+    # │    │    └─Embedding: 3-1                                        256,002,048
+    # │    │    └─Embedding: 3-2                                        526,336
+    # │    │    └─Embedding: 3-3                                        1,024
+    # │    │    └─LayerNorm: 3-4                                        2,048
+    # │    │    └─Dropout: 3-5                                          --
+    # │    └─XLMRobertaEncoder: 2-2                                     --
+    # │    │    └─ModuleList: 3-6                                       302,309,376
+    # ├─XLMRobertaClassificationHead: 1-2                               --
+    # │    └─Linear: 2-3                                                1,049,600
+    # │    └─Dropout: 2-4                                               --
+    # │    └─Linear: 2-5                                                1,025
+    # ==========================================================================================
+    # Total params: 559,891,457
+    # Trainable params: 559,891,457
     # Non-trainable params: 0
-    # =====================================================================================
+    # ==========================================================================================
     # 注意，需要给 input 才能知道整个的参数量
     summary(model)
 
-    # XLMRobertaModel(
-    #   (embeddings): XLMRobertaEmbeddings(
-    #     (word_embeddings): Embedding(250002, 1024, padding_idx=1)
-    #     (position_embeddings): Embedding(514, 1024, padding_idx=1)
-    #     (token_type_embeddings): Embedding(1, 1024)
-    #     (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
-    #     (dropout): Dropout(p=0.1, inplace=False)
-    #   )
-    #   (encoder): XLMRobertaEncoder(
-    #     (layer): ModuleList(
-    #       (0-23): 24 x XLMRobertaLayer(
-    #         (attention): XLMRobertaAttention(
-    #           (self): XLMRobertaSelfAttention(
-    #             (query): Linear(in_features=1024, out_features=1024, bias=True)
-    #             (key): Linear(in_features=1024, out_features=1024, bias=True)
-    #             (value): Linear(in_features=1024, out_features=1024, bias=True)
-    #             (dropout): Dropout(p=0.1, inplace=False)
+    # XLMRobertaForSequenceClassification(
+    #   (roberta): XLMRobertaModel(
+    #     (embeddings): XLMRobertaEmbeddings(
+    #       (word_embeddings): Embedding(250002, 1024, padding_idx=1)
+    #       (position_embeddings): Embedding(514, 1024, padding_idx=1)
+    #       (token_type_embeddings): Embedding(1, 1024)
+    #       (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
+    #       (dropout): Dropout(p=0.1, inplace=False)
+    #     )
+    #     (encoder): XLMRobertaEncoder(
+    #       (layer): ModuleList(
+    #         (0-23): 24 x XLMRobertaLayer(
+    #           (attention): XLMRobertaAttention(
+    #             (self): XLMRobertaSelfAttention(
+    #               (query): Linear(in_features=1024, out_features=1024, bias=True)
+    #               (key): Linear(in_features=1024, out_features=1024, bias=True)
+    #               (value): Linear(in_features=1024, out_features=1024, bias=True)
+    #               (dropout): Dropout(p=0.1, inplace=False)
+    #             )
+    #             (output): XLMRobertaSelfOutput(
+    #               (dense): Linear(in_features=1024, out_features=1024, bias=True)
+    #               (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
+    #               (dropout): Dropout(p=0.1, inplace=False)
+    #             )
     #           )
-    #           (output): XLMRobertaSelfOutput(
-    #             (dense): Linear(in_features=1024, out_features=1024, bias=True)
+    #           (intermediate): XLMRobertaIntermediate(
+    #             (dense): Linear(in_features=1024, out_features=4096, bias=True)
+    #             (intermediate_act_fn): GELUActivation()
+    #           )
+    #           (output): XLMRobertaOutput(
+    #             (dense): Linear(in_features=4096, out_features=1024, bias=True)
     #             (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
     #             (dropout): Dropout(p=0.1, inplace=False)
     #           )
     #         )
-    #         (intermediate): XLMRobertaIntermediate(
-    #           (dense): Linear(in_features=1024, out_features=4096, bias=True)
-    #           (intermediate_act_fn): GELUActivation()
-    #         )
-    #         (output): XLMRobertaOutput(
-    #           (dense): Linear(in_features=4096, out_features=1024, bias=True)
-    #           (LayerNorm): LayerNorm((1024,), eps=1e-05, elementwise_affine=True)
-    #           (dropout): Dropout(p=0.1, inplace=False)
-    #         )
     #       )
     #     )
     #   )
-    #   (pooler): XLMRobertaPooler(
+    #   (classifier): XLMRobertaClassificationHead(
     #     (dense): Linear(in_features=1024, out_features=1024, bias=True)
-    #     (activation): Tanh()
+    #     (dropout): Dropout(p=0.1, inplace=False)
+    #     (out_proj): Linear(in_features=1024, out_features=1, bias=True)
     #   )
     # )
     print(model)
 
-    # ==============================================================================================================
-    # Layer (type:depth-idx)                                       Output Shape              Param #
-    # ==============================================================================================================
-    # XLMRobertaModel                                              [16, 1024]                --
-    # ├─XLMRobertaEmbeddings: 1-1                                  [16, 512, 1024]           --
-    # │    └─Embedding: 2-1                                        [16, 512, 1024]           256,002,048
-    # │    └─Embedding: 2-2                                        [16, 512, 1024]           1,024
-    # │    └─Embedding: 2-3                                        [16, 512, 1024]           526,336
-    # │    └─LayerNorm: 2-4                                        [16, 512, 1024]           2,048
-    # │    └─Dropout: 2-5                                          [16, 512, 1024]           --
-    # ├─XLMRobertaEncoder: 1-2                                     [16, 512, 1024]           --
-    # │    └─ModuleList: 2-6                                       --                        --
-    # │    │    └─XLMRobertaLayer: 3-1                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-2                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-3                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-4                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-5                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-6                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-7                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-8                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-9                             [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-10                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-11                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-12                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-13                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-14                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-15                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-16                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-17                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-18                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-19                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-20                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-21                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-22                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-23                            [16, 512, 1024]           12,596,224
-    # │    │    └─XLMRobertaLayer: 3-24                            [16, 512, 1024]           12,596,224
-    # ├─XLMRobertaPooler: 1-3                                      [16, 1024]                --
-    # │    └─Linear: 2-7                                           [16, 1024]                1,049,600
-    # │    └─Tanh: 2-8                                             [16, 1024]                --
-    # ==============================================================================================================
-    # Total params: 559,890,432
-    # Trainable params: 559,890,432
+    # ===================================================================================================================
+    # Layer (type:depth-idx)                                            Output Shape              Param #
+    # ===================================================================================================================
+    # XLMRobertaForSequenceClassification                               [16, 1]                   --
+    # ├─XLMRobertaModel: 1-1                                            [16, 512, 1024]           --
+    # │    └─XLMRobertaEmbeddings: 2-1                                  [16, 512, 1024]           --
+    # │    │    └─Embedding: 3-1                                        [16, 512, 1024]           256,002,048
+    # │    │    └─Embedding: 3-2                                        [16, 512, 1024]           1,024
+    # │    │    └─Embedding: 3-3                                        [16, 512, 1024]           526,336
+    # │    │    └─LayerNorm: 3-4                                        [16, 512, 1024]           2,048
+    # │    │    └─Dropout: 3-5                                          [16, 512, 1024]           --
+    # │    └─XLMRobertaEncoder: 2-2                                     [16, 512, 1024]           --
+    # │    │    └─ModuleList: 3-6                                       --                        302,309,376
+    # ├─XLMRobertaClassificationHead: 1-2                               [16, 1]                   --
+    # │    └─Dropout: 2-3                                               [16, 1024]                --
+    # │    └─Linear: 2-4                                                [16, 1024]                1,049,600
+    # │    └─Dropout: 2-5                                               [16, 1024]                --
+    # │    └─Linear: 2-6                                                [16, 1]                   1,025
+    # ===================================================================================================================
+    # Total params: 559,891,457
+    # Trainable params: 559,891,457
     # Non-trainable params: 0
     # Total mult-adds (Units.GIGABYTES): 8.96
-    # ==============================================================================================================
+    # ===================================================================================================================
     # Input size (MB): 0.03
     # Forward/backward pass size (MB): 17985.31
-    # Params size (MB): 2239.56
-    # Estimated Total Size (MB): 20224.90
-    # ==============================================================================================================
+    # Params size (MB): 2239.57
+    # Estimated Total Size (MB): 20224.91
+    # ===================================================================================================================
     summary(model, input_size=(16, 512), dtypes=[torch.int])
     model = model.eval()
 
-    # (0, 1) = 0.9819545149803162
-    # (0, 2) = 0.7154759764671326
-    # (1, 2) = 0.820598304271698
-    # (0, 1) > (1, 2) > (0, 2)，比较符合直觉
-    sentences = ["样例数据-1", "样例数据-2", "错例数据-2"]
-    # 等价于 batch_encode_plus，返回的是二维向量，而不是将两个句子放在一起，可以支持多个句子
-    # Asking to truncate to max_length but no maximum length is provided and the model has no predefined maximum length.
-    # Default to no truncation. 如果设定 truncation=True，需要指定最大长度
-    encoded_input = tokenizer(sentences, padding=True, truncation=True, max_length=500, return_tensors='pt')
-    # 如果 model 在显卡中，那么参数也要都在显卡中
-    change_dict_value_to_gpu(encoded_input)
-    # {'input_ids': tensor([[    0,     6, 35567, 13506, 12833,  5759,     2],
-    #         [    0,     6, 35567, 13506, 12833,  5428,     2],
-    #         [    0,     6, 41782, 13506, 12833,  5428,     2]], device='cuda:0'),
-    #         'attention_mask': tensor([[1, 1, 1, 1, 1, 1, 1],
-    #         [1, 1, 1, 1, 1, 1, 1],
-    #         [1, 1, 1, 1, 1, 1, 1]], device='cuda:0')}
-    print(encoded_input)
-
+    # rank
+    # tensor([-0.9298, -0.0641,  3.5109], device='cuda:0')
+    # pairs = [["样例数据-1", "样例数据-2"], ["样例数据-1", "错例数据-2"], ["样例数据-2", "错例数据-2"]]
+    # tensor([-5.6085,  5.7650], device='cuda:0')
+    pairs = [['what is panda?', 'hi'], ['what is panda?',
+                                        'The giant panda, sometimes called a panda bear or '
+                                        'simply panda, is a bear species endemic to China.']]
     with torch.no_grad():
-        model_output = model(**encoded_input)
-        # Perform pooling. In this case, cls pooling.
-        # cls-pooling：直接取 [CLS] 的 embedding
-        # mean-pooling：取每个 Token 的平均 embedding
-        # max-pooling：对得到的每个 Embedding 取 max
-        sentence_embeddings = model_output[0][:, 0]
-    # normalize embeddings
-    sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
-    # [3, 1024]
-    print(sentence_embeddings.shape)
-    print("Sentence embeddings:", sentence_embeddings)
-    # 因为是 normalize 之后，自乘值肯定是 1
-    for i in range(sentence_embeddings.shape[0]):
-        for j in range(i, sentence_embeddings.shape[0]):
-            print(F"{i} @ {j} = {sentence_embeddings[i] @ sentence_embeddings[j]}")
+        # 注意 padding = True 必须指定，因为这里相当于是 batch，必须将所有样本凑成一样长的，否则报错
+        encoded_input = tokenizer(pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
+        # 如果 model 在显卡中，那么参数也要都在显卡中
+        change_dict_value_to_gpu(encoded_input)
+        scores = model(**encoded_input, return_dict=True)
+    # {'input_ids': tensor([[     0,   2367,     83,      6,  85407,     32,      2,      2,   1274,
+    #               2,      1,      1,      1,      1,      1,      1,      1,      1,
+    #               1,      1,      1,      1,      1,      1,      1,      1,      1,
+    #               1,      1,      1,      1,      1,      1,      1,      1],
+    #         [     0,   2367,     83,      6,  85407,     32,      2,      2,    581,
+    #            6051,     18,      6,  85407,      4,  68018,  35839,     10,      6,
+    #           85407,  81148,    707,  42856,      6,  85407,      4,     83,     10,
+    #           81148, 114149,  28117,  21068,     47,   9098,      5,      2]],
+    #        device='cuda:0'),
+    #        'attention_mask': tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    #          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    #         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    #          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], device='cuda:0')}
+    print(encoded_input)
+    # SequenceClassifierOutput(loss=None, logits=tensor([[-5.6085],
+    #         [ 5.7650]], device='cuda:0'), hidden_states=None, attentions=None)
+    print(scores)
+    scores = scores.logits.view(-1, ).float()
+    # tensor([-5.6085,  5.7650], device='cuda:0')
+    print(scores)
 
 
 def main():

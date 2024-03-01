@@ -3,6 +3,7 @@ import atexit
 import inspect
 import json
 import math
+import operator
 import os
 # noinspection PyUnresolvedReferences
 import queue
@@ -46,6 +47,44 @@ BGE_RERANKER_LARGE_revision = "master"
 BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + r"quietnight\bge-reranker-large"
 
 CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
+
+
+# 将字典排序，注意这个并不是直接对 key 排序（字典是无序的），而是按照某一个 key 的 value_list 排序，同时其它 value_list 跟着变动
+# {'names': ["a", "b", "c"], 'score': [2, 3, 1]} -> {'names': ["c", "a", "b"], 'score': [1, 2, 3]}
+# 注意是原位修改
+def sort_dict_with_one_value_list(_dict, _key, _sub_key=None, _reverse=False):
+    key_index_dict = {_key: 0}
+    total_list = [_dict[_key]]
+    start = 1
+
+    if _sub_key is not None:
+        assert _sub_key != _key
+        key_index_dict[_sub_key] = 1
+        total_list.append(_dict[_sub_key])
+        start = 2
+
+    for key in _dict:
+        if key == _key:
+            continue
+        if _sub_key is not None and key == _sub_key:
+            continue
+        key_index_dict[key] = start
+        start += 1
+        total_list.append(_dict[key])
+
+    # zip 化
+    total_list = list(zip(*total_list))
+    if _sub_key is None:
+        total_list.sort(key=operator.itemgetter(0), reverse=_reverse)
+    else:
+        total_list.sort(key=lambda item: (item[0], item[1]), reverse=_reverse)
+
+    # 还原
+    total_list = list(zip(*total_list))
+    for key in _dict:
+        _dict[key] = total_list[key_index_dict[key]]
+
+    return _dict
 
 
 # 保留几位有效数字
@@ -407,6 +446,12 @@ def main():
     a = r"1,3\4,/5"
     assert_equal(multiply_split(",", a), ['1', '3\\4', '/5'])
     assert_equal(multiply_split([",", "\\", "/"], a), ['1', '3', '4', '', '5'])
+
+    assert_equal(sort_dict_with_one_value_list({'names': ["a", "d", "c", "b"], 'score': [3, 2, 1, 2]}, "score"),
+                 {'names': ('c', 'd', 'b', 'a'), 'score': (1, 2, 2, 3)})
+    assert_equal(
+        sort_dict_with_one_value_list({'names': ["a", "d", "c", "b"], 'score': [3, 2, 1, 2]}, "score", "names"),
+        {'names': ('c', 'b', 'd', 'a'), 'score': (1, 2, 2, 3)})
 
 
 if __name__ == '__main__':
