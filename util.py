@@ -1,5 +1,6 @@
 # noinspection PyUnresolvedReferences
 import atexit
+import inspect
 import json
 import math
 import os
@@ -9,6 +10,7 @@ import random
 import re
 import time
 import traceback
+from functools import partial
 # 可以看到，最终调用函数example时，是经过 @my_decorator装饰的，装饰器的作用是接受一个被包裹的函数作为参数，对其进行加工，
 # 返回一个包裹函数，代码使用 @functools.wraps装饰将要返回的包裹函数wrapper，使得它的 __name__， __module__，和 __doc__
 # 属性与被装饰函数example完全相同，这样虽然最终调用的是经过装饰的example函数，但是某些属性还是得到维护。
@@ -42,6 +44,26 @@ BGE_LARGE_CN_model_dir = BIGDATA_MODELS_PATH + r"AI-ModelScope\bge-large-zh-v1__
 BGE_RERANKER_LARGE_model_id = "quietnight/bge-reranker-large"
 BGE_RERANKER_LARGE_revision = "master"
 BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + r"quietnight\bge-reranker-large"
+
+CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
+
+
+# 保留几位有效数字
+def get_round_value(_value, _digit):
+    return round(_value, _digit)
+
+
+get_round_6 = partial(get_round_value, _digit=6)
+get_round_5 = partial(get_round_value, _digit=5)
+get_round_4 = partial(get_round_value, _digit=4)
+get_round_3 = partial(get_round_value, _digit=3)
+get_round_2 = partial(get_round_value, _digit=2)
+get_round_1 = partial(get_round_value, _digit=1)
+
+
+# 获得一个函数的源代码
+def get_function_source(_func):
+    return inspect.getsource(_func)
 
 
 # 打印一个对象的所有方法，ignore 表示去掉魔术方法

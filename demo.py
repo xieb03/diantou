@@ -1314,7 +1314,7 @@ def main():
 
     # check_chatglm3()
     # check_bge_zh()
-    check_bge_reranker()
+    # check_bge_reranker()
 
 
 if __name__ == '__main__':
