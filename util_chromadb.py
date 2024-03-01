@@ -2,6 +2,7 @@ import chromadb
 from chromadb import Documents, EmbeddingFunction, Embeddings
 from transformers import AutoModel, AutoModelForSequenceClassification, AutoTokenizer
 
+from util_date import *
 from util_torch import *
 
 
@@ -106,8 +107,11 @@ class ChromadbPersistentCollection:
         self.client.delete_collection(self.name)
 
     # 增加多条记录
+    # 可以用 uris 来记录相关文档，例如我们是通过 query 的相似度，来找到对应的 answer
     def add(self, documents, ids=None, uris=None, print_count=True):
         documents = to_list(documents)
+        count = len(documents)
+
         if ids is not None:
             ids = to_list(ids)
         if uris is not None:
@@ -115,10 +119,10 @@ class ChromadbPersistentCollection:
 
         # 注意 ids 不能为空，而且不要有重复，这里用数据条数作为 id，保证不重复
         if ids is None:
-            count = self.count()
+            id_start = self.count()
             ids = list()
             for i in range(len(documents)):
-                ids.append(str(count + i))
+                ids.append(str(id_start + i))
 
         self.collection.add(
             documents=documents,
@@ -126,8 +130,11 @@ class ChromadbPersistentCollection:
             uris=uris
         )
 
+        total_count = self.count()
+        assert total_count >= count, F"{total_count} < {count}"
+
         if print_count:
-            print(F"{self.name} 一共有 {self.count()} 条数据.")
+            print(F"插入了 {count} 条新数据，{self.name} 一共有 {total_count} 条数据.")
 
     # noinspection PyTypedDict
     def query_one(self, query_text, n_results=6, include=None, simplify_result=True):
@@ -177,10 +184,15 @@ def main():
     # 1024 [0.015082, 0.004146, -0.015681, 0.03677, 0.017891]
     # 1024 [0.011628, 0.005764, -0.008518, 0.009795, 0.041958]
     embedding_function = BGELargeCNEmbeddingFunction(BGE_LARGE_CN_model_dir)
-    for embedding in embedding_function(["样例数据-1", "样例数据-2", "错例数据-2"]):
+    embedding_list = embedding_function(["样例数据-1", "样例数据-2", "错例数据-2"])
+    for embedding in embedding_list:
         print(len(embedding), list(map(get_round_6, to_list(embedding)[:5])))
+    # 0.6639, 0.8792，与下面 chromadb 算出来的结果一致
+    print(F"{round(np.dot(embedding_list[0], embedding_list[2]), 4)}, "
+          F"{round(np.dot(embedding_list[0], embedding_list[1]), 4)}")
 
-    collection = ChromadbPersistentCollection(collection_name="test", embedding_function=embedding_function)
+    collection = ChromadbPersistentCollection(collection_name=str(get_current_timestamp()),
+                                              embedding_function=embedding_function)
     # total  gpu memory:  6.38 G
     # torch  gpu memory:  4.54 G
     # tensor gpu memory:  4.52 G
@@ -193,6 +205,11 @@ def main():
         uris=["details of 0", "details of 2", "details of 1"]
     )
 
+    collection.add(
+        documents=["样例数据-2", "错例数据-2"],
+        uris=["details of 3", "details of 4"]
+    )
+
     # {'ids': [0, 2, 1], 'documents': ['This is a document', 'This is another document',
     # 'This is the third document'], 'uris': ['details of 0', 'details of 1', 'details of 2'],
     # 'similarities': [1.0, 0.8707, 0.8097]}
@@ -202,6 +219,12 @@ def main():
     # 'uris': ('details of 0', 'details of 1', 'details of 2'), 'similarities': (1.0, 0.8707, 0.8097),
     # 'scores': [9.4713, 3.3706, 0.3262]}
     print(collection.query_and_rank_one("This is a document"))
+
+    # {'ids': (4, 3), 'documents': ('错例数据-2', '样例数据-2'),
+    # 'uris': ('details of 4', 'details of 3'),
+    # 'similarities': (0.6639, 0.8792), 'scores': [-0.0641, -0.9298]}
+    # 与上面外部调用 embedding_function 算出来的结果一致
+    print(collection.query_and_rank_one("样例数据-1", n_results=2))
 
     collection.drop()
 

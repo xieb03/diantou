@@ -11,6 +11,8 @@ import random
 import re
 import time
 import traceback
+# noinspection PyUnresolvedReferences
+from collections import defaultdict
 from functools import partial
 # 可以看到，最终调用函数example时，是经过 @my_decorator装饰的，装饰器的作用是接受一个被包裹的函数作为参数，对其进行加工，
 # 返回一个包裹函数，代码使用 @functools.wraps装饰将要返回的包裹函数wrapper，使得它的 __name__， __module__，和 __doc__
@@ -23,8 +25,6 @@ from typing import List
 import numpy as np
 from IPython.display import Image, display, HTML
 from watermark import watermark
-# noinspection PyUnresolvedReferences
-from collections import defaultdict
 
 PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
@@ -108,7 +108,7 @@ def sort_dict_with_one_value_list(_dict, _key, _sub_key=None, _reverse=False):
     # 还原
     total_list = list(zip(*total_list))
     for key in _dict:
-        _dict[key] = total_list[key_index_dict[key]]
+        _dict[key] = list(total_list[key_index_dict[key]])
 
     return _dict
 

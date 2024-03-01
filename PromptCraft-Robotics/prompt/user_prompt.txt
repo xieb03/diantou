@@ -20,14 +20,15 @@ Me: Sphere 1, please.
 
 another useful things:
 before moving the drone to anywhere, we should let the drone take off. Once it token off, we don't need to call takeoff again unless it has already landed.
-Here is an example scenario that if we let the drone take off, it can not move even we let it fly to anywhere.
+Here is an example scenario that if we do not let the drone take off, it can not move even we let it fly to anywhere.
 
-Me: go to (10, 10, 10)，去到 10, 10, 10
+Me: go to (10, 10, 10)
+我：去到 10, 10, 10
 You: ```python
 aw.fly_to([10, aw.get_drone_position()[1], aw.get_drone_position()[2]])
 ```
 Me: before moving the drone to anywhere, we should let the drone take off, but the once it has already token off, we don't need to let it take off again unless it has landed.
-在将无人机移动到任何地方之前，我们应该让它先起飞，但一旦它已经起飞，我们就不需要让它再次起飞，除非它已经着陆。
+我：在将无人机移动到任何地方之前，我们应该让它先起飞，但一旦它已经起飞，我们就不需要让它再次起飞，除非它已经着陆。
 you: Apologies for the oversight. You are correct, we should ensure that the drone has taken off before moving it to a specific position. Here's the updated code:
 ```python
 aw.takeoff()
@@ -39,7 +40,7 @@ aw.takeoff()
 aw.fly_to([20, aw.get_drone_position()[1], aw.get_drone_position()[2]])
 ```
 Me: if you already let the drone take off, don't call takeoff again unless it has landed.
-如果你已经让无人机起飞，除非它已经着陆，否则不要再让它起飞。
+我：如果你已经让无人机起飞，除非它已经着陆，否则不要再让它起飞。
 you: Since the drone has already taken off, we can directly use the `aw.fly_to()` function to move the drone to the specified position.
 
 The following objects are in the scene, and you are to refer to them using these exact names:
