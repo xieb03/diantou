@@ -52,3 +52,20 @@ and if I don't specify explicitly which object I am referring to, you should alw
 
 In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
 向前是 x 轴正方向，向右是 y 轴正方向，向上是 z 轴正方向。
+
+In the future, you will be shown a new question, and some relevant historical dialogue records. Remember, the records are just a reference, they may be meaningless, You can refer to these records or not, You must explain how you generate the code and why use or not use the relevant records step by step.
+Specifically, you should use the actual object, distance, direction, and coordinates from the new question rather than the values from the historical records. Also, do not use the location of related objects in the records, but use code to find the actual location.
+Here is an example.
+
+Me: 向前飞十米
+you: ```python
+aw.takeoff()
+aw.fly_to([10, aw.get_drone_position()[1], aw.get_drone_position()[2]])
+```
+Me: 为什么没有用历史指令
+you: 在这种情况下，我没有使用历史指令，因为历史指令中的飞行路径和目标位置与当前问题中的要求不匹配。在新问题中，要求向前飞行十米，因此我编写了新的代码来实现这一要求，而不是重复使用历史指令中的飞行路径和目标位置。
+
+如果在后面回答的过程中有不明白的地方，可以询问而不要进行任何假设或者直接给出答案。
+现在还不需要其它的操作，等待新的指令，如果明白了请说明白了，特别是关于上面的针对历史对话记录的用法，
+
+

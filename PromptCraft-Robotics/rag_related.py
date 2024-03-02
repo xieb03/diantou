@@ -190,20 +190,22 @@ def get_rag_results(_question, _answer=None, _collection=None, _collection_name=
     rag_question_list = questions[:_top_n]
 
     if _debug:
+        print(Colors.RED + "-" * 80)
+        print("DEBUG")
         question = _question.replace("\n", "\n\t")
-        print(Colors.GREEN + F"test_question = {question}" + Colors.ENDC)
+        print(F"test_question = {question}")
         if _answer is not None:
             _answer = _answer.replace("\n", "\n\t")
-            print(Colors.GREEN + F"test_answer = {_answer}" + Colors.ENDC)
+            print(F"test_answer = {_answer}")
         answer_count = len(questions)
         for j in range(min(answer_count, _top_n)):
-            print(Colors.BLUE + F"\tsimilarity = {similarities[j]:.4F}" + Colors.ENDC)
-            print(Colors.BLUE + F"\tscore = {scores[j]:.4F}" + Colors.ENDC)
+            print(F"\tsimilarity = {similarities[j]:.4F}")
+            print(F"\tscore = {scores[j]:.4F}")
             questions[j] = questions[j].replace("\n", "\n\t\t")
-            print(Colors.BLUE + F"\tsimilar_question = {questions[j]}" + Colors.ENDC)
+            print(F"\tsimilar_question = {questions[j]}")
             similar_answers[j] = similar_answers[j].replace("\n", "\n\t\t")
-            print(Colors.BLUE + F"\tanswer = {similar_answers[j]}" + Colors.ENDC)
-        print("-" * 80)
+            print(F"\tanswer = {similar_answers[j]}")
+        print("-" * 80 + Colors.ENDC)
 
     return rag_question_list, rag_answer_list
 

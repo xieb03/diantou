@@ -1,3 +1,4 @@
+import ast
 # noinspection PyUnresolvedReferences
 import atexit
 import inspect
@@ -51,6 +52,17 @@ BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + r"quietnight\bge-reranker-l
 CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
 
 PYTHON_CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
+
+
+# 检查 python 代码是否有语法错误，ast.parse 是用来解析语法树，如果语法有问题会报错
+# noinspection PyBroadException
+def check_python_code_syntax_error(_python_code):
+    try:
+        ast.parse(_python_code)
+        return True
+    except Exception:
+        traceback.print_exc()
+        return False
 
 
 # 从一段字符串中接触 三引号 的部分，主要用来抽离出 python 代码
@@ -485,10 +497,16 @@ def main():
     assert_equal(multiply_split([",", "\\", "/"], a), ['1', '3', '4', '', '5'])
 
     assert_equal(sort_dict_with_one_value_list({'names': ["a", "d", "c", "b"], 'score': [3, 2, 1, 2]}, "score"),
-                 {'names': ('c', 'd', 'b', 'a'), 'score': (1, 2, 2, 3)})
+                 {'names': ['c', 'd', 'b', 'a'], 'score': [1, 2, 2, 3]})
     assert_equal(
         sort_dict_with_one_value_list({'names': ["a", "d", "c", "b"], 'score': [3, 2, 1, 2]}, "score", "names"),
-        {'names': ('c', 'b', 'd', 'a'), 'score': (1, 2, 2, 3)})
+        {'names': ['c', 'b', 'd', 'a'], 'score': [1, 2, 2, 3]})
+
+    python_code = "blue_car_position = [current_position[0] + 10, current_position[1], current_position[2]]"
+    assert check_python_code_syntax_error(python_code)
+
+    python_code = "blue_car_position = [current_position[0] + 10, current_position[1], current_position[2]"
+    assert not check_python_code_syntax_error(python_code)
 
 
 if __name__ == '__main__':

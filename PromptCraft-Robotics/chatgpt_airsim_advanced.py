@@ -7,11 +7,16 @@ from recorder import Recorder
 # 获取 rag 的 chromadb 的 collection
 collection = ChromadbPersistentCollection(collection_name=CHROMADB_COLLECTION_NAME)
 
-prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
-                   "You can refer to these records but should use the actual distance, direction, and coordinates "
-                   "from the new question. If you feel that the relevant records are unreasonable, "
-                   "you can ignore them, but tell me the reasons."
-                   "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
+# 一些指令转移到历史记录里面，这样不用每次都提示一大堆
+# prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
+#                    "You can refer to these records but should use the actual distance, direction, and coordinates "
+#                    "from the new question. Specifically, do not use the location of related objects in historical "
+#                    "records, but use code to find the actual location. "
+#                    "You must explain how you use the records, however, if you feel that the relevant records "
+#                    "are unreasonable or useless, you can ignore them, but must tell me the reasons."
+#                    "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
+
+prompt_template = "new question: {question}\n\n{count} relevant records: \n{records}"
 
 
 # 开启 chatgpt_airsim
@@ -27,15 +32,14 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
     print(f"Initializing AirSim...")
     # noinspection PyUnusedLocal
     aw = AirSimWrapper()
-    print(f"Done.")
+    print("Done.")
 
     response = get_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt,
                                            history_message_list=history_message_list)
-    # Understood. Thank you for providing the functions and clarifications.
-    # Please let me know what you would like me to do with the drone.
-    print(f"\n{response}\n")
+    # Understood. I am ready for the new question and will refer to the historical dialogue records as needed.
+    print(Colors.BLUE + f"\n{response}\n" + Colors.ENDC)
 
-    print("Welcome to the AirSim chatbot! I am ready to help you with your AirSim questions and commands.")
+    # print("Welcome to the AirSim chatbot! I am ready to help you with your AirSim questions and commands.")
 
     while True:
         if _with_text:
@@ -62,17 +66,21 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
         rag_question_list, rag_answer_list = get_rag_results(_question=question, _collection=collection,
                                                              _debug=True, _top_n=3)
         prompt = assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template)
-        print(Colors.GREEN + F"你的最终 prompt 是：\n'{prompt}'" + Colors.ENDC)
+        print(Colors.GREEN + F"你的最终 prompt 是：\n{prompt}" + Colors.ENDC)
 
         response = get_chat_completion_content(user_prompt=prompt, history_message_list=history_message_list)
 
-        print(f"\n{response}\n")
+        print(Colors.BLUE + f"\n{response}\n" + Colors.ENDC)
 
         code = extract_python_code(response)
         if code is not None:
-            print("Please wait while I run the code in AirSim...")
-            exec(code)
-            print("Done!\n")
+            if not check_python_code_syntax_error(code):
+                print(Colors.RED + f"获取的 python 代码编译有问题，请重新试过." + Colors.ENDC)
+                continue
+            else:
+                print("Please wait while I run the code in AirSim...")
+                exec(code)
+                print("Done!\n")
         else:
             print("Sorry, i didn't get any code from the response, please try again.")
 
