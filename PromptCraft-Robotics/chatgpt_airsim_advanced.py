@@ -1,15 +1,17 @@
-import sys
 from multiprocessing import Queue, Process
 
 from airsim_wrapper import *
-from rag_related import get_rag_results, CHROMADB_COLLECTION_NAME
+from rag_related import *
 from recorder import Recorder
-
-sys.path.append("../")
-from project_utils import *
 
 # 获取 rag 的 chromadb 的 collection
 collection = ChromadbPersistentCollection(collection_name=CHROMADB_COLLECTION_NAME)
+
+prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
+                   "You can refer to these records but should use the actual distance, direction, and coordinates "
+                   "from the new question. If you feel that the relevant records are unreasonable, "
+                   "you can ignore them, but tell me the reasons."
+                   "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
 
 
 # 开启 chatgpt_airsim
@@ -59,8 +61,10 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
 
         rag_question_list, rag_answer_list = get_rag_results(_question=question, _collection=collection,
                                                              _debug=True, _top_n=3)
+        prompt = assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template)
+        print(Colors.GREEN + F"你的最终 prompt 是：\n'{prompt}'" + Colors.ENDC)
 
-        response = get_chat_completion_content(user_prompt=question, history_message_list=history_message_list)
+        response = get_chat_completion_content(user_prompt=prompt, history_message_list=history_message_list)
 
         print(f"\n{response}\n")
 

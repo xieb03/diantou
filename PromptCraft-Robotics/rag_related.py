@@ -9,6 +9,7 @@ AIRSIM_FUNCTION_REGEX = re.compile("(aw\\..+\\(?).*\\)?", re.IGNORECASE)
 CHROMADB_COLLECTION_NAME = "normal"
 
 
+# 分析 command.json 的一些统计值
 @func_timer(arg=False)
 def analysis_command_json(_command_json_path="prompt/command.json", _debug=False):
     all_function_list = ["aw.takeoff", "aw.land", "aw.get_drone_position", "aw.fly_to", "aw.fly_path", "aw.set_yaw",
@@ -138,7 +139,8 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
     return final_question_list, final_answer_list
 
 
-@func_timer(arg=True)
+# 将 command.json 中的 QA pair 对插入 chromadb 向量数据库中
+@func_timer(arg=False)
 def insert_pre_prompt_to_chromadb(_command_json_path="prompt/command.json", _collection_name=CHROMADB_COLLECTION_NAME,
                                   _debug=True,
                                   _top_n=3):
@@ -171,6 +173,7 @@ def insert_pre_prompt_to_chromadb(_command_json_path="prompt/command.json", _col
     # collection.drop()
 
 
+# 根据问题从 chromadb 向量数据库中找到几个相似的 QA 对，这里采用召回和排序的方法，最多返回 top_n 对
 @func_timer(arg=False)
 def get_rag_results(_question, _answer=None, _collection=None, _collection_name=CHROMADB_COLLECTION_NAME, _debug=True,
                     _top_n=3):
@@ -205,11 +208,35 @@ def get_rag_results(_question, _answer=None, _collection=None, _collection_name=
     return rag_question_list, rag_answer_list
 
 
+# 将 rag 结果组装成最终 prompt
+def assemble_prompt_from_template(_question, _rag_question_list, _rag_answer_list, _prompt_template):
+    count = len(_rag_question_list)
+    assert count == len(_rag_answer_list)
+    records = ""
+    for i in range(count):
+        records += "user: " + _rag_question_list[i] + "\n"
+        records += "assistant: " + _rag_answer_list[i] + "\n"
+        records += "\n"
+
+    return _prompt_template.format(question=_question, count=count, records=records)
+
+
+@func_timer(arg=True)
 def main():
     fix_all_seed()
 
     # analysis_command_json(_debug=True)
-    insert_pre_prompt_to_chromadb(_debug=True)
+    # insert_pre_prompt_to_chromadb(_debug=True)
+
+    question = "向前飞 100 米."
+    rag_question_list, rag_answer_list = get_rag_results(_question=question, _debug=True)
+    prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
+                       "You can refer to these records but should use the actual distance, direction, and coordinates "
+                       "from the new question. If you feel that the relevant records are unreasonable, "
+                       "you can ignore them, but tell me the reasons."
+                       "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
+
+    print(assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template))
 
 
 if __name__ == '__main__':
