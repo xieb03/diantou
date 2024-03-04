@@ -1,804 +1,794 @@
 [
     {
         "role": "user",
-        "content": "获取无人机当前位置并飞往 [100, 200, 50]，然后沿路径移动至 [[120, 210, 40], [130, 220, 30], [140, 230, 20]]，最后将偏航角调整为90度。"
+        "content": "起飞"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.fly_to([100, 200, 50])\ntarget_path = [[120, 210, 40], [130, 220, 30], [140, 230, 20]]\naw.fly_path(target_path)\naw.set_yaw(90)\n```"
+        "content": "aw.takeoff()"
     },
     {
         "role": "user",
-        "content": "在目前位置起飞，然后飞向 [50, 50, 20]，接着向右斜飞至 [70, 60, 15]，最后降落。"
+        "content": "飞向汽车上方"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, 50, 20])\naw.fly_to([70, 60, 15])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('car'))"
     },
     {
         "role": "user",
-        "content": "沿着路径飞行至 [[0, 0, 30], [10, 10, 25], [20, 20, 20]]，然后抵达 [30, 30, 10]。"
+        "content": "向右平移5米"
     },
     {
         "role": "assistant",
-        "content": "```python\ntarget_path = [[0, 0, 30], [10, 10, 25], [20, 20, 20]]\naw.fly_path(target_path)\naw.fly_to([30, 30, 10])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] + 5, current_position[2]])"
     },
     {
         "role": "user",
-        "content": "将无人机起飞，然后向东飞行至 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "向下降3米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
     },
     {
         "role": "user",
-        "content": "获取当前位置，然后向上飞至高度100，再向东南方向飞至 [120, 120, 100]，最后设定偏航角为45度。"
+        "content": "飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], 100])\naw.fly_to([120, 120, 100])\naw.set_yaw(45)\n```"
+        "content": "aw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "起飞，然后飞向 [70, 70, 50]，接着向北斜飞至 [90, 90, 40]，最后将偏航角设定为0度。"
+        "content": "飞向第一个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, 70, 50])\naw.fly_to([90, 90, 40])\naw.set_yaw(0)\n```"
+        "content": "aw.fly_to(aw.get_position('tower1'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西北飞至 [80, 80, 60]，接着沿路径移动至 [[90, 90, 50], [100, 100, 40], [110, 110, 30]]，最后将偏航角调整为315度。"
+        "content": "飞向太阳能板"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 60])\ntarget_path = [[90, 90, 50], [100, 100, 40], [110, 110, 30]]\naw.fly_path(target_path)\naw.set_yaw(315)\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞往 [30, 0, 40]，再向东北方向飞至 [50, 20, 30]，最后将偏航角设为45度。"
+        "content": "设置偏航角为90度"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([30, 0, 40])\naw.fly_to([50, 20, 30])\naw.set_yaw(45)\n```"
+        "content": "aw.set_yaw(90)"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向北飞行至 [0, 100, 50]，再向西偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 100, 50])\naw.set_yaw(270)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "向左平移8米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] - 8, current_position[2]])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "向上升5米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "飞向第二个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "aw.fly_to(aw.get_position('turbine2'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "飞向第三个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "aw.fly_to(aw.get_position('tower3'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "向左平移10米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] - 10, current_position[2]])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "向上升7米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+        "content": "向右平移12米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] + 12, current_position[2]])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "向下降6米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "向下降7米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "飞向汽车上方并向右平移5米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to(aw.get_position('car'))\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "向下降3米并飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "飞向太阳能板并设置偏航角为90度"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\naw.set_yaw(90)"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "向上升5米并飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+        "content": "向左平移8米并飞向第一个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('tower1'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "向上升7米并向右平移12米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "向下降6米并飞向第二个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine2'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "飞向第三个塔并向左平移10米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "向上升4米并飞向汽车上方"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('car'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "飞向人群并向左平移8米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "aw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "向下降7米并飞向太阳能板"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('solarpanels'))"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+        "content": "向右平移10米并飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "向上升6米并飞向第一个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])\naw.fly_to(aw.get_position('tower1'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "向左平移12米并飞向第二个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('turbine2'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "向下降5米并飞向第三个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('tower3'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "起飞，然后飞向汽车上方"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "aw.takeoff()\naw.fly_to(aw.get_position('car'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "首先向右平移5米，接着向下降3米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "起飞，然后飞向第一个塔，并向左平移8米，最后向上升5米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "aw.takeoff()\naw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+        "content": "首先向右平移12米，接着向下降6米，然后飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "起飞，然后向上升7米，最后飞向太阳能板"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\naw.fly_to(aw.get_position('solarpanels'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "首先向下降5米，然后飞向人群，并向左平移8米，最后向上升6米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "起飞，然后向左平移10米，接着向上升4米，最后飞向第二个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "首先飞向第三个塔，然后向右平移12米，最后向下降6米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "飞向第一个塔，然后向左平移8米，最后向上升5米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "飞向太阳能板，然后向上升7米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "向下降5米，然后飞向人群，并向左平移8米，最后向上升6米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+        "content": "飞向汽车上方，然后向右平移5米，最后向下降3米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "飞向人群，然后向下降6米，最后飞向第三个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "aw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('tower3'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "飞向第二个风力发电机，然后向左平移10米，最后向上升4米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "首先向左平移12米，然后飞向汽车上方，最后向下降6米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "首先飞向汽车上方，然后向右平移5米，接着向下降3米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "起飞，然后向上升5米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "首先飞向第一个塔，然后向左平移8米，最后向上升7米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "起飞，然后飞向第三个塔，接着向右平移12米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "aw.takeoff()\naw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "首先向下降6米，然后飞向汽车上方，最后向左平移8米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "首先飞向太阳能板，然后向下降7米，最后飞向第一个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('tower1'))"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [100, 100, 60]，接着沿路径移动至 [[110, 110, 50], [120, 120, 40], [130, 130, 30]]，最后将偏航角调整为45度。"
+        "content": "起飞，然后向左平移8米，接着向上升6米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 100, 60])\ntarget_path = [[110, 110, 50], [120, 120, 40], [130, 130, 30]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "首先向右平移10米，然后向下降5米，最后飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移12米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "首先飞向第三个塔，然后向右平移12米，最后向下降6米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "首先向下降6米，然后飞向汽车上方，最后向左平移8米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [70, -70, 40]，接着向东南偏航并飞至 [90, -90, 30]，最后将偏航角设为135度。"
+        "content": "首先飞向太阳能板，然后向下降7米，最后飞向第一个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([70, -70, 40])\naw.set_yaw(135)\naw.fly_to([90, -90, 30])\naw.set_yaw(135)\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('tower1'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [0, 50, 40]，再向东南偏航并飞行至 [50, 0, 30]，最后降落。"
+        "content": "起飞，然后向左平移8米，接着向上升6米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([0, 50, 40])\naw.set_yaw(225)\naw.fly_to([50, 0, 30])\naw.land()\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [100, 0, 60]，再向西北方向飞至 [80, 20, 50]，最后将偏航角设为0度。"
+        "content": "首先飞向汽车上方，然后向右平移5米，接着向下降3米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([100, 0, 60])\naw.fly_to([80, 20, 50])\n```"
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后向西南飞至 [50, -50, 40]，接着向东偏航并飞至 [90, -90, 30]，最后将偏航角设为90度。"
+        "content": "起飞，然后向上升5米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, -50, 40])\naw.set_yaw(90)\naw.fly_to([90, -90, 30])\naw.set_yaw(90)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东北飞行至 [80, 80, 50]，再向下降至高度40，最后设定偏航角为45度。"
+        "content": "首先飞向第一个塔，然后向左平移8米，最后向上升7米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 80, 50])\naw.fly_to([80, 80, 40])\naw.set_yaw(45)\n```"
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [100, 0, 50]，接着向北偏航并飞行至 [90, 90, 30]，最后降落。"
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, 0, 50])\naw.set_yaw(0)\naw.fly_to([90, 90, 30])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [60, 100, 70]，接着沿路径移动至 [[70, 110, 60], [80, 120, 50], [90, 130, 40]]，最后将偏航角调整为60度。"
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([60, 100, 70])\ntarget_path = [[70, 110, 60], [80, 120, 50], [90, 130, 40]]\naw.fly_path(target_path)\naw.set_yaw(60)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向南飞行至 [0, -100, 50]，再向西北偏航并飞行至 [-80, -80, 30]，最后降落。"
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([0, -100, 50])\naw.set_yaw(315)\naw.fly_to([-80, -80, 30])\naw.land()\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东南飞至 [150, -50, 80]，接着沿路径移动至 [[160, -60, 70], [170, -70, 60], [180, -80, 50]]，最后将偏航角调整为135度。"
+        "content": "首先飞向第三个塔，然后向右平移12米，最后向下降6米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([150, -50, 80])\ntarget_path = [[160, -60, 70], [170, -70, 60], [180, -80, 50]]\naw.fly_path(target_path)\naw.set_yaw(135)\n```"
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞至 [30, 30, 30]，接着向东偏航并飞至 [50, 10, 20]，最后将偏航角设为30度。"
+        "content": "首先向下降6米，然后飞向汽车上方，最后向左平移8米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([30, 30, 30])\naw.set_yaw(90)\naw.fly_to([50, 10, 20])\naw.set_yaw(30)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西南飞行至 [-80, -80, 50]，再向上升至高度60，最后设定偏航角为225度。"
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-80, -80, 50])\naw.fly_to([-80, -80, 60])\naw.set_yaw(225)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [40, 0, 40]，接着向北偏航并飞行至 [20, 20, 30]，最后降落。"
+        "content": "首先飞向太阳能板，然后向下降7米，最后飞向第一个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([40, 0, 40])\naw.set_yaw(0)\naw.fly_to([20, 20, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('tower1'))"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [120, 0, 70]，接着沿路径移动至 [[130, 10, 60], [140, 20, 50], [150, 30, 40]]，最后将偏航角调整为45度。"
+        "content": "起飞，然后向左平移8米，接着向上升6米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([120, 0, 70])\ntarget_path = [[130, 10, 60], [140, 20, 50], [150, 30, 40]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [60, -60, 40]，接着向西南偏航并飞至 [30, -90, 20]，最后将偏航角设为135度。"
+        "content": "首先飞向汽车上方，然后向右平移5米，接着向下降3米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([60, -60, 40])\naw.set_yaw(225)\naw.fly_to([30, -90, 20])\naw.set_yaw(135)\n```"
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东飞行至 [80, 30, 50]，再向下降至高度40，最后设定偏航角为90度。"
+        "content": "起飞，然后向上升5米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, 30, 50])\naw.fly_to([80, 30, 40])\naw.set_yaw(90)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [120, 0, 70]，再向东北方向飞至 [140, 20, 60]，最后将偏航角设为0度。"
+        "content": "首先飞向第一个塔，然后向左平移8米，最后向上升7米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([120, 0, 70])\naw.fly_to([140, 20, 60])\n```"
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [20, -20, 20]，接着向东北偏航并飞至 [30, -10, 10]，最后将偏航角设为45度。"
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([20, -20, 20])\naw.set_yaw(45)\naw.fly_to([30, -10, 10])\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向西北飞至 [-30, -30, 40]，接着沿路径移动至 [[-40, -40, 30], [-50, -50, 20], [-60, -60, 10]]，最后将偏航角调整为225度。"
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-30, -30, 40])\ntarget_path = [[-40, -40, 30], [-50, -50, 20], [-60, -60, 10]]\naw.fly_path(target_path)\naw.set_yaw(225)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [80, 0, 70]，再向西南方向飞至 [50, -30, 60]，最后将偏航角设为0度。"
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([80, 0, 70])\naw.fly_to([50, -30, 60])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [100, -100, 60]，接着向东南偏航并飞至 [150, -150, 30]，最后将偏航角设为135度。"
+        "content": "起飞，然后向下降7米，接着飞向汽车上方"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([100, -100, 60])\naw.set_yaw(135)\naw.fly_to([150, -150, 30])\naw.set_yaw(135)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('car'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西北飞至 [-60, 60, 50]，再向上升至高度80，最后设定偏航角为315度。"
+        "content": "首先向左平移8米，然后向上升7米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-60, 60, 50])\naw.fly_to([-60, 60, 80])\naw.set_yaw(315)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向南飞行至 [20, -100, 40]，再向东偏航并飞行至 [40, -120, 30]，最后降落。"
+        "content": "首先飞向太阳能板，然后向右平移12米，最后向下降6米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([20, -100, 40])\naw.set_yaw(90)\naw.fly_to([40, -120, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东北飞至 [90, 0, 70]，接着沿路径移动至 [[100, 10, 60], [110, 20, 50], [120, 30, 40]]，最后将偏航角调整为45度。"
+        "content": "起飞，然后向右平移10米，接着向上升5米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([90, 0, 70])\ntarget_path = [[100, 10, 60], [110, 20, 50], [120, 30, 40]]\naw.fly_path(target_path)\naw.set_yaw(45)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [80, -80, 50]，接着向东南偏航并飞至 [100, -100, 30]，最后将偏航角设为135度。"
+        "content": "首先向下降6米，然后飞向第二个风力发电机，最后向左平移8米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([80, -80, 50])\naw.set_yaw(135)\naw.fly_to([100, -100, 30])\naw.set_yaw(135)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向西飞行至 [-100, 0, 50]，再向东南偏航并飞行至 [-150, -50, 30]，最后降落。"
+        "content": "首先飞向人群，然后向左平移10米，最后向上升4米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-100, 0, 50])\naw.set_yaw(225)\naw.fly_to([-150, -50, 30])\naw.land()\n```"
+        "content": "aw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [70, 0, 70]，再向东北方向飞至 [90, 20, 60]，最后将偏航角设为0度。"
+        "content": "起飞，然后向下降5米，接着飞向第一个塔"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([70, 0, 70])\naw.fly_to([90, 20, 60])\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('tower1'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [30, -30, 30]，接着向东北偏航并飞至 [40, -20, 20]，最后将偏航角设为45度。"
+        "content": "首先向上升6米，然后向右平移12米，最后飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([30, -30, 30])\naw.set_yaw(45)\naw.fly_to([40, -20, 20])\naw.set_yaw(45)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向西北飞至 [-50, 50, 40]，接着沿路径移动至 [[-60, 60, 30], [-70, 70, 20], [-80, 80, 10]]，最后将偏航角调整为225度。"
+        "content": "首先向下降7米，然后飞向汽车上方，最后向左平移8米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([-50, 50, 40])\ntarget_path = [[-60, 60, 30], [-70, 70, 20], [-80, 80, 10]]\naw.fly_path(target_path)\naw.set_yaw(225)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [60, 0, 70]，再向西南方向飞至 [30, -30, 60]，最后将偏航角设为0度。"
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([60, 0, 70])\naw.fly_to([30, -30, 60])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [50, 50, 50]，接着向西南偏航并飞至 [30, 30, 30]，最后将偏航角设为180度。"
+        "content": "首先飞向太阳能板，然后向下降6米，最后飞向第二个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, 50, 50])\naw.set_yaw(180)\naw.fly_to([30, 30, 30])\naw.set_yaw(180)\n```"
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine2'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东南飞至 [80, -80, 60]，再向上升至高度80，最后设定偏航角为90度。"
+        "content": "起飞，然后向右平移8米，接着向上升4米"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, -80, 60])\naw.fly_to([80, -80, 80])\naw.set_yaw(90)\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后向北偏航至 [60, 0, 80]，再向西北方向飞至 [40, 20, 70]，最后将偏航角设为0度。"
+        "content": "首先向下降5米，然后飞向第三个塔，最后向左平移12米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.set_yaw(0)\naw.fly_to([60, 0, 80])\naw.fly_to([40, 20, 70])\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])"
     },
     {
         "role": "user",
-        "content": "在当前位置起飞，然后飞向 [-70, 70, 50]，接着向东南偏航并飞至 [-90, 90, 30]，最后将偏航角设为135度。"
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([-70, 70, 50])\naw.set_yaw(135)\naw.fly_to([-90, 90, 30])\naw.set_yaw(135)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
     },
     {
         "role": "user",
-        "content": "获取当前位置并起飞，然后向东飞行至 [100, 0, 60]，再向西北偏航并飞行至 [80, 20, 50]，最后降落。"
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
     },
     {
         "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([100, 0, 60])\naw.set_yaw(315)\naw.fly_to([80, 20, 50])\naw.land()\n```"
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
     },
     {
         "role": "user",
-        "content": "从当前位置起飞，然后飞向 [50, 0, 50]，接着向北偏航并飞行至 [30, 30, 30]，最后降落。"
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
     },
     {
         "role": "assistant",
-        "content": "```python\naw.takeoff()\naw.fly_to([50, 0, 50])\naw.set_yaw(0)\naw.fly_to([30, 30, 30])\naw.land()\n```"
-    },
-    {
-        "role": "user",
-        "content": "获取当前无人机位置并起飞，然后向东南飞至 [80, -80, 60]，再向上升至高度80，最后设定偏航角为90度。"
-    },
-    {
-        "role": "assistant",
-        "content": "```python\ncurrent_position = aw.get_drone_position()\naw.takeoff()\naw.fly_to([80, -80, 60])\naw.fly_to([80, -80, 80])\naw.set_yaw(90)\n```"
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
     }
 ]
-
-

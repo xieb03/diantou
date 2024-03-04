@@ -5,7 +5,11 @@ from sklearn.model_selection import train_test_split
 sys.path.append("../")
 from project_utils import *
 
-AIRSIM_FUNCTION_REGEX = re.compile("(aw\\..+\\(?).*\\)?", re.IGNORECASE)
+# 不支持嵌套，只支持多个单个函数串联
+# AIRSIM_FUNCTION_REGEX = re.compile("(aw\\..+\\(?).*\\)?", re.IGNORECASE)
+
+# 支持 aw.fly_to(aw.get_position('car')) 的嵌套形式，会输出 ['aw.fly_to', 'aw.get_position'] 两个函数
+AIRSIM_FUNCTION_REGEX = re.compile("(aw\\..+?\\(+?)", re.IGNORECASE)
 CHROMADB_COLLECTION_NAME = "normal"
 
 
@@ -27,21 +31,30 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
 
     function_count_in_each_command_dict = defaultdict(int)
     function_count_dict = dict.fromkeys(all_function_list, 0)
-    sub_function_count_dict = defaultdict(int)
+    # sub_function_count_dict = defaultdict(int)
     function_count_detail_dict = {function: list() for function in all_function_list}
     wrong_function_dict = defaultdict(int)
     for i in range(0, length, 2):
         user_command = command_list[i]
-        assert user_command["role"] == "user"
+        assert user_command["role"] == "user", F"第 {i // 2} 段并不是 user."
         question = user_command["content"]
         question_list.append(question)
         assistant_command = command_list[i + 1]
-        assert assistant_command["role"] == "assistant"
+        assert assistant_command["role"] == "assistant", F"第 {(i + 1) // 2} 段并不是 assistant."
         answer = assistant_command["content"]
         # 注意 answer 包括整个 content，而不仅仅是 python 代码
         answer_list.append(answer)
 
+        # 优先用三引号寻找代码
         python_code = extract_python_code(answer)
+        # 如果没有找到，那么直接按照 python 代码处理
+        if not python_code:
+            python_code = answer.strip()
+
+        # 检查 python 代码是否能编译通过，注意这里只检查代码的合理性
+        assert check_python_code_syntax_error(python_code), (
+                Colors.RED + f"获取的 python 代码编译有问题，请重新试过." + Colors.ENDC)
+
         function_list = AIRSIM_FUNCTION_REGEX.findall(python_code)
         function_count = len(function_list)
         function_count_in_each_command_dict[function_count] += 1
@@ -52,15 +65,15 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
                 wrong_function_dict[main_function] += 1
             else:
                 function_count_dict[main_function] += 1
-                sub_function_count_dict[function] += 1
+                # sub_function_count_dict[function] += 1
                 function_count_detail_dict[main_function].append(function)
 
     function_count_in_each_command_dict = dict(sorted(function_count_in_each_command_dict.items(),
                                                       key=operator.itemgetter(1), reverse=True))
     function_count_dict = dict(sorted(function_count_dict.items(),
                                       key=operator.itemgetter(1), reverse=True))
-    sub_function_count_dict = dict(sorted(sub_function_count_dict.items(),
-                                          key=lambda x: (x[1], x[0]), reverse=True))
+    # sub_function_count_dict = dict(sorted(sub_function_count_dict.items(),
+    #                                       key=lambda x: (x[1], x[0]), reverse=True))
     function_count_detail_dict = dict(sorted(function_count_detail_dict.items(),
                                              key=lambda x: len(x[1]), reverse=True))
     for value in function_count_detail_dict.values():
@@ -109,9 +122,9 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
         print("-" * 80)
         # 主函数的调用次数
         print_dict(function_count_dict)
-        print("-" * 80)
-        # 子函数（含参）的调用次数
-        print_dict(sub_function_count_dict)
+        # print("-" * 80)
+        # # 子函数（含参）的调用次数
+        # print_dict(sub_function_count_dict)
         print("-" * 80)
         # 每个主函数中的所有子函数
         print_dict(function_count_detail_dict)
@@ -192,11 +205,12 @@ def get_rag_results(_question, _answer=None, _collection=None, _collection_name=
     if _debug:
         print(Colors.RED + "-" * 80)
         print("DEBUG")
-        question = _question.replace("\n", "\n\t")
+        question = _question.replace("\n", "\n")
         print(F"test_question = {question}")
         if _answer is not None:
-            _answer = _answer.replace("\n", "\n\t")
-            print(F"test_answer = {_answer}")
+            _answer = _answer.replace("\n", "\n")
+            print(F"test_answer = ```{_answer}```")
+        print()
         answer_count = len(questions)
         for j in range(min(answer_count, _top_n)):
             print(F"\tsimilarity = {similarities[j]:.4F}")
@@ -204,7 +218,8 @@ def get_rag_results(_question, _answer=None, _collection=None, _collection_name=
             questions[j] = questions[j].replace("\n", "\n\t\t")
             print(F"\tsimilar_question = {questions[j]}")
             similar_answers[j] = similar_answers[j].replace("\n", "\n\t\t")
-            print(F"\tanswer = {similar_answers[j]}")
+            print(F"\tanswer = ```{similar_answers[j]}```")
+            print()
         print("-" * 80 + Colors.ENDC)
 
     return rag_question_list, rag_answer_list
@@ -217,7 +232,7 @@ def assemble_prompt_from_template(_question, _rag_question_list, _rag_answer_lis
     records = ""
     for i in range(count):
         records += "user: " + _rag_question_list[i] + "\n"
-        records += "assistant: " + _rag_answer_list[i] + "\n"
+        records += "assistant: ```" + _rag_answer_list[i] + "```\n"
         records += "\n"
 
     return _prompt_template.format(question=_question, count=count, records=records)
@@ -227,14 +242,16 @@ def assemble_prompt_from_template(_question, _rag_question_list, _rag_answer_lis
 def main():
     fix_all_seed()
 
-    # analysis_command_json(_debug=True)
-    # insert_pre_prompt_to_chromadb(_debug=True)
+    # analysis_command_json(_command_json_path="prompt/command_old.json", _debug=True)
+    # analysis_command_json(_command_json_path="prompt/command.json", _debug=True)
+    insert_pre_prompt_to_chromadb(_command_json_path="prompt/command.json", _debug=True)
 
     question = "向前飞 100 米."
     rag_question_list, rag_answer_list = get_rag_results(_question=question, _debug=True)
     prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
-                       "You can refer to these records but should use the actual distance, direction, and coordinates "
-                       "from the new question. If you feel that the relevant records are unreasonable, "
+                       "You can refer to these records but should use "
+                       "the actual distance, direction, and coordinates from the new question. "
+                       "If you feel that the relevant records are unreasonable, "
                        "you can ignore them, but tell me the reasons."
                        "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
 

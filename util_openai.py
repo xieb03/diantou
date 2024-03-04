@@ -162,7 +162,11 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
     # from 20240204，gpt-3.5-turbo-0613
     # assert_equal(true_model, "gpt-3.5-turbo-0613")
     # from 20240225，gpt-3.5-turbo-0125
-    assert_equal(true_model, "gpt-3.5-turbo-0125")
+    # assert_equal(true_model, "gpt-3.5-turbo-0125")
+    # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
+    assert true_model in ["gpt-35-turbo", "gpt-3.5-turbo-0125"]
+
+    # assert_equal(true_model, "gpt-35-turbo")
 
     # 无论如何，都保存到历史对话中
     # if not using_history and history_message_list is not None:

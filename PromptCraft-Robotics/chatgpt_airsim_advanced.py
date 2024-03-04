@@ -94,19 +94,25 @@ def start_recoder(_model_name="medium", _queue: Queue = None):
 
 
 def main():
-    # chatgpt 和 recoder 通信，借助一个共享队列来传递文本
-    shared_queue = Queue()
+    with_text = True
+    # with_text = False
 
-    # text -> chatgpt response -> code -> airsim 模拟
-    p1 = Process(target=start_chatgpt_airsim, args=(False, shared_queue))
-    p1.start()
+    if with_text:
+        start_chatgpt_airsim(True)
+    else:
+        # chatgpt 和 recoder 通信，借助一个共享队列来传递文本
+        shared_queue = Queue()
 
-    # tkinter 界面 -> sounddevice 录音 -> mp3 -> local whisper 语音识别 -> text
-    p2 = Process(target=start_recoder, args=("medium", shared_queue))
-    p2.start()
+        # text -> chatgpt response -> code -> airsim 模拟
+        p1 = Process(target=start_chatgpt_airsim, args=(False, shared_queue))
+        p1.start()
 
-    p1.join()
-    p2.join()
+        # tkinter 界面 -> sounddevice 录音 -> mp3 -> local whisper 语音识别 -> text
+        p2 = Process(target=start_recoder, args=("medium", shared_queue))
+        p2.start()
+
+        p1.join()
+        p2.join()
 
 
 if __name__ == '__main__':
