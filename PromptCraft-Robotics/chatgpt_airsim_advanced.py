@@ -64,7 +64,7 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
                 continue
 
         rag_question_list, rag_answer_list = get_rag_results(_question=question, _collection=collection,
-                                                             _debug=True, _top_n=3)
+                                                             _debug=True, _top_n=3, _min_similarity=0.4)
         prompt = assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template)
         print(Colors.GREEN + F"你的最终 prompt 是：\n{prompt}" + Colors.ENDC)
 

@@ -189,7 +189,7 @@ def insert_pre_prompt_to_chromadb(_command_json_path="prompt/command.json", _col
 # 根据问题从 chromadb 向量数据库中找到几个相似的 QA 对，这里采用召回和排序的方法，最多返回 top_n 对
 @func_timer(arg=False)
 def get_rag_results(_question, _answer=None, _collection=None, _collection_name=CHROMADB_COLLECTION_NAME, _debug=True,
-                    _top_n=3):
+                    _top_n=3, _min_similarity=0.4):
     if _collection is None:
         _collection = ChromadbPersistentCollection(collection_name=_collection_name)
 
@@ -198,9 +198,6 @@ def get_rag_results(_question, _answer=None, _collection=None, _collection_name=
     similarities = all_similar_answer["similarities"]
     scores = all_similar_answer["scores"]
     similar_answers = all_similar_answer["uris"]
-
-    rag_answer_list = similar_answers[:_top_n]
-    rag_question_list = questions[:_top_n]
 
     if _debug:
         print(Colors.RED + "-" * 80)
@@ -222,7 +219,25 @@ def get_rag_results(_question, _answer=None, _collection=None, _collection_name=
             print()
         print("-" * 80 + Colors.ENDC)
 
-    return rag_question_list, rag_answer_list
+    rag_answer_list = similar_answers[:_top_n]
+    rag_question_list = questions[:_top_n]
+    origin_rag_count = len(rag_answer_list)
+
+    if _min_similarity is not None:
+        rag_similarity_list = similarities[:_top_n]
+        new_rag_question_list = list()
+        new_rag_answer_list = list()
+        for question, answer, similarity in zip(rag_question_list, rag_answer_list, rag_similarity_list):
+            if similarity >= _min_similarity:
+                new_rag_question_list.append(question)
+                new_rag_answer_list.append(answer)
+        rag_count = len(new_rag_question_list)
+        if rag_count < origin_rag_count:
+            print(Colors.RED + F"用相似度阈值 {_min_similarity:.2F} 只保留了 {rag_count} 条记录." + Colors.ENDC)
+
+        return new_rag_question_list, new_rag_answer_list
+    else:
+        return rag_question_list, rag_answer_list
 
 
 # 将 rag 结果组装成最终 prompt
