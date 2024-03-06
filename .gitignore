@@ -57,6 +57,7 @@ node_modules/
 
 # lora output
 **/output/*
+**/output_cr/*
 
 *.pyc
 

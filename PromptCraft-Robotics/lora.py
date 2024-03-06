@@ -598,7 +598,9 @@ def fine_tune(
             return_tensors='pt',
         ),
         train_dataset=train_dataset,
-        eval_dataset=val_dataset.select(list(range(50))),
+        # 注意用 min 做一下数量的保护，否则当数据集中样本数量较少时，会报错：
+        # IndexError: Index 49 out of range for dataset of size 12.
+        eval_dataset=val_dataset.select(list(range(min(val_dataset.num_rows, 50)))),
         tokenizer=tokenizer,
         compute_metrics=functools.partial(compute_metrics, tokenizer=tokenizer),
     )

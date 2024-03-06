@@ -2,7 +2,7 @@ data_config:
   train_file: command_fix_train.json
   val_file: command_fix_dev.json
   test_file: command_fix_dev.json
-  num_proc: 16
+  num_proc: 1
 max_input_length: 128
 max_output_length: 256
 training_args:
@@ -15,7 +15,7 @@ training_args:
   remove_unused_columns: false
   # settings for saving checkpoints
   save_strategy: steps
-  save_steps: 50
+  save_steps: 10
   # settings for logging
   log_level: info
   logging_strategy: steps
