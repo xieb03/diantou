@@ -253,24 +253,50 @@ def assemble_prompt_from_template(_question, _rag_question_list, _rag_answer_lis
     return _prompt_template.format(question=_question, count=count, records=records)
 
 
+# 将 command.json 转化为 lora 微调的格式
+def covert_command_to_lora(_command_json_path: str, _fix_json_path: str, _debug: bool = True):
+    question_list, answer_list = analysis_command_json(_command_json_path=_command_json_path, _debug=_debug)
+    assert len(question_list) == len(answer_list)
+
+    # 80% 作为训练集，20% 作为测试集
+    question_list_train, question_list_test, answer_list_train, answer_list_test = (
+        train_test_split(question_list, answer_list, test_size=0.2, random_state=0))
+
+    for split, sub_question_list, sub_answer_list in zip(["train", "dev"], [question_list_train, question_list_test],
+                                                         [answer_list_train, answer_list_test]):
+        count = 0
+        with open(_fix_json_path.format(split=split), 'wt', encoding='utf-8') as fout:
+            for question, answer in zip(sub_question_list, sub_answer_list):
+                count += 1
+                sample = {'conversations': [{'role': 'user', 'content': question},
+                                            {'role': 'assistant', 'content': answer}]}
+                fout.write(json.dumps(sample, ensure_ascii=False) + '\n')
+        print(F"{split} 一共保存了 {count} 条数据.")
+
+
 @func_timer(arg=True)
 def main():
     fix_all_seed()
 
     # analysis_command_json(_command_json_path="prompt/command_old.json", _debug=True)
     # analysis_command_json(_command_json_path="prompt/command.json", _debug=True)
-    insert_pre_prompt_to_chromadb(_command_json_path="prompt/command.json", _debug=True)
+    # insert_pre_prompt_to_chromadb(_command_json_path="prompt/command.json", _debug=True)
+    #
+    # question = "向前飞 100 米."
+    # rag_question_list, rag_answer_list = get_rag_results(_question=question, _debug=True)
+    # prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
+    #                    "You can refer to these records but should use "
+    #                    "the actual distance, direction, and coordinates from the new question. "
+    #                    "If you feel that the relevant records are unreasonable, "
+    #                    "you can ignore them, but tell me the reasons."
+    #                    "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
+    #
+    # print(assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template))
 
-    question = "向前飞 100 米."
-    rag_question_list, rag_answer_list = get_rag_results(_question=question, _debug=True)
-    prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
-                       "You can refer to these records but should use "
-                       "the actual distance, direction, and coordinates from the new question. "
-                       "If you feel that the relevant records are unreasonable, "
-                       "you can ignore them, but tell me the reasons."
-                       "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
-
-    print(assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template))
+    # 去重后，共有 59 条有效记录.
+    # train 一共保存了 47 条数据.
+    # dev 一共保存了 12 条数据.
+    covert_command_to_lora(_command_json_path="prompt/command.json", _fix_json_path="prompt/command_fix_{split}.json")
 
 
 if __name__ == '__main__':
