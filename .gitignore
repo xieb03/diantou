@@ -55,6 +55,9 @@ node_modules/
 !**/big-data/.gitkeep
 !**/big_data/.gitkeep
 
+# lora output
+**/output/*
+
 *.pyc
 
 # spark

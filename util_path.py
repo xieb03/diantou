@@ -37,6 +37,14 @@ def get_dir_size(_file_path):
     return total_size
 
 
+# 删除文件路径后面的分隔符，确保后面连接的时候保持干净
+def delete_end_path_separator(_path: str):
+    while _path.endswith(PATH_SEPARATOR):
+        _path = _path[:-1]
+
+    return _path
+
+
 def main():
     assert not is_file_or_dir_exist(get_current_timestamp())
     # D:\PycharmProjects\xiebo\diantou\util_path.py
