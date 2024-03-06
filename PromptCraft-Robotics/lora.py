@@ -477,6 +477,12 @@ def compute_metrics(eval_preds: EvalPrediction, tokenizer: PreTrainedTokenizer):
     return {k: np.mean(v) for k, v in metrics_dct.items()}
 
 
+# 如果 batch_size 设置的比较大，就会出现下面的两个 UserWarning，特别是第 2 个，不能控制随机数生成固定结果，感觉是和 GPU 共享内存有关或者说显存到达一定程度会触发某种 cudnn 优化，而如果 batch_size 较小就没有这个问题
+# 但如果将 warn_only 改成 False 也可以运行被可以生成随机结果，可能是 warn_only=False 会强制找到确定性的方法，如果找不到再报错，而 warn_only=True 只是出现警告而已
+# C:\Users\admin\.cache\huggingface\modules\transformers_modules\chatglm3-6b\modeling_chatglm.py:231: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at ..\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:263.)
+#   context_layer = torch.nn.functional.scaled_dot_product_attention(query_layer, key_layer, value_layer,
+# D:\Users\admin\anaconda3\Lib\site-packages\torch\autograd\__init__.py:266: UserWarning: Memory Efficient attention defaults to a non-deterministic algorithm. To explicitly enable determinism call torch.use_deterministic_algorithms(True, warn_only=False). (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\attention_backward.cu:451.)
+#   Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
 def fine_tune(
         data_dir: str,
         # A string that specifies the model id of a pretrained model configuration hosted on huggingface.co,
@@ -628,9 +634,9 @@ def fine_tune(
                       "The specified checkpoint sn(" + auto_resume_from_checkpoint
                       + ") has not been saved. Please search for the correct checkpoint in the model output directory")
 
-    # test stage
-    if test_dataset is not None:
-        trainer.predict(test_dataset)
+    # # test stage
+    # if test_dataset is not None:
+    #     trainer.predict(test_dataset)
 
 
 # 微调以前
@@ -640,6 +646,9 @@ def fine_tune(
 # 通过 torch.use_deterministic_algorithms(True, warn_only=True)，可以禁止抛出异常而只是 warn，方便调试
 # _temperature 必须要 > 0
 def before_fine_tune(_temperature=0.1):
+    # 单独为了 cumsum_cuda_kernel 关闭
+    torch.use_deterministic_algorithms(False)
+
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=CHATGLM3_6B_model_dir,
                                               trust_remote_code=True)
     model = AutoModel.from_pretrained(CHATGLM3_6B_model_dir, trust_remote_code=True).cuda()
@@ -668,12 +677,18 @@ def before_fine_tune(_temperature=0.1):
     print(response)
     # print_history_message_list(history)
 
-    history = list()
     response, history = model.chat(tokenizer,
-                                   "类型#裙*版型#显瘦*材质#网纱*风格#性感*裙型#百褶*裙下摆#压褶*裙长#连衣裙*裙衣门襟#拉链*裙衣门襟#套头*裙款式#拼接*裙款式#拉链*裙款式#木耳边*裙款式#抽褶*裙款式#不规则",
-                                   history=history, temperature=_temperature)
-    # 这是一款性感的百褶网纱连衣裙，裙下摆采用压褶设计，显得更加立体和丰富。裙衣门襟为拉链设计，方便穿脱。
-    # 整款裙子采用了拼接和木耳边等细节设计，增加了裙子的层次感和时尚感。同时，抽褶和不规则的裙款式设计，让这款裙子更具动感，展现出女性的优雅和魅力。
+                                   "类型#裙*版型#显瘦*材质#网纱*风格#性感*裙型#百褶*裙下摆#压褶*裙长#连衣裙*裙衣门襟#拉链*裙衣门襟#套头*裙款式",
+                                   temperature=_temperature)
+    # 这是一款非常性感的百褶网纱连衣裙，裙下摆采用了压褶设计，能够很好地修饰身材，让穿着者显得更加苗条高挑。
+    # 裙衣门襟采用了拉链设计，既方便穿脱，又增加了时尚感。整体风格为性感，适合各种场合穿着，让人眼前一亮。
+    print(response)
+    # print_history_message_list(history)
+
+    response, history = model.chat(tokenizer,
+                                   "aw.fly_to() 是什么含义，如果不知道就说不知道",
+                                   temperature=_temperature)
+    # 抱歉，我无法提供关于 "aw.fly_to()" 的具体含义，因为我无法确定这个函数或方法来自哪个编程语言或具体的项目。如果您能提供更多上下文信息，我将尽力帮助您。
     print(response)
     # print_history_message_list(history)
 
@@ -712,13 +727,16 @@ def load_model_and_tokenizer(model_dir: Union[str, Path]) -> tuple[ModelType, To
 
 # 微调以后
 def after_fine_tune(_temperature=0.1):
-    model, tokenizer = load_model_and_tokenizer(r"./output/checkpoint-400")
+    # 单独为了 cumsum_cuda_kernel 关闭
+    torch.use_deterministic_algorithms(False)
+    
+    model, tokenizer = load_model_and_tokenizer(r"./output/checkpoint-250")
     model = model.eval()
-    # model (<class 'peft.peft_model.PeftModelForCausalLM'>) has 6244599808 parameters,
+    # model (<class 'peft.peft_model.PeftModelForCausalLM'>) has 6245533696 parameters,
     # 0 (0.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
     print_model_parameter_summary(model)
-    # total  gpu memory:  13.57 G
-    # torch  gpu memory:  12.16 G
+    # total  gpu memory:  12.76 G
+    # torch  gpu memory:  11.67 G
     # tensor gpu memory:  11.66 G
     print_gpu_memory_summary()
 
@@ -727,40 +745,45 @@ def after_fine_tune(_temperature=0.1):
     print(response)
     # print_history_message_list(history)
 
-    # 1. 尝试放松身心，如深呼吸、冥想或热水泡澡。
-    # 2. 避免刺激性食物和饮料，如咖啡、茶和巧克力。
-    # 3. 保持规律的睡眠时间表。
-    # 4. 减少使用电子产品，特别是在睡前。
-    # 5. 尝试进行轻柔的伸展运动，如瑜伽或拉伸运动。
-    # 6. 如果需要，可以使用助眠药物。但在使用前，请咨询医生。
-    # 7. 保持良好的睡眠环境，如安静、舒适、黑暗和凉爽。
+    # 1. 尝试放松身心，如冥想、深呼吸等。
+    # 2. 避免咖啡因和尼古丁。
+    # 3. 保持规律作息，尽量每天按时上床睡觉。
+    # 4. 减少使用电子产品，尤其是睡前。
+    # 5. 增加运动量，但避免剧烈运动。
+    # 6. 睡前适当饮水，但避免过多。
+    # 7. 尝试阅读或听轻音乐。
+    # 8. 如有需要，可咨询专业人士。
     response, history = model.chat(tokenizer, "晚上睡不着应该怎么办，回复字数不要超过 100 个", history=history,
                                    temperature=_temperature)
     print(response)
     # print_history_message_list(history)
 
-    history = list()
     response, history = model.chat(tokenizer,
-                                   "类型#裙*版型#显瘦*材质#网纱*风格#性感*裙型#百褶*裙下摆#压褶*裙长#连衣裙*裙衣门襟#拉链*裙衣门襟#套头*裙款式#拼接*裙款式#拉链*裙款式#木耳边*裙款式#抽褶*裙款式#不规则",
-                                   history=history, temperature=_temperature)
-    # 这是一款性感的百褶网纱连衣裙，裙下摆采用压褶设计，显得更加立体和丰富。裙衣门襟为拉链设计，方便穿脱。
-    # 整款裙子采用了拼接和木耳边等细节设计，增加了裙子的层次感和时尚感。同时，抽褶和不规则的裙款式设计，让这款裙子更具动感，展现出女性的优雅和魅力。
+                                   "类型#裙*版型#显瘦*材质#网纱*风格#性感*裙型#百褶*裙下摆#压褶*裙长#连衣裙*裙衣门襟#拉链*裙衣门襟#套头*裙款式",
+                                   temperature=_temperature)
+    # 这款连衣裙的版型设计，整体上采用了显瘦的款式，加上百褶的裙摆，整体上显得非常时尚，加上网纱的装饰，整体上显得非常性感，
+    # 加上拉链的装饰，整体上显得非常实用。加上超长版型的设计，加上超长裙摆的设计，整体上显得非常优雅，加上超长裙摆的设计，加上超长裙摆的设计，整体上显得非常优雅。
+    print(response)
+    # print_history_message_list(history)
+
+    response, history = model.chat(tokenizer,
+                                   "aw.fly_to() 是什么含义，如果不知道就说不知道",
+                                   temperature=_temperature)
+    # 抱歉，我无法提供关于 "aw.fly_to()" 的详细信息，因为我无法确定您所提到的 "aw" 代表什么。如果您能提供更多上下文或信息，我将尽力帮助您。
     print(response)
     # print_history_message_list(history)
 
 
 @func_timer(arg=True)
 def main():
-    fix_all_seed(_simple=False, _warn_only=True)
-
-    save_dir = BIGDATA_DATA_PATH + 'AdvertiseGen_fix'
+    fix_all_seed(_simple=False, _warn_only=False)
 
     # D:\PycharmProjects\xiebo\diantou\bigdata\data\AdvertiseGen\train.json 共有 114599 行.
     # D:\PycharmProjects\xiebo\diantou\bigdata\data\AdvertiseGen\dev.json 共有 1070 行.
-    # convert_adgen(BIGDATA_DATA_PATH + 'AdvertiseGen', save_dir)
+    # convert_adgen(BIGDATA_DATA_PATH + 'AdvertiseGen', BIGDATA_DATA_PATH + 'AdvertiseGen_fix')
 
     # tensorflow sed random seed fail.
-    # Loading checkpoint shards: 100%|██████████| 7/7 [00:02<00:00,  3.37it/s]
+    # Loading checkpoint shards: 100%|██████████| 7/7 [00:01<00:00,  3.68it/s]
     # model (<class 'transformers_modules.chatglm3-6b.modeling_chatglm.ChatGLMForConditionalGeneration'>) has 6243584000 parameters, 6243584000 (100.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
     # model (<class 'peft.peft_model.PeftModelForCausalLM'>) has 6245533696 parameters, 1949696 (0.03%) are trainable, the dtype is torch.float16，占 11.63G 显存.
     # trainable params: 1,949,696 || all params: 6,245,533,696 || trainable%: 0.031217444255383614
@@ -780,119 +803,93 @@ def main():
     # })
     # You are using an old version of the checkpointing format that is deprecated (We will also silently ignore `gradient_checkpointing_kwargs` in case you passed it).Please update to the new format on your modeling file. To use the new format, you need to completely remove the definition of the method `_set_gradient_checkpointing` in your model.
     # max_steps is given, it will override any value given in num_train_epochs
-    # total  gpu memory:  12.9 G
+    # total  gpu memory:  12.72 G
     # torch  gpu memory:  11.67 G
     # tensor gpu memory:  11.66 G
     # ***** Running training *****
     #   Num examples = 114,599
     #   Num Epochs = 1
-    #   Instantaneous batch size per device = 8
-    #   Total train batch size (w. parallel, distributed & accumulation) = 8
+    #   Instantaneous batch size per device = 12
+    #   Total train batch size (w. parallel, distributed & accumulation) = 12
     #   Gradient Accumulation steps = 1
-    #   Total optimization steps = 400
+    #   Total optimization steps = 250
     #   Number of trainable parameters = 1,949,696
-    #   0%|          | 0/400 [00:00<?, ?it/s]D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   0%|          | 0/250 [00:00<?, ?it/s]D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
     # C:\Users\admin\.cache\huggingface\modules\transformers_modules\chatglm3-6b\modeling_chatglm.py:231: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at ..\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:263.)
     #   context_layer = torch.nn.functional.scaled_dot_product_attention(query_layer, key_layer, value_layer,
-    #   2%|▎         | 10/400 [01:50<15:45,  2.43s/it]{'loss': 4.7887, 'grad_norm': 2.1173408031463623, 'learning_rate': 4.875e-05, 'epoch': 0.0}
-    #   5%|▌         | 20/400 [02:00<06:52,  1.08s/it]{'loss': 4.6477, 'grad_norm': 2.4829466342926025, 'learning_rate': 4.75e-05, 'epoch': 0.0}
-    #   8%|▊         | 30/400 [02:11<06:10,  1.00s/it]{'loss': 4.418, 'grad_norm': 2.719491958618164, 'learning_rate': 4.6250000000000006e-05, 'epoch': 0.0}
-    #  10%|█         | 40/400 [02:22<07:12,  1.20s/it]{'loss': 4.1482, 'grad_norm': 2.392939329147339, 'learning_rate': 4.5e-05, 'epoch': 0.0}
-    #  12%|█▎        | 50/400 [02:33<06:12,  1.06s/it]{'loss': 3.9312, 'grad_norm': 2.4369444847106934, 'learning_rate': 4.375e-05, 'epoch': 0.0}
-    #  15%|█▌        | 60/400 [02:45<07:03,  1.25s/it]{'loss': 3.9537, 'grad_norm': 2.512172222137451, 'learning_rate': 4.25e-05, 'epoch': 0.0}
-    #  18%|█▊        | 70/400 [02:55<05:57,  1.08s/it]{'loss': 3.8322, 'grad_norm': 2.3900489807128906, 'learning_rate': 4.125e-05, 'epoch': 0.0}
-    #  20%|██        | 80/400 [03:06<06:04,  1.14s/it]{'loss': 3.8352, 'grad_norm': 2.141808271408081, 'learning_rate': 4e-05, 'epoch': 0.01}
-    #  22%|██▎       | 90/400 [03:19<06:05,  1.18s/it]{'loss': 3.7057, 'grad_norm': 2.4001009464263916, 'learning_rate': 3.875e-05, 'epoch': 0.01}
-    #  25%|██▌       | 100/400 [03:30<05:47,  1.16s/it]{'loss': 3.7051, 'grad_norm': 2.375187397003174, 'learning_rate': 3.7500000000000003e-05, 'epoch': 0.01}
-    #  28%|██▊       | 110/400 [03:40<05:08,  1.06s/it]{'loss': 3.7369, 'grad_norm': 2.576702356338501, 'learning_rate': 3.625e-05, 'epoch': 0.01}
-    #  30%|███       | 120/400 [03:52<05:42,  1.22s/it]{'loss': 3.698, 'grad_norm': 2.6313319206237793, 'learning_rate': 3.5e-05, 'epoch': 0.01}
-    #  32%|███▎      | 130/400 [04:04<05:07,  1.14s/it]{'loss': 3.6764, 'grad_norm': 2.9250454902648926, 'learning_rate': 3.375000000000001e-05, 'epoch': 0.01}
-    #  35%|███▌      | 140/400 [04:14<04:45,  1.10s/it]{'loss': 3.7215, 'grad_norm': 2.929673194885254, 'learning_rate': 3.2500000000000004e-05, 'epoch': 0.01}
-    #  38%|███▊      | 150/400 [04:26<05:13,  1.25s/it]{'loss': 3.7186, 'grad_norm': 2.9973206520080566, 'learning_rate': 3.125e-05, 'epoch': 0.01}
-    #  40%|████      | 160/400 [04:37<04:32,  1.14s/it]{'loss': 3.6934, 'grad_norm': 3.1966705322265625, 'learning_rate': 3e-05, 'epoch': 0.01}
-    #  42%|████▎     | 170/400 [04:49<04:20,  1.13s/it]{'loss': 3.598, 'grad_norm': 3.132033586502075, 'learning_rate': 2.8749999999999997e-05, 'epoch': 0.01}
-    #  45%|████▌     | 180/400 [05:00<03:59,  1.09s/it]{'loss': 3.6859, 'grad_norm': 3.351003408432007, 'learning_rate': 2.7500000000000004e-05, 'epoch': 0.01}
-    #  48%|████▊     | 190/400 [05:11<04:05,  1.17s/it]{'loss': 3.5826, 'grad_norm': 3.148512840270996, 'learning_rate': 2.625e-05, 'epoch': 0.01}
-    #  50%|█████     | 200/400 [05:23<03:39,  1.10s/it]***** Running Evaluation *****
+    #   4%|▍         | 10/250 [01:39<08:27,  2.11s/it]{'loss': 4.8152, 'grad_norm': 1.8391568660736084, 'learning_rate': 4.8e-05, 'epoch': 0.0}
+    #   8%|▊         | 20/250 [01:48<03:34,  1.07it/s]{'loss': 4.6387, 'grad_norm': 2.3202433586120605, 'learning_rate': 4.600000000000001e-05, 'epoch': 0.0}
+    #  12%|█▏        | 30/250 [01:58<03:33,  1.03it/s]{'loss': 4.3238, 'grad_norm': 2.4035308361053467, 'learning_rate': 4.4000000000000006e-05, 'epoch': 0.0}
+    #  16%|█▌        | 40/250 [02:08<03:49,  1.09s/it]{'loss': 4.192, 'grad_norm': 2.102768659591675, 'learning_rate': 4.2e-05, 'epoch': 0.0}
+    #  20%|██        | 50/250 [02:18<03:21,  1.01s/it]{'loss': 4.009, 'grad_norm': 1.91422700881958, 'learning_rate': 4e-05, 'epoch': 0.01}
+    #  24%|██▍       | 60/250 [02:28<03:13,  1.02s/it]{'loss': 3.8783, 'grad_norm': 1.9220069646835327, 'learning_rate': 3.8e-05, 'epoch': 0.01}
+    #  28%|██▊       | 70/250 [02:38<02:50,  1.05it/s]{'loss': 3.7914, 'grad_norm': 1.9412838220596313, 'learning_rate': 3.6e-05, 'epoch': 0.01}
+    #  32%|███▏      | 80/250 [02:48<03:04,  1.09s/it]{'loss': 3.7895, 'grad_norm': 1.8838335275650024, 'learning_rate': 3.4000000000000007e-05, 'epoch': 0.01}
+    #  36%|███▌      | 90/250 [02:57<02:26,  1.09it/s]{'loss': 3.7295, 'grad_norm': 2.1114237308502197, 'learning_rate': 3.2000000000000005e-05, 'epoch': 0.01}
+    #  40%|████      | 100/250 [03:08<02:45,  1.10s/it]{'loss': 3.7629, 'grad_norm': 2.109829902648926, 'learning_rate': 3e-05, 'epoch': 0.01}
+    #  44%|████▍     | 110/250 [03:18<02:28,  1.06s/it]{'loss': 3.6922, 'grad_norm': 2.3670461177825928, 'learning_rate': 2.8000000000000003e-05, 'epoch': 0.01}
+    #  48%|████▊     | 120/250 [03:28<02:10,  1.00s/it]{'loss': 3.7369, 'grad_norm': 2.396379232406616, 'learning_rate': 2.6000000000000002e-05, 'epoch': 0.01}
+    #  50%|█████     | 125/250 [03:33<02:07,  1.02s/it]***** Running Evaluation *****
     #   Num examples = 50
-    #   Batch size = 8
-    # {'loss': 3.6367, 'grad_norm': 3.2902638912200928, 'learning_rate': 2.5e-05, 'epoch': 0.01}
+    #   Batch size = 12
     #
-    #   0%|          | 0/7 [00:00<?, ?it/s]
-    #  29%|██▊       | 2/7 [00:06<00:16,  3.27s/it]
-    #  43%|████▎     | 3/7 [00:13<00:18,  4.65s/it]
-    #  57%|█████▋    | 4/7 [00:15<00:11,  3.70s/it]
-    #  71%|███████▏  | 5/7 [00:17<00:06,  3.22s/it]
-    #  86%|████████▌ | 6/7 [00:24<00:04,  4.33s/it]
-    # 100%|██████████| 7/7 [00:26<00:00,  3.80s/it]Building prefix dict from the default dictionary ...
+    #   0%|          | 0/5 [00:00<?, ?it/s]
+    #  40%|████      | 2/5 [00:06<00:10,  3.35s/it]
+    #  60%|██████    | 3/5 [00:13<00:09,  4.77s/it]
+    #  80%|████████  | 4/5 [00:20<00:05,  5.49s/it]
+    # 100%|██████████| 5/5 [00:27<00:00,  6.08s/it]Building prefix dict from the default dictionary ...
     # Loading model from cache C:\Users\admin\AppData\Local\Temp\jieba.cache
-    # Loading model cost 0.317 seconds.
+    # Loading model cost 0.314 seconds.
     # Prefix dict has been built successfully.
-    # {'eval_rouge-1': 29.266655999999994, 'eval_rouge-2': 5.416386, 'eval_rouge-l': 22.596558, 'eval_bleu-4': 0.02592826276710041, 'eval_runtime': 133.2774, 'eval_samples_per_second': 0.375, 'eval_steps_per_second': 0.053, 'epoch': 0.01}
+    # {'eval_rouge-1': 28.395013999999996, 'eval_rouge-2': 5.604386, 'eval_rouge-l': 22.320870000000003, 'eval_bleu-4': 0.024923493122661018, 'eval_runtime': 122.2012, 'eval_samples_per_second': 0.409, 'eval_steps_per_second': 0.041, 'epoch': 0.01}
     #
-    #  50%|█████     | 200/400 [07:36<03:39,  1.10s/it]
-    # 100%|██████████| 7/7 [00:27<00:00,  3.80s/it]
-    #                                              Checkpoint destination directory ./output\checkpoint-200 already exists and is non-empty. Saving will proceed but saved results may be invalid.
-    # Saving model checkpoint to ./output\checkpoint-200
-    # D:\Users\admin\anaconda3\Lib\site-packages\peft\utils\save_and_load.py:154: UserWarning: Could not find a config file in D:\PycharmProjects\xiebo\diantou\bigdata\models\ZhipuAI\chatglm3-6b - will assume that the vocabulary was not modified.
-    #   warnings.warn(
-    # tokenizer config file saved in ./output\checkpoint-200\tokenizer_config.json
-    # Special tokens file saved in ./output\checkpoint-200\special_tokens_map.json
+    #  50%|█████     | 125/250 [05:36<02:07,  1.02s/it]
+    # 100%|██████████| 5/5 [00:27<00:00,  6.08s/it]
+    #                                              Checkpoint destination directory ./output\checkpoint-125 already exists and is non-empty. Saving will proceed but saved results may be invalid.
+    # Saving model checkpoint to ./output\checkpoint-125
+    # tokenizer config file saved in ./output\checkpoint-125\tokenizer_config.json
+    # Special tokens file saved in ./output\checkpoint-125\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  52%|█████▎    | 210/400 [07:47<08:44,  2.76s/it]{'loss': 3.7338, 'grad_norm': 3.5706963539123535, 'learning_rate': 2.375e-05, 'epoch': 0.01}
-    #  55%|█████▌    | 220/400 [07:58<03:25,  1.14s/it]{'loss': 3.6848, 'grad_norm': 3.5871829986572266, 'learning_rate': 2.25e-05, 'epoch': 0.02}
-    #  57%|█████▊    | 230/400 [08:08<03:06,  1.09s/it]{'loss': 3.5541, 'grad_norm': 3.4223954677581787, 'learning_rate': 2.125e-05, 'epoch': 0.02}
-    #  60%|██████    | 240/400 [08:19<02:55,  1.10s/it]{'loss': 3.6383, 'grad_norm': 4.052501678466797, 'learning_rate': 2e-05, 'epoch': 0.02}
-    #  62%|██████▎   | 250/400 [08:31<03:07,  1.25s/it]{'loss': 3.6693, 'grad_norm': 3.7695517539978027, 'learning_rate': 1.8750000000000002e-05, 'epoch': 0.02}
-    #  65%|██████▌   | 260/400 [08:42<02:28,  1.06s/it]{'loss': 3.5732, 'grad_norm': 3.6141488552093506, 'learning_rate': 1.75e-05, 'epoch': 0.02}
-    #  68%|██████▊   | 270/400 [08:53<02:19,  1.07s/it]{'loss': 3.667, 'grad_norm': 3.900953769683838, 'learning_rate': 1.6250000000000002e-05, 'epoch': 0.02}
-    #  70%|███████   | 280/400 [09:04<02:13,  1.11s/it]{'loss': 3.7475, 'grad_norm': 3.5460364818573, 'learning_rate': 1.5e-05, 'epoch': 0.02}
-    #  72%|███████▎  | 290/400 [09:16<02:11,  1.20s/it]{'loss': 3.5783, 'grad_norm': 3.624561071395874, 'learning_rate': 1.3750000000000002e-05, 'epoch': 0.02}
-    #  75%|███████▌  | 300/400 [09:26<01:46,  1.06s/it]{'loss': 3.6057, 'grad_norm': 4.056458473205566, 'learning_rate': 1.25e-05, 'epoch': 0.02}
-    #  78%|███████▊  | 310/400 [09:37<01:40,  1.11s/it]{'loss': 3.6078, 'grad_norm': 3.95469069480896, 'learning_rate': 1.125e-05, 'epoch': 0.02}
-    #  80%|████████  | 320/400 [09:47<01:23,  1.04s/it]{'loss': 3.5979, 'grad_norm': 3.535107374191284, 'learning_rate': 1e-05, 'epoch': 0.02}
-    #  82%|████████▎ | 330/400 [09:59<01:21,  1.16s/it]{'loss': 3.6783, 'grad_norm': 3.5198938846588135, 'learning_rate': 8.75e-06, 'epoch': 0.02}
-    #  85%|████████▌ | 340/400 [10:10<01:05,  1.10s/it]{'loss': 3.5963, 'grad_norm': 3.640310049057007, 'learning_rate': 7.5e-06, 'epoch': 0.02}
-    #  88%|████████▊ | 350/400 [10:21<00:55,  1.12s/it]{'loss': 3.5387, 'grad_norm': 3.580289125442505, 'learning_rate': 6.25e-06, 'epoch': 0.02}
-    #  90%|█████████ | 360/400 [10:32<00:43,  1.10s/it]{'loss': 3.6697, 'grad_norm': 4.112462520599365, 'learning_rate': 5e-06, 'epoch': 0.03}
-    #  92%|█████████▎| 370/400 [10:42<00:32,  1.09s/it]{'loss': 3.5717, 'grad_norm': 3.465850353240967, 'learning_rate': 3.75e-06, 'epoch': 0.03}
-    #  95%|█████████▌| 380/400 [10:53<00:22,  1.12s/it]{'loss': 3.6156, 'grad_norm': 3.556001901626587, 'learning_rate': 2.5e-06, 'epoch': 0.03}
-    #  98%|█████████▊| 390/400 [11:05<00:11,  1.20s/it]{'loss': 3.7178, 'grad_norm': 4.060969829559326, 'learning_rate': 1.25e-06, 'epoch': 0.03}
-    # 100%|██████████| 400/400 [11:17<00:00,  1.30s/it]***** Running Evaluation *****
+    #  52%|█████▏    | 130/250 [05:41<19:52,  9.94s/it]{'loss': 3.6742, 'grad_norm': 2.389089345932007, 'learning_rate': 2.4e-05, 'epoch': 0.01}
+    #  56%|█████▌    | 140/250 [05:51<02:12,  1.21s/it]{'loss': 3.7498, 'grad_norm': 2.5621700286865234, 'learning_rate': 2.2000000000000003e-05, 'epoch': 0.01}
+    #  60%|██████    | 150/250 [06:01<01:45,  1.06s/it]{'loss': 3.7176, 'grad_norm': 2.5832748413085938, 'learning_rate': 2e-05, 'epoch': 0.02}
+    #  64%|██████▍   | 160/250 [06:11<01:26,  1.04it/s]{'loss': 3.7068, 'grad_norm': 2.884803295135498, 'learning_rate': 1.8e-05, 'epoch': 0.02}
+    #  68%|██████▊   | 170/250 [06:22<01:20,  1.00s/it]{'loss': 3.692, 'grad_norm': 2.637817621231079, 'learning_rate': 1.6000000000000003e-05, 'epoch': 0.02}
+    #  72%|███████▏  | 180/250 [06:31<01:06,  1.05it/s]{'loss': 3.7549, 'grad_norm': 2.8193984031677246, 'learning_rate': 1.4000000000000001e-05, 'epoch': 0.02}
+    #  76%|███████▌  | 190/250 [06:42<01:02,  1.04s/it]{'loss': 3.8154, 'grad_norm': 2.5782933235168457, 'learning_rate': 1.2e-05, 'epoch': 0.02}
+    #  80%|████████  | 200/250 [06:51<00:48,  1.04it/s]{'loss': 3.6676, 'grad_norm': 2.9160537719726562, 'learning_rate': 1e-05, 'epoch': 0.02}
+    #  84%|████████▍ | 210/250 [07:00<00:35,  1.12it/s]{'loss': 3.71, 'grad_norm': 2.8538198471069336, 'learning_rate': 8.000000000000001e-06, 'epoch': 0.02}
+    #  88%|████████▊ | 220/250 [07:11<00:30,  1.01s/it]{'loss': 3.7516, 'grad_norm': 2.7598519325256348, 'learning_rate': 6e-06, 'epoch': 0.02}
+    #  92%|█████████▏| 230/250 [07:21<00:21,  1.06s/it]{'loss': 3.6957, 'grad_norm': 2.9201884269714355, 'learning_rate': 4.000000000000001e-06, 'epoch': 0.02}
+    #  96%|█████████▌| 240/250 [07:30<00:09,  1.03it/s]{'loss': 3.7213, 'grad_norm': 3.0240941047668457, 'learning_rate': 2.0000000000000003e-06, 'epoch': 0.03}
+    # 100%|██████████| 250/250 [07:40<00:00,  1.08it/s]***** Running Evaluation *****
+    # {'loss': 3.6836, 'grad_norm': 2.846071481704712, 'learning_rate': 0.0, 'epoch': 0.03}
     #   Num examples = 50
-    #   Batch size = 8
-    # {'loss': 3.6064, 'grad_norm': 3.7951302528381348, 'learning_rate': 0.0, 'epoch': 0.03}
+    #   Batch size = 12
     #
-    #   0%|          | 0/7 [00:00<?, ?it/s]
-    #  29%|██▊       | 2/7 [00:06<00:16,  3.27s/it]
-    #  43%|████▎     | 3/7 [00:08<00:11,  2.90s/it]
-    #  57%|█████▋    | 4/7 [00:10<00:07,  2.59s/it]
-    #  71%|███████▏  | 5/7 [00:12<00:04,  2.31s/it]
-    #  86%|████████▌ | 6/7 [00:19<00:03,  3.69s/it]
+    #   0%|          | 0/5 [00:00<?, ?it/s]
+    #  40%|████      | 2/5 [00:06<00:10,  3.34s/it]
+    #  60%|██████    | 3/5 [00:13<00:09,  4.75s/it]
+    #  80%|████████  | 4/5 [00:20<00:05,  5.49s/it]
     #
-    # {'eval_rouge-1': 28.351001999999998, 'eval_rouge-2': 5.814047999999999, 'eval_rouge-l': 22.311304, 'eval_bleu-4': 0.0281416633161164, 'eval_runtime': 128.6532, 'eval_samples_per_second': 0.389, 'eval_steps_per_second': 0.054, 'epoch': 0.03}
-    # 100%|██████████| 400/400 [13:25<00:00,  1.30s/it]
-    # 100%|██████████| 7/7 [00:22<00:00,  3.53s/it]
-    #                                              Checkpoint destination directory ./output\checkpoint-400 already exists and is non-empty. Saving will proceed but saved results may be invalid.
-    # Saving model checkpoint to ./output\checkpoint-400
-    # D:\Users\admin\anaconda3\Lib\site-packages\peft\utils\save_and_load.py:154: UserWarning: Could not find a config file in D:\PycharmProjects\xiebo\diantou\bigdata\models\ZhipuAI\chatglm3-6b - will assume that the vocabulary was not modified.
-    #   warnings.warn(
-    # tokenizer config file saved in ./output\checkpoint-400\tokenizer_config.json
-    # Special tokens file saved in ./output\checkpoint-400\special_tokens_map.json
+    # 100%|██████████| 250/250 [09:37<00:00,  1.08it/s]
+    # 100%|██████████| 5/5 [00:27<00:00,  6.09s/it]
+    #                                              Checkpoint destination directory ./output\checkpoint-250 already exists and is non-empty. Saving will proceed but saved results may be invalid.
+    # Saving model checkpoint to ./output\checkpoint-250
+    # {'eval_rouge-1': 28.395645999999996, 'eval_rouge-2': 6.052718, 'eval_rouge-l': 22.884051999999993, 'eval_bleu-4': 0.03046700715847921, 'eval_runtime': 116.9475, 'eval_samples_per_second': 0.428, 'eval_steps_per_second': 0.043, 'epoch': 0.03}
+    # tokenizer config file saved in ./output\checkpoint-250\tokenizer_config.json
+    # Special tokens file saved in ./output\checkpoint-250\special_tokens_map.json
     #
     #
     # Training completed. Do not forget to share your model on huggingface.co/models =)
     #
     #
-    # 100%|██████████| 400/400 [13:26<00:00,  2.02s/it]
-    # ***** Running Prediction *****
-    #   Num examples = 1070
-    #   Batch size = 8
-    # {'train_runtime': 806.7695, 'train_samples_per_second': 3.966, 'train_steps_per_second': 0.496, 'train_loss': 3.7591455078125, 'epoch': 0.03}
-    # 100%|██████████| 134/134 [10:31<00:00,  4.72s/it]
-    # 'main' spent 1549.5834s.
+    # 100%|██████████| 250/250 [09:38<00:00,  2.31s/it]
+    # {'train_runtime': 578.2234, 'train_samples_per_second': 5.188, 'train_steps_per_second': 0.432, 'train_loss': 3.8679921875, 'epoch': 0.03}
+    # 'main' spent 584.3999s.
+    # save_dir = BIGDATA_DATA_PATH + 'AdvertiseGen_fix'
     # fine_tune(data_dir=save_dir, model_dir=CHATGLM3_6B_model_dir, config_file="./finetune_configs/lora.yaml")
 
     # before_fine_tune()

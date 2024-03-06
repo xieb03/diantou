@@ -57,12 +57,13 @@ PYTHON_CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
 
 # 检查 python 代码是否有语法错误，ast.parse 是用来解析语法树，如果语法有问题会报错
 # noinspection PyBroadException
-def check_python_code_syntax_error(_python_code):
+def check_python_code_syntax_error(_python_code, _print_error=False):
     try:
         ast.parse(_python_code)
         return True
     except Exception:
-        traceback.print_exc()
+        if _print_error:
+            traceback.print_exc()
         return False
 
 
@@ -163,8 +164,10 @@ def multiply_split(_sep_list, _str):
 
 # 打印系统信息
 def print_requirements():
+    # deepspeed 几乎不能在 windows 下面安装
     packages = ("torch,torchdata,torchtext,torchvision,torchaudio,openai,langchain,langchain-openai,tiktoken,"
-                "transformers,datasets,scikit-learn,numpy,pandas,matplotlib,scipy")
+                "transformers,deepspeed,peft,rouge_chinese,"
+                "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,scipy")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -475,7 +478,7 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
-    # Last updated: 2024-02-28 20:08:20中国标准时间
+    # Last updated: 2024-03-07 00:47:02中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
@@ -491,13 +494,19 @@ def main():
     # langchain-openai: not installed
     # tiktoken        : 0.6.0
     # transformers    : 4.38.1
+    # deepspeed       : not installed
+    # peft            : 0.7.1
+    # rouge_chinese   : 1.0.3
+    # mpi4py          : 3.1.5
     # datasets        : 2.17.1
+    # jieba           : 0.42.1
+    # ruamel_yaml     : 0.18.6
     # scikit-learn    : 1.4.1.post1
     # numpy           : 1.24.3
     # pandas          : 2.0.3
     # matplotlib      : 3.8.3
     # scipy           : 1.11.1
-    #
+    # 
     # conda environment: base
     #
     # Compiler    : MSC v.1916 64 bit (AMD64)
