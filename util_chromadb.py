@@ -69,13 +69,20 @@ class BGEReRankingFunction:
         return scores
 
 
+# embedding_function=BGELargeCNEmbeddingFunction(BGE_LARGE_CN_model_dir),
+# reranker=BGEReRankingFunction(BGE_RERANKER_LARGE_model_dir)
+# 注意上面两个不要放在 __init__ 中，否则在即使不创建实例也会被执行到，可能是 python 要记录所有的默认值
 class ChromadbPersistentCollection:
 
     # 如果只是进行 query 而不进行 add，可以指定 embedding_function=None，节省显存
     # 上面的话不对，因为 query 也要进行 embedding 的运算
     def __init__(self, persistent_path=CHROMADB_PATH, collection_name="my_collection", metadata=None,
-                 embedding_function=BGELargeCNEmbeddingFunction(BGE_LARGE_CN_model_dir),
-                 reranker=BGEReRankingFunction(BGE_RERANKER_LARGE_model_dir)):
+                 embedding_function=None, reranker=None):
+        if embedding_function is None:
+            embedding_function = BGELargeCNEmbeddingFunction(BGE_LARGE_CN_model_dir)
+        if reranker is None:
+            reranker = BGEReRankingFunction(BGE_RERANKER_LARGE_model_dir)
+
         self.client = chromadb.PersistentClient(path=persistent_path)
 
         self.metadata = metadata

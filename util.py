@@ -314,27 +314,55 @@ def assert_close(a, b, rel_tol=1e-05, abs_tol=1e-08):
 
 
 # 固定随机种子
+# https://zhuanlan.zhihu.com/p/629526120
 # noinspection PyBroadException,PyUnresolvedReferences
 def fix_all_seed(_seed=13, _print=True, _simple=True):
     random.seed(_seed)
     np.random.seed(_seed)
+    os.environ['PYTHONHASHSEED'] = str(_seed)
     if not _simple:
+        try:
+            import torch
+            torch.manual_seed(_seed)
+            torch.cuda.manual_seed(_seed)
+            torch.cuda.manual_seed_all(_seed)
+            # 默认是 False
+            torch.backends.cudnn.deterministic = True
+            # 当torch.backends.cudnn.benchmark 选项为 True 时候，cuda 为了提升训练效率，会自动试运行不同优化的卷积算法，
+            # 以搜索最优最快的算法实现，由于不同硬件不同以及不同的版本的卷积算法实现，可能会导致训练结果不一致。
+            # 所以，为了算法可复现，通常设置cudnn.benchmark = False。
+            # 那什么情况可以设置 True:
+            # 不考虑可复现性，当模型的输入和结构在训练过程保持固定不变化的时候，可以实现算法加速。
+            # 否则，会因为反复的算法最优搜索导致额外的时间浪费。
+            # 默认是 False
+            torch.backends.cudnn.benchmark = False
+            # torch.use_deterministic_algorithms(True) 允许你配置 PyTorch 在可用的情况下使用确定性算法而不是非确定性算法，
+            # 并且如果已知某个操作是不确定的(并且没有确定的替代方法)，则抛出 RuntimeError 错误。
+            torch.use_deterministic_algorithms(True)
+            # RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)`
+            # or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic
+            # because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case,
+            # you must set an environment variable before running your PyTorch application:
+            # CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8.
+            # For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#cublasApi_reproducibility
+            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':16:8'
+            # torch.backends.cudnn.enabled 是 PyTorch 中的一个选项，用于指示是否启用 cuDNN（CUDA Deep Neural Network library）作为深度学习算法的加速库。
+            # cuDNN 是由 NVIDIA 开发的针对深度神经网络进行优化的库，它使用了高度优化的算法和数据结构，可以显著提高深度学习模型的训练和推理速度。在使用 cuDNN 之前，我们需要确保 PyTorch 和 CUDA 都已正确配置。
+            # 当 torch.backends.cudnn.enabled = True 时，PyTorch 会尝试使用 cuDNN 进行加速。cuDNN 会根据当前运行的 GPU 驱动版本、CUDA 版本和硬件设备的兼容性自动选择合适的算法，并将其作为底层运算库来加速 PyTorch 中的卷积、池化等操作。这样，深度学习模型的训练和推理速度可以得到显著提升。
+            # 然而，有时我们可能需要禁用 cuDNN 加速。虽然 cuDNN 对大多数情况都是有益的，但在某些特定情况下，其使用可能导致不稳定的结果或不同于其他加速库的行为。因此，当 torch.backends.cudnn.enabled = False 时，PyTorch 将不会尝试使用 cuDNN 进行加速，而是使用纯 Python 实现的算法。这可能会带来一定的性能损失，但有时可以避免不稳定的行为。
+            # 总之，torch.backends.cudnn.enabled 是一个控制是否启用 cuDNN 加速的选项。根据具体情况，我们可以根据需求选择启用或禁用 cuDNN。
+            # 我们可以根据是否需要确定性的结果来选择是否打开这一选项，建议显检验是否具有确定性，如果前面的不足以维持确定性，可以把这一项置为 False
+            # 默认是 True
+            # torch.backends.cudnn.enabled = False
+        except Exception:
+            if _print:
+                print("pytorch sed random seed fail.")
         try:
             import tensorflow as tf
             tf.set_random_seed(_seed)
         except Exception:
             if _print:
                 print("tensorflow sed random seed fail.")
-        try:
-            import torch
-            torch.manual_seed(_seed)
-            torch.cuda.manual_seed(_seed)
-            torch.cuda.manual_seed_all(_seed)
-            torch.backends.cudnn.benchmark = False
-            torch.backends.cudnn.deterministic = True
-        except Exception:
-            if _print:
-                print("pytorch sed random seed fail.")
 
 
 # 打乱字符串

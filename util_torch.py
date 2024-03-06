@@ -7,6 +7,26 @@ from torch import nn
 from util import *
 
 
+# https://zhuanlan.zhihu.com/p/629526120
+# 在多进程数据加载算法中，DataLoader将根据Randomness in multi-process data loading algorithm对worker进行重新初始化种子。使用worker_init_fn()来保持可再现性:
+# def seed_worker(worker_id):
+#     worker_seed = torch.initial_seed() % 2**32
+#     numpy.random.seed(worker_seed)
+#     random.seed(worker_seed)
+#
+# DataLoader(
+#     xxx,
+#     batch_size=batch_size,
+#     num_workers=num_workers,
+#     worker_init_fn=seed_worker,
+# )
+# noinspection PyUnusedLocal
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2 ** 32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
 # 将一个 dict 的 所有 value 都放到 gpu 中，注意是原位修改
 def change_dict_value_to_gpu(_dict):
     for k, v in _dict.items():
