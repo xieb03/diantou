@@ -21,6 +21,7 @@ def get_model_dir(model_id=CHATGLM3_6B_model_id):
     return BIGDATA_MODELS_PATH + model_dir
 
 
+@func_timer(arg=True)
 def main():
     modelscope_download(model_id=CHATGLM3_6B_model_id, revision=CHATGLM3_6B_model_revision)
     modelscope_download(model_id=BGE_LARGE_CN_model_id, revision=BGE_LARGE_CN_model_revision)

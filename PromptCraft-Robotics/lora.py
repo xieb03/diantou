@@ -7,11 +7,11 @@ from typing import Any, Optional, Union
 
 import jieba
 import ruamel.yaml as yaml
-import typer
 from datasets import Dataset, DatasetDict, NamedSplit, Split, load_dataset
 from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from peft import (
     PeftConfig,
+    AutoPeftModelForCausalLM,
     PeftModelForCausalLM,
     get_peft_config,
     get_peft_model
@@ -34,7 +34,6 @@ from project_utils import *
 
 ModelType = Union[PreTrainedModel, PeftModelForCausalLM]
 TokenizerType = Union[PreTrainedTokenizer, PreTrainedTokenizerFast]
-app = typer.Typer(pretty_exceptions_show_locals=False)
 
 
 # 解析路径
@@ -634,9 +633,125 @@ def fine_tune(
         trainer.predict(test_dataset)
 
 
+# 微调以前
+# RuntimeError: cumsum_cuda_kernel does not have a deterministic implementation, but you set 'torch.use_deterministic_algorithms(True)'.
+# You can turn off determinism just for this operation, or you can use the 'warn_only=True' option, if that's acceptable for your application.
+# You can also file an issue at https://github.com/pytorch/pytorch/issues to help us prioritize adding deterministic support for this operation.
+# 通过 torch.use_deterministic_algorithms(True, warn_only=True)，可以禁止抛出异常而只是 warn，方便调试
+# _temperature 必须要 > 0
+def before_fine_tune(_temperature=0.1):
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=CHATGLM3_6B_model_dir,
+                                              trust_remote_code=True)
+    model = AutoModel.from_pretrained(CHATGLM3_6B_model_dir, trust_remote_code=True).cuda()
+    model = model.eval()
+    # model (<class 'transformers_modules.chatglm3-6b.modeling_chatglm.ChatGLMForConditionalGeneration'>)
+    # has 6243584000 parameters, 6243584000 (100.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
+    print_model_parameter_summary(model)
+    # total  gpu memory:  12.89 G
+    # torch  gpu memory:  11.66 G
+    # tensor gpu memory:  11.66 G
+    print_gpu_memory_summary()
+    response, history = model.chat(tokenizer, "你好", history=[], temperature=_temperature)
+    # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
+    print(response)
+    # print_history_message_list(history)
+
+    # 1. 尝试放松身心，如深呼吸、冥想或热水泡澡。
+    # 2. 避免刺激性食物和饮料，如咖啡、茶和巧克力。
+    # 3. 保持规律的睡眠时间表。
+    # 4. 减少使用电子产品，特别是在睡前。
+    # 5. 尝试进行轻柔的伸展运动，如瑜伽或拉伸运动。
+    # 6. 如果需要，可以使用助眠药物。但在使用前，请咨询医生。
+    # 7. 保持良好的睡眠环境，如安静、舒适、黑暗和凉爽。
+    response, history = model.chat(tokenizer, "晚上睡不着应该怎么办，回复字数不要超过 100 个", history=history,
+                                   temperature=_temperature)
+    print(response)
+    # print_history_message_list(history)
+
+    history = list()
+    response, history = model.chat(tokenizer,
+                                   "类型#裙*版型#显瘦*材质#网纱*风格#性感*裙型#百褶*裙下摆#压褶*裙长#连衣裙*裙衣门襟#拉链*裙衣门襟#套头*裙款式#拼接*裙款式#拉链*裙款式#木耳边*裙款式#抽褶*裙款式#不规则",
+                                   history=history, temperature=_temperature)
+    # 这是一款性感的百褶网纱连衣裙，裙下摆采用压褶设计，显得更加立体和丰富。裙衣门襟为拉链设计，方便穿脱。
+    # 整款裙子采用了拼接和木耳边等细节设计，增加了裙子的层次感和时尚感。同时，抽褶和不规则的裙款式设计，让这款裙子更具动感，展现出女性的优雅和魅力。
+    print(response)
+    # print_history_message_list(history)
+
+
+# property 'eos_token' of 'ChatGLMTokenizer' object has no setter
+# 将 checkpoint-400/tokenizer_config.json 中的 eos_token 去掉
+# property 'pad_token' of 'ChatGLMTokenizer' object has no setter
+# 将 checkpoint-400/tokenizer_config.json 中的 pad_token 去掉
+# property 'unk_token' of 'ChatGLMTokenizer' object has no setter
+# 将 checkpoint-400/tokenizer_config.json 中的 unk_token 去掉
+# File "D:\Users\admin\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 1585, in set_input_embeddings
+#     base_model.set_input_embeddings(value)
+#   File "D:\Users\admin\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 1587, in set_input_embeddings
+#     raise NotImplementedError
+# 在源模型的 modeling_chatglm.py 中 ChatGLMModel 类第 770 行 加入以下代码
+#     def set_input_embeddings(self, value):
+#         self.embedding.word_embeddings = value
+def load_model_and_tokenizer(model_dir: Union[str, Path]) -> tuple[ModelType, TokenizerType]:
+    model_dir = _resolve_path(model_dir)
+    if (model_dir / 'adapter_config.json').exists():
+        model = AutoPeftModelForCausalLM.from_pretrained(
+            model_dir, trust_remote_code=True, device_map='auto'
+        )
+        # base_model_name_or_path='D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\models\\ZhipuAI\\chatglm3-6b'
+        tokenizer_dir = model.peft_config['default'].base_model_name_or_path
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_dir, trust_remote_code=True, device_map='auto'
+        )
+        tokenizer_dir = model_dir
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_dir, trust_remote_code=True
+    )
+    return model.eval(), tokenizer
+
+
+# 微调以后
+def after_fine_tune(_temperature=0.1):
+    model, tokenizer = load_model_and_tokenizer(r"./output/checkpoint-400")
+    model = model.eval()
+    # model (<class 'peft.peft_model.PeftModelForCausalLM'>) has 6244599808 parameters,
+    # 0 (0.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
+    print_model_parameter_summary(model)
+    # total  gpu memory:  13.57 G
+    # torch  gpu memory:  12.16 G
+    # tensor gpu memory:  11.66 G
+    print_gpu_memory_summary()
+
+    response, history = model.chat(tokenizer, "你好", history=[], temperature=_temperature)
+    # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
+    print(response)
+    # print_history_message_list(history)
+
+    # 1. 尝试放松身心，如深呼吸、冥想或热水泡澡。
+    # 2. 避免刺激性食物和饮料，如咖啡、茶和巧克力。
+    # 3. 保持规律的睡眠时间表。
+    # 4. 减少使用电子产品，特别是在睡前。
+    # 5. 尝试进行轻柔的伸展运动，如瑜伽或拉伸运动。
+    # 6. 如果需要，可以使用助眠药物。但在使用前，请咨询医生。
+    # 7. 保持良好的睡眠环境，如安静、舒适、黑暗和凉爽。
+    response, history = model.chat(tokenizer, "晚上睡不着应该怎么办，回复字数不要超过 100 个", history=history,
+                                   temperature=_temperature)
+    print(response)
+    # print_history_message_list(history)
+
+    history = list()
+    response, history = model.chat(tokenizer,
+                                   "类型#裙*版型#显瘦*材质#网纱*风格#性感*裙型#百褶*裙下摆#压褶*裙长#连衣裙*裙衣门襟#拉链*裙衣门襟#套头*裙款式#拼接*裙款式#拉链*裙款式#木耳边*裙款式#抽褶*裙款式#不规则",
+                                   history=history, temperature=_temperature)
+    # 这是一款性感的百褶网纱连衣裙，裙下摆采用压褶设计，显得更加立体和丰富。裙衣门襟为拉链设计，方便穿脱。
+    # 整款裙子采用了拼接和木耳边等细节设计，增加了裙子的层次感和时尚感。同时，抽褶和不规则的裙款式设计，让这款裙子更具动感，展现出女性的优雅和魅力。
+    print(response)
+    # print_history_message_list(history)
+
+
 @func_timer(arg=True)
 def main():
-    fix_all_seed(_simple=False)
+    fix_all_seed(_simple=False, _warn_only=True)
 
     save_dir = BIGDATA_DATA_PATH + 'AdvertiseGen_fix'
 
@@ -778,7 +893,10 @@ def main():
     # {'train_runtime': 806.7695, 'train_samples_per_second': 3.966, 'train_steps_per_second': 0.496, 'train_loss': 3.7591455078125, 'epoch': 0.03}
     # 100%|██████████| 134/134 [10:31<00:00,  4.72s/it]
     # 'main' spent 1549.5834s.
-    fine_tune(data_dir=save_dir, model_dir=CHATGLM3_6B_model_dir, config_file="./finetune_configs/lora.yaml")
+    # fine_tune(data_dir=save_dir, model_dir=CHATGLM3_6B_model_dir, config_file="./finetune_configs/lora.yaml")
+
+    # before_fine_tune()
+    after_fine_tune()
 
 
 if __name__ == '__main__':

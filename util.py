@@ -316,7 +316,7 @@ def assert_close(a, b, rel_tol=1e-05, abs_tol=1e-08):
 # 固定随机种子
 # https://zhuanlan.zhihu.com/p/629526120
 # noinspection PyBroadException,PyUnresolvedReferences
-def fix_all_seed(_seed=13, _print=True, _simple=True):
+def fix_all_seed(_seed=13, _print=True, _simple=True, _warn_only=False):
     random.seed(_seed)
     np.random.seed(_seed)
     os.environ['PYTHONHASHSEED'] = str(_seed)
@@ -338,7 +338,7 @@ def fix_all_seed(_seed=13, _print=True, _simple=True):
             torch.backends.cudnn.benchmark = False
             # torch.use_deterministic_algorithms(True) 允许你配置 PyTorch 在可用的情况下使用确定性算法而不是非确定性算法，
             # 并且如果已知某个操作是不确定的(并且没有确定的替代方法)，则抛出 RuntimeError 错误。
-            torch.use_deterministic_algorithms(True)
+            torch.use_deterministic_algorithms(True, warn_only=_warn_only)
             # RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)`
             # or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic
             # because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case,
@@ -351,7 +351,7 @@ def fix_all_seed(_seed=13, _print=True, _simple=True):
             # 当 torch.backends.cudnn.enabled = True 时，PyTorch 会尝试使用 cuDNN 进行加速。cuDNN 会根据当前运行的 GPU 驱动版本、CUDA 版本和硬件设备的兼容性自动选择合适的算法，并将其作为底层运算库来加速 PyTorch 中的卷积、池化等操作。这样，深度学习模型的训练和推理速度可以得到显著提升。
             # 然而，有时我们可能需要禁用 cuDNN 加速。虽然 cuDNN 对大多数情况都是有益的，但在某些特定情况下，其使用可能导致不稳定的结果或不同于其他加速库的行为。因此，当 torch.backends.cudnn.enabled = False 时，PyTorch 将不会尝试使用 cuDNN 进行加速，而是使用纯 Python 实现的算法。这可能会带来一定的性能损失，但有时可以避免不稳定的行为。
             # 总之，torch.backends.cudnn.enabled 是一个控制是否启用 cuDNN 加速的选项。根据具体情况，我们可以根据需求选择启用或禁用 cuDNN。
-            # 我们可以根据是否需要确定性的结果来选择是否打开这一选项，建议显检验是否具有确定性，如果前面的不足以维持确定性，可以把这一项置为 False
+            # 我们可以根据是否需要确定性的结果来选择是否打开这一选项，建议显检验是否具有确定性，如果前面的设定不足以维持确定性，可以把这一项置为 False，因为可能根本就没用到 cuDNN 的加速，所以这一项等于没有用处
             # 默认是 True
             # torch.backends.cudnn.enabled = False
         except Exception:
