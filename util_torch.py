@@ -26,6 +26,40 @@ def print_gpu_memory_summary(_digit=2):
     print("tensor gpu memory: ", round(torch.cuda.memory_allocated() / 1024 / 1024 / 1024, _digit), "G")
 
 
+# 打印 model 的参数情况
+# 与 model.print_trainable_parameters() 相比较
+def print_model_parameter_summary(_model):
+    total_parameter_count = _model.num_parameters()
+    trainable_params_count = sum(p.numel() for p in _model.parameters() if p.requires_grad)
+
+    dtype = _model.dtype
+    # 半精度
+    if dtype in (torch.float16, torch.half):
+        gpu_memory = total_parameter_count * 2 / 1024 ** 3
+    # 浮点数
+    elif dtype in (torch.float32, torch.float):
+        gpu_memory = total_parameter_count * 4 / 1024 ** 3
+    # 双精度
+    elif dtype in (torch.float64, torch.double):
+        gpu_memory = total_parameter_count * 8 / 1024 ** 3
+    # 带符号/无符号 8 位整数
+    elif dtype in (torch.int8, torch.uint8):
+        gpu_memory = total_parameter_count * 1 / 1024 ** 3
+    # 带符号 16 位整数
+    elif dtype in (torch.int16, torch.short):
+        gpu_memory = total_parameter_count * 2 / 1024 ** 3
+    # 带符号 32 位整数
+    elif dtype in (torch.int32, torch.int):
+        gpu_memory = total_parameter_count * 4 / 1024 ** 3
+    # 带符号 64 位整数
+    elif dtype in (torch.int64, torch.long):
+        gpu_memory = total_parameter_count * 8 / 1024 ** 3
+    else:
+        raise ValueError(F"暂时不支持 {dtype} 数据类型.")
+    print(
+        F"model ({type(_model)}) has {total_parameter_count} parameters, {trainable_params_count} ({trainable_params_count / total_parameter_count:.2%}) are trainable, the dtype is {dtype}，占 {round(gpu_memory, 2)}G 显存.")
+
+
 # 获取显卡的整体情况
 # 可用 GPU 数量: 1
 # GPU 0 的详细信息:

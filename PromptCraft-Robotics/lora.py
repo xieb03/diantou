@@ -628,13 +628,16 @@ def fine_tune(
 
 @func_timer(arg=True)
 def main():
+    fix_all_seed(_simple=False)
+
     save_dir = BIGDATA_DATA_PATH + 'AdvertiseGen_fix'
 
     # D:\PycharmProjects\xiebo\diantou\bigdata\data\AdvertiseGen\train.json 共有 114599 行.
     # D:\PycharmProjects\xiebo\diantou\bigdata\data\AdvertiseGen\dev.json 共有 1070 行.
     # convert_adgen(BIGDATA_DATA_PATH + 'AdvertiseGen', save_dir)
 
-    # Loading checkpoint shards: 100%|██████████| 7/7 [00:02<00:00,  2.42it/s]
+    # tensorflow sed random seed fail.
+    # Loading checkpoint shards: 100%|██████████| 7/7 [00:02<00:00,  2.39it/s]
     # trainable params: 1,949,696 || all params: 6,245,533,696 || trainable%: 0.031217444255383614
     # --> model has 1.949696M params
     #
@@ -655,85 +658,112 @@ def main():
     # ***** Running training *****
     #   Num examples = 114,599
     #   Num Epochs = 1
-    #   Instantaneous batch size per device = 16
-    #   Total train batch size (w. parallel, distributed & accumulation) = 16
+    #   Instantaneous batch size per device = 8
+    #   Total train batch size (w. parallel, distributed & accumulation) = 8
     #   Gradient Accumulation steps = 1
-    #   Total optimization steps = 200
+    #   Total optimization steps = 400
     #   Number of trainable parameters = 1,949,696
-    #   0%|          | 0/200 [00:00<?, ?it/s]D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   0%|          | 0/400 [00:00<?, ?it/s]D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
     # C:\Users\admin\.cache\huggingface\modules\transformers_modules\chatglm3-6b\modeling_chatglm.py:231: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at ..\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:263.)
     #   context_layer = torch.nn.functional.scaled_dot_product_attention(query_layer, key_layer, value_layer,
-    #   5%|▌         | 10/200 [01:19<05:58,  1.89s/it]{'loss': 4.8074, 'grad_norm': 1.742727279663086, 'learning_rate': 4.75e-05, 'epoch': 0.0}
-    #  10%|█         | 20/200 [01:30<03:28,  1.16s/it]{'loss': 4.6371, 'grad_norm': 2.0353524684906006, 'learning_rate': 4.5e-05, 'epoch': 0.0}
-    #  15%|█▌        | 30/200 [01:43<05:12,  1.84s/it]{'loss': 4.3875, 'grad_norm': 2.037071704864502, 'learning_rate': 4.25e-05, 'epoch': 0.0}
-    #  20%|██        | 40/200 [02:00<04:27,  1.67s/it]{'loss': 4.1852, 'grad_norm': 1.8006170988082886, 'learning_rate': 4e-05, 'epoch': 0.01}
-    #  25%|██▌       | 50/200 [02:16<03:47,  1.52s/it]{'loss': 3.965, 'grad_norm': 1.8800947666168213, 'learning_rate': 3.7500000000000003e-05, 'epoch': 0.01}
-    #  30%|███       | 60/200 [02:29<03:08,  1.35s/it]{'loss': 3.8852, 'grad_norm': 1.7793691158294678, 'learning_rate': 3.5e-05, 'epoch': 0.01}
-    #  35%|███▌      | 70/200 [02:40<02:28,  1.14s/it]{'loss': 3.81, 'grad_norm': 1.6698007583618164, 'learning_rate': 3.2500000000000004e-05, 'epoch': 0.01}
-    #  40%|████      | 80/200 [02:53<02:32,  1.27s/it]{'loss': 3.7869, 'grad_norm': 1.7256942987442017, 'learning_rate': 3e-05, 'epoch': 0.01}
-    #  45%|████▌     | 90/200 [03:06<02:49,  1.54s/it]{'loss': 3.7258, 'grad_norm': 1.9063904285430908, 'learning_rate': 2.7500000000000004e-05, 'epoch': 0.01}
-    #  50%|█████     | 100/200 [03:19<02:14,  1.35s/it]***** Running Evaluation *****
+    #   2%|▎         | 10/400 [01:17<13:02,  2.01s/it]{'loss': 4.7883, 'grad_norm': 2.1165051460266113, 'learning_rate': 4.875e-05, 'epoch': 0.0}
+    #   5%|▌         | 20/400 [01:27<06:37,  1.05s/it]{'loss': 4.6477, 'grad_norm': 2.4801695346832275, 'learning_rate': 4.75e-05, 'epoch': 0.0}
+    #   8%|▊         | 30/400 [01:37<06:04,  1.02it/s]{'loss': 4.4184, 'grad_norm': 2.721554756164551, 'learning_rate': 4.6250000000000006e-05, 'epoch': 0.0}
+    #  10%|█         | 40/400 [01:48<06:51,  1.14s/it]{'loss': 4.1484, 'grad_norm': 2.3928160667419434, 'learning_rate': 4.5e-05, 'epoch': 0.0}
+    #  12%|█▎        | 50/400 [01:59<06:08,  1.05s/it]{'loss': 3.9311, 'grad_norm': 2.4339187145233154, 'learning_rate': 4.375e-05, 'epoch': 0.0}
+    #  15%|█▌        | 60/400 [02:11<06:57,  1.23s/it]{'loss': 3.9543, 'grad_norm': 2.5126044750213623, 'learning_rate': 4.25e-05, 'epoch': 0.0}
+    #  18%|█▊        | 70/400 [02:22<05:56,  1.08s/it]{'loss': 3.8318, 'grad_norm': 2.390678644180298, 'learning_rate': 4.125e-05, 'epoch': 0.0}
+    #  20%|██        | 80/400 [02:32<06:02,  1.13s/it]{'loss': 3.8355, 'grad_norm': 2.142401695251465, 'learning_rate': 4e-05, 'epoch': 0.01}
+    #  22%|██▎       | 90/400 [02:44<05:58,  1.16s/it]{'loss': 3.7059, 'grad_norm': 2.405839681625366, 'learning_rate': 3.875e-05, 'epoch': 0.01}
+    #  25%|██▌       | 100/400 [02:55<05:41,  1.14s/it]{'loss': 3.7051, 'grad_norm': 2.382492780685425, 'learning_rate': 3.7500000000000003e-05, 'epoch': 0.01}
+    #  28%|██▊       | 110/400 [03:06<05:00,  1.04s/it]{'loss': 3.7375, 'grad_norm': 2.581019639968872, 'learning_rate': 3.625e-05, 'epoch': 0.01}
+    #  30%|███       | 120/400 [03:18<05:42,  1.22s/it]{'loss': 3.6992, 'grad_norm': 2.6315016746520996, 'learning_rate': 3.5e-05, 'epoch': 0.01}
+    #  32%|███▎      | 130/400 [03:29<05:04,  1.13s/it]{'loss': 3.6775, 'grad_norm': 2.930100917816162, 'learning_rate': 3.375000000000001e-05, 'epoch': 0.01}
+    #  35%|███▌      | 140/400 [03:39<04:41,  1.08s/it]{'loss': 3.7225, 'grad_norm': 2.933806896209717, 'learning_rate': 3.2500000000000004e-05, 'epoch': 0.01}
+    #  38%|███▊      | 150/400 [03:51<04:54,  1.18s/it]{'loss': 3.7195, 'grad_norm': 2.997965097427368, 'learning_rate': 3.125e-05, 'epoch': 0.01}
+    #  40%|████      | 160/400 [04:02<04:30,  1.13s/it]{'loss': 3.6941, 'grad_norm': 3.2050392627716064, 'learning_rate': 3e-05, 'epoch': 0.01}
+    #  42%|████▎     | 170/400 [04:13<04:12,  1.10s/it]{'loss': 3.5988, 'grad_norm': 3.1321661472320557, 'learning_rate': 2.8749999999999997e-05, 'epoch': 0.01}
+    #  45%|████▌     | 180/400 [04:24<03:56,  1.07s/it]{'loss': 3.6871, 'grad_norm': 3.3551008701324463, 'learning_rate': 2.7500000000000004e-05, 'epoch': 0.01}
+    #  48%|████▊     | 190/400 [04:35<04:00,  1.15s/it]{'loss': 3.5844, 'grad_norm': 3.153400182723999, 'learning_rate': 2.625e-05, 'epoch': 0.01}
+    #  50%|█████     | 200/400 [04:46<03:34,  1.07s/it]***** Running Evaluation *****
     #   Num examples = 50
-    #   Batch size = 16
-    # {'loss': 3.6889, 'grad_norm': 2.0083062648773193, 'learning_rate': 2.5e-05, 'epoch': 0.01}
+    #   Batch size = 8
+    # {'loss': 3.6381, 'grad_norm': 3.2983381748199463, 'learning_rate': 2.5e-05, 'epoch': 0.01}
     #
-    #   0%|          | 0/4 [00:00<?, ?it/s]
-    #  50%|█████     | 2/4 [00:08<00:08,  4.21s/it]
-    #  75%|███████▌  | 3/4 [00:19<00:06,  7.00s/it]
-    # 100%|██████████| 4/4 [00:25<00:00,  6.83s/it]Building prefix dict from the default dictionary ...
+    #   0%|          | 0/7 [00:00<?, ?it/s]
+    #  29%|██▊       | 2/7 [00:05<00:14,  2.99s/it]
+    #  43%|████▎     | 3/7 [00:12<00:18,  4.53s/it]
+    #  57%|█████▋    | 4/7 [00:14<00:10,  3.66s/it]
+    #  71%|███████▏  | 5/7 [00:17<00:06,  3.22s/it]
+    #  86%|████████▌ | 6/7 [00:23<00:04,  4.38s/it]
+    # 100%|██████████| 7/7 [00:26<00:00,  3.81s/it]Building prefix dict from the default dictionary ...
     # Loading model from cache C:\Users\admin\AppData\Local\Temp\jieba.cache
-    # Loading model cost 0.316 seconds.
+    # Loading model cost 0.319 seconds.
     # Prefix dict has been built successfully.
-    # {'eval_rouge-1': 29.970258000000005, 'eval_rouge-2': 5.467486, 'eval_rouge-l': 22.30071, 'eval_bleu-4': 0.025423957289888176, 'eval_runtime': 104.8078, 'eval_samples_per_second': 0.477, 'eval_steps_per_second': 0.038, 'epoch': 0.01}
     #
-    #  50%|█████     | 100/200 [05:04<02:14,  1.35s/it]
-    # 100%|██████████| 4/4 [00:26<00:00,  6.83s/it]
-    #                                              Saving model checkpoint to ./output\tmp-checkpoint-100
+    #  50%|█████     | 200/400 [06:31<03:34,  1.07s/it]
+    # 100%|██████████| 7/7 [00:27<00:00,  3.81s/it]
+    #                                              Checkpoint destination directory ./output\checkpoint-200 already exists and is non-empty. Saving will proceed but saved results may be invalid.
+    # Saving model checkpoint to ./output\checkpoint-200
     # D:\Users\admin\anaconda3\Lib\site-packages\peft\utils\save_and_load.py:154: UserWarning: Could not find a config file in D:\PycharmProjects\xiebo\diantou\bigdata\models\ZhipuAI\chatglm3-6b - will assume that the vocabulary was not modified.
     #   warnings.warn(
-    # tokenizer config file saved in ./output\tmp-checkpoint-100\tokenizer_config.json
-    # Special tokens file saved in ./output\tmp-checkpoint-100\special_tokens_map.json
+    # {'eval_rouge-1': 29.215131999999997, 'eval_rouge-2': 5.509948, 'eval_rouge-l': 22.720696000000004, 'eval_bleu-4': 0.026230480272829763, 'eval_runtime': 104.3707, 'eval_samples_per_second': 0.479, 'eval_steps_per_second': 0.067, 'epoch': 0.01}
+    # tokenizer config file saved in ./output\checkpoint-200\tokenizer_config.json
+    # Special tokens file saved in ./output\checkpoint-200\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  55%|█████▌    | 110/200 [05:18<04:06,  2.74s/it]{'loss': 3.7857, 'grad_norm': 2.200469970703125, 'learning_rate': 2.25e-05, 'epoch': 0.02}
-    #  60%|██████    | 120/200 [05:31<01:41,  1.27s/it]{'loss': 3.702, 'grad_norm': 2.1562118530273438, 'learning_rate': 2e-05, 'epoch': 0.02}
-    #  65%|██████▌   | 130/200 [05:45<01:40,  1.43s/it]{'loss': 3.7434, 'grad_norm': 2.1666572093963623, 'learning_rate': 1.75e-05, 'epoch': 0.02}
-    #  70%|███████   | 140/200 [05:58<01:15,  1.26s/it]{'loss': 3.8168, 'grad_norm': 2.3526597023010254, 'learning_rate': 1.5e-05, 'epoch': 0.02}
-    #  75%|███████▌  | 150/200 [06:11<01:04,  1.30s/it]{'loss': 3.7166, 'grad_norm': 2.3969156742095947, 'learning_rate': 1.25e-05, 'epoch': 0.02}
-    #  80%|████████  | 160/200 [06:25<00:54,  1.36s/it]{'loss': 3.7434, 'grad_norm': 2.368338108062744, 'learning_rate': 1e-05, 'epoch': 0.02}
-    #  85%|████████▌ | 170/200 [06:42<01:00,  2.02s/it]{'loss': 3.7844, 'grad_norm': 2.3829667568206787, 'learning_rate': 7.5e-06, 'epoch': 0.02}
-    #  90%|█████████ | 180/200 [06:58<00:26,  1.30s/it]{'loss': 3.7605, 'grad_norm': 2.5197689533233643, 'learning_rate': 5e-06, 'epoch': 0.03}
-    #  95%|█████████▌| 190/200 [07:12<00:14,  1.46s/it]{'loss': 3.7598, 'grad_norm': 2.4845376014709473, 'learning_rate': 2.5e-06, 'epoch': 0.03}
-    # 100%|██████████| 200/200 [07:32<00:00,  1.78s/it]***** Running Evaluation *****
+    #  52%|█████▎    | 210/400 [06:41<07:29,  2.37s/it]{'loss': 3.7354, 'grad_norm': 3.5725529193878174, 'learning_rate': 2.375e-05, 'epoch': 0.01}
+    #  55%|█████▌    | 220/400 [06:52<03:23,  1.13s/it]{'loss': 3.6865, 'grad_norm': 3.5926661491394043, 'learning_rate': 2.25e-05, 'epoch': 0.02}
+    #  57%|█████▊    | 230/400 [07:02<03:02,  1.07s/it]{'loss': 3.5551, 'grad_norm': 3.4276504516601562, 'learning_rate': 2.125e-05, 'epoch': 0.02}
+    #  60%|██████    | 240/400 [07:13<02:50,  1.06s/it]{'loss': 3.6393, 'grad_norm': 4.057920455932617, 'learning_rate': 2e-05, 'epoch': 0.02}
+    #  62%|██████▎   | 250/400 [07:25<03:00,  1.20s/it]{'loss': 3.6707, 'grad_norm': 3.768479585647583, 'learning_rate': 1.8750000000000002e-05, 'epoch': 0.02}
+    #  65%|██████▌   | 260/400 [07:35<02:26,  1.04s/it]{'loss': 3.5742, 'grad_norm': 3.619391918182373, 'learning_rate': 1.75e-05, 'epoch': 0.02}
+    #  68%|██████▊   | 270/400 [07:46<02:14,  1.04s/it]{'loss': 3.6682, 'grad_norm': 3.90297269821167, 'learning_rate': 1.6250000000000002e-05, 'epoch': 0.02}
+    #  70%|███████   | 280/400 [07:57<02:11,  1.10s/it]{'loss': 3.748, 'grad_norm': 3.548724889755249, 'learning_rate': 1.5e-05, 'epoch': 0.02}
+    #  72%|███████▎  | 290/400 [08:08<02:10,  1.19s/it]{'loss': 3.5793, 'grad_norm': 3.6238465309143066, 'learning_rate': 1.3750000000000002e-05, 'epoch': 0.02}
+    #  75%|███████▌  | 300/400 [08:19<01:45,  1.06s/it]{'loss': 3.6068, 'grad_norm': 4.055033206939697, 'learning_rate': 1.25e-05, 'epoch': 0.02}
+    #  78%|███████▊  | 310/400 [08:29<01:35,  1.06s/it]{'loss': 3.6094, 'grad_norm': 3.956423044204712, 'learning_rate': 1.125e-05, 'epoch': 0.02}
+    #  80%|████████  | 320/400 [08:39<01:22,  1.03s/it]{'loss': 3.5988, 'grad_norm': 3.542884111404419, 'learning_rate': 1e-05, 'epoch': 0.02}
+    #  82%|████████▎ | 330/400 [08:51<01:19,  1.13s/it]{'loss': 3.6795, 'grad_norm': 3.5247437953948975, 'learning_rate': 8.75e-06, 'epoch': 0.02}
+    #  85%|████████▌ | 340/400 [09:01<01:05,  1.09s/it]{'loss': 3.5971, 'grad_norm': 3.6458752155303955, 'learning_rate': 7.5e-06, 'epoch': 0.02}
+    #  88%|████████▊ | 350/400 [09:13<00:54,  1.09s/it]{'loss': 3.5402, 'grad_norm': 3.5853166580200195, 'learning_rate': 6.25e-06, 'epoch': 0.02}
+    #  90%|█████████ | 360/400 [09:23<00:43,  1.08s/it]{'loss': 3.6715, 'grad_norm': 4.119731903076172, 'learning_rate': 5e-06, 'epoch': 0.03}
+    #  92%|█████████▎| 370/400 [09:34<00:32,  1.07s/it]{'loss': 3.5732, 'grad_norm': 3.4740848541259766, 'learning_rate': 3.75e-06, 'epoch': 0.03}
+    #  95%|█████████▌| 380/400 [09:44<00:21,  1.09s/it]{'loss': 3.6172, 'grad_norm': 3.560781717300415, 'learning_rate': 2.5e-06, 'epoch': 0.03}
+    #  98%|█████████▊| 390/400 [09:56<00:11,  1.17s/it]{'loss': 3.7193, 'grad_norm': 4.061306476593018, 'learning_rate': 1.25e-06, 'epoch': 0.03}
+    # 100%|██████████| 400/400 [10:07<00:00,  1.26s/it]***** Running Evaluation *****
+    # {'loss': 3.6084, 'grad_norm': 3.800374746322632, 'learning_rate': 0.0, 'epoch': 0.03}
     #   Num examples = 50
-    #   Batch size = 16
-    # {'loss': 3.8025, 'grad_norm': 2.603775978088379, 'learning_rate': 0.0, 'epoch': 0.03}
+    #   Batch size = 8
     #
-    #   0%|          | 0/4 [00:00<?, ?it/s]
-    #  50%|█████     | 2/4 [00:09<00:09,  4.61s/it]
-    #  75%|███████▌  | 3/4 [00:21<00:07,  7.69s/it]
+    #   0%|          | 0/7 [00:00<?, ?it/s]
+    #  29%|██▊       | 2/7 [00:05<00:14,  2.91s/it]
+    #  43%|████▎     | 3/7 [00:08<00:10,  2.70s/it]
+    #  57%|█████▋    | 4/7 [00:10<00:07,  2.39s/it]
+    #  71%|███████▏  | 5/7 [00:11<00:04,  2.11s/it]
+    #  86%|████████▌ | 6/7 [00:17<00:03,  3.31s/it]
     #
-    # {'eval_rouge-1': 29.645415999999997, 'eval_rouge-2': 5.852326000000001, 'eval_rouge-l': 23.031176000000002, 'eval_bleu-4': 0.028074359716300144, 'eval_runtime': 104.0097, 'eval_samples_per_second': 0.481, 'eval_steps_per_second': 0.038, 'epoch': 0.03}
-    # 100%|██████████| 200/200 [09:16<00:00,  1.78s/it]
-    # 100%|██████████| 4/4 [00:23<00:00,  5.79s/it]
-    #                                              Saving model checkpoint to ./output\tmp-checkpoint-200
+    # {'eval_rouge-1': 28.693828, 'eval_rouge-2': 5.60198, 'eval_rouge-l': 22.719960000000004, 'eval_bleu-4': 0.02791650299040651, 'eval_runtime': 96.3453, 'eval_samples_per_second': 0.519, 'eval_steps_per_second': 0.073, 'epoch': 0.03}
+    # 100%|██████████| 400/400 [11:43<00:00,  1.26s/it]
+    # 100%|██████████| 7/7 [00:19<00:00,  3.02s/it]
+    #                                              Saving model checkpoint to ./output\tmp-checkpoint-400
     # D:\Users\admin\anaconda3\Lib\site-packages\peft\utils\save_and_load.py:154: UserWarning: Could not find a config file in D:\PycharmProjects\xiebo\diantou\bigdata\models\ZhipuAI\chatglm3-6b - will assume that the vocabulary was not modified.
     #   warnings.warn(
-    # tokenizer config file saved in ./output\tmp-checkpoint-200\tokenizer_config.json
-    # Special tokens file saved in ./output\tmp-checkpoint-200\special_tokens_map.json
+    # tokenizer config file saved in ./output\tmp-checkpoint-400\tokenizer_config.json
+    # Special tokens file saved in ./output\tmp-checkpoint-400\special_tokens_map.json
+    # {'train_runtime': 704.5268, 'train_samples_per_second': 4.542, 'train_steps_per_second': 0.568, 'train_loss': 3.7600830078125, 'epoch': 0.03}
     #
     #
     # Training completed. Do not forget to share your model on huggingface.co/models =)
     #
     #
-    # 100%|██████████| 200/200 [09:17<00:00,  2.79s/it]
+    # 100%|██████████| 400/400 [11:44<00:00,  1.76s/it]
     # ***** Running Prediction *****
     #   Num examples = 1070
-    #   Batch size = 16
-    # {'train_runtime': 557.2423, 'train_samples_per_second': 5.743, 'train_steps_per_second': 0.359, 'train_loss': 3.924697265625, 'epoch': 0.03}
-    # 100%|██████████| 67/67 [11:11<00:00, 10.02s/it]
-    # 'main' spent 1312.5112s.
+    #   Batch size = 8
+    # 100%|██████████| 134/134 [09:06<00:00,  4.08s/it]
+    # 'main' spent 1329.2519s.
     fine_tune(data_dir=save_dir, model_dir=CHATGLM3_6B_model_dir, config_file="./finetune_configs/lora.yaml")
 
 
