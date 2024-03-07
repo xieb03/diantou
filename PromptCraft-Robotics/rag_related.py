@@ -209,7 +209,7 @@ def insert_pre_prompt_to_chromadb(_command_json_path="prompt/command.json", _col
 # 根据问题从 chromadb 向量数据库中找到几个相似的 QA 对，这里采用召回和排序的方法，最多返回 top_n 对
 @func_timer(arg=False)
 def get_rag_results(_question, _answer=None, _collection=None, _collection_name=CHROMADB_COLLECTION_NAME, _debug=True,
-                    _top_n=3, _min_similarity=0.4):
+                    _top_n=3, _min_similarity=0.5):
     if _collection is None:
         _collection = ChromadbPersistentCollection(collection_name=_collection_name)
 
@@ -266,6 +266,7 @@ def assemble_prompt_from_template(_question, _rag_question_list, _rag_answer_lis
     assert count == len(_rag_answer_list)
     records = ""
     for i in range(count):
+        records += "Record " + str(i + 1) + ":\n"
         records += "user: " + _rag_question_list[i] + "\n"
         records += "assistant: ```" + _rag_answer_list[i] + "```\n"
         records += "\n"

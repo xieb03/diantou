@@ -52,7 +52,7 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None, _use_chatglm=Tru
     #                    "are unreasonable or useless, you can ignore them, but must tell me the reasons."
     #                    "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
 
-    prompt_template = "new question: {question}\n\n{count} relevant records: \n{records}"
+    prompt_template = "new prompt: {question}\n\n注意：下面的 {count} 个相关记录仅是对话的实例，如果相关性不大的话，可以不予理会，但必须说明原因。最终你要给出可以满足要求的回复。\n\n{records}"
 
     while True:
         if _with_text:
@@ -77,8 +77,11 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None, _use_chatglm=Tru
                 continue
 
         rag_question_list, rag_answer_list = get_rag_results(_question=question, _collection=collection,
-                                                             _debug=True, _top_n=3, _min_similarity=0.4)
-        prompt = assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template)
+                                                             _debug=True, _top_n=3, _min_similarity=0.5)
+        if len(rag_question_list) == 0:
+            prompt = question
+        else:
+            prompt = assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template)
         print(Colors.GREEN + F"你的最终 prompt 是：\n{prompt}" + Colors.ENDC)
 
         if _use_chatglm:
