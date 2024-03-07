@@ -5,6 +5,8 @@ import sounddevice as sd
 import soundfile as sf
 
 # noinspection PyUnresolvedReferences
+from util_chatglm import *
+# noinspection PyUnresolvedReferences
 from util_chromadb import *
 from util_openai import *
 from util_path import *

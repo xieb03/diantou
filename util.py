@@ -55,6 +55,24 @@ CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
 PYTHON_CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
 
 
+# 打印历史对话
+def print_history_message_list(history_message_list, _with_index=True, _start_index=1):
+    index = _start_index
+    for message in history_message_list:
+        role = message["role"]
+        content = message["content"].strip()
+        if _with_index:
+            print(F"{index} {role}:")
+        else:
+            print(F"{role}:")
+        content = content.replace("\n", "\n\t")
+        print(F'\t{content}')
+
+        # 有 assistant 意味着要开始一轮的对话
+        if role == "assistant":
+            index += 1
+
+
 # 检查 python 代码是否有语法错误，ast.parse 是用来解析语法树，如果语法有问题会报错
 # noinspection PyBroadException
 def check_python_code_syntax_error(_python_code, _print_error=False):
@@ -68,14 +86,14 @@ def check_python_code_syntax_error(_python_code, _print_error=False):
 
 
 # 从一段字符串中接触 三引号 的部分，主要用来抽离出 python 代码
+# 支持多个三引号，会将多段代码串联起来
 def extract_python_code(content):
     code_blocks = PYTHON_CODE_BLOCK_REGEX.findall(content)
     if code_blocks:
+        if len(code_blocks) > 1:
+            print(F"共发现 {len(code_blocks)} 段代码，会将它们串联起来.")
+        code_blocks = [code[7:] if code.startswith("python") else code for code in code_blocks]
         full_code = "\n".join(code_blocks)
-
-        if full_code.startswith("python"):
-            full_code = full_code[7:]
-
         return full_code
     else:
         return None

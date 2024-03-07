@@ -20,7 +20,8 @@ prompt_template = "new question: {question}\n\n{count} relevant records: \n{reco
 
 
 # 开启 chatgpt_airsim
-def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
+def start_chatgpt_airsim(_with_text=True, _queue: Queue = None, _use_chatglm=True,
+                         _checkpoint_path=None):
     with open("prompt/system_prompt.txt", "r", encoding="UTF8") as f:
         system_prompt = f.read()
 
@@ -34,8 +35,20 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
     aw = AirSimWrapper()
     print("Done.")
 
-    response = get_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt,
+    chatglm_tokenizer = None
+    chatglm_model = None
+    if _use_chatglm:
+        chatglm_model, chatglm_tokenizer = load_chatglm_model_and_tokenizer(_use_checkpoint=True,
+                                                                            _checkpoint_path=_checkpoint_path)
+
+        # chatglm 不支持批量对话，所以 system 和 user_system 要分别调用
+        _ = get_chatglm_completion_content(chatglm_tokenizer, chatglm_model, system_prompt=system_prompt,
                                            history_message_list=history_message_list)
+        response = get_chatglm_completion_content(chatglm_tokenizer, chatglm_model, user_prompt=user_prompt,
+                                                  history_message_list=history_message_list)
+    else:
+        response = get_chatgpt_completion_content(user_prompt=user_prompt, system_prompt=system_prompt,
+                                                  history_message_list=history_message_list)
     # Understood. I am ready for the new question and will refer to the historical dialogue records as needed.
     print(Colors.BLUE + f"\n{response}\n" + Colors.ENDC)
 
@@ -68,7 +81,11 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
         prompt = assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template)
         print(Colors.GREEN + F"你的最终 prompt 是：\n{prompt}" + Colors.ENDC)
 
-        response = get_chat_completion_content(user_prompt=prompt, history_message_list=history_message_list)
+        if _use_chatglm:
+            response = get_chatglm_completion_content(chatglm_tokenizer, chatglm_model, user_prompt=prompt,
+                                                      history_message_list=history_message_list)
+        else:
+            response = get_chatgpt_completion_content(user_prompt=prompt, history_message_list=history_message_list)
 
         print(Colors.BLUE + f"\n{response}\n" + Colors.ENDC)
 
@@ -79,10 +96,16 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None):
                 continue
             else:
                 print("Please wait while I run the code in AirSim...")
-                exec(code)
+                # noinspection PyBroadException
+                try:
+                    exec(code)
+                except Exception:
+                    traceback.print_exc()
+                    print(Colors.RED + "Sorry, the python code {code} is wrong, please try again." + Colors.ENDC)
+                    continue
                 print("Done!\n")
         else:
-            print("Sorry, i didn't get any code from the response, please try again.")
+            print(Colors.RED + "Sorry, i didn't get any code from the response, please try again." + Colors.ENDC)
 
     sys.exit(0)
 
@@ -94,17 +117,29 @@ def start_recoder(_model_name="medium", _queue: Queue = None):
 
 
 def main():
+    # 文字
     with_text = True
+    # 语音
     # with_text = False
 
+    # chatglm
+    use_chatglm = True
+    # chatgpt
+    # use_chatglm = False
+
+    # 微调模型
+    checkpoint_path = r"./output_cr/checkpoint-100"
+    # 原始模型
+    # checkpoint_path = None
+
     if with_text:
-        start_chatgpt_airsim(True)
+        start_chatgpt_airsim(_with_text=True, _use_chatglm=use_chatglm, _checkpoint_path=checkpoint_path)
     else:
         # chatgpt 和 recoder 通信，借助一个共享队列来传递文本
         shared_queue = Queue()
 
         # text -> chatgpt response -> code -> airsim 模拟
-        p1 = Process(target=start_chatgpt_airsim, args=(False, shared_queue))
+        p1 = Process(target=start_chatgpt_airsim, args=(False, shared_queue, use_chatglm, checkpoint_path))
         p1.start()
 
         # tkinter 界面 -> sounddevice 录音 -> mp3 -> local whisper 语音识别 -> text

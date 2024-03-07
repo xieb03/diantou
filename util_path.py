@@ -8,6 +8,16 @@ def is_file_or_dir_exist(_file_path):
     return os.path.exists(_file_path)
 
 
+# 一个文件是否存在
+def is_file_exist(_file_path):
+    return is_file_or_dir_exist(_file_path) and is_file(_file_path)
+
+
+# 一个文件夹是否存在
+def is_dir_exist(_file_path):
+    return is_file_or_dir_exist(_file_path) and is_dir(_file_path)
+
+
 # 一个路径是否是文件
 def is_file(_file_path):
     return os.path.isfile(_file_path)
@@ -43,6 +53,11 @@ def delete_end_path_separator(_path: str):
         _path = _path[:-1]
 
     return _path
+
+
+# 确保结尾有且只有一个分隔符
+def keep_one_end_path_separator(_path: str):
+    return delete_end_path_separator(_path) + PATH_SEPARATOR
 
 
 def main():

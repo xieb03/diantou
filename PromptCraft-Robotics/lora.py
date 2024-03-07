@@ -11,7 +11,6 @@ from datasets import Dataset, DatasetDict, NamedSplit, Split, load_dataset
 from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from peft import (
     PeftConfig,
-    AutoPeftModelForCausalLM,
     PeftModelForCausalLM,
     get_peft_config,
     get_peft_model
@@ -730,10 +729,7 @@ def before_fine_tune(_temperature=0.01):
     # 单独为了 cumsum_cuda_kernel 关闭
     torch.use_deterministic_algorithms(False)
 
-    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=CHATGLM3_6B_model_dir,
-                                              trust_remote_code=True)
-    model = AutoModel.from_pretrained(CHATGLM3_6B_model_dir, trust_remote_code=True).cuda()
-    model = model.eval()
+    model, tokenizer = load_chatglm_model_and_tokenizer()
     # model (<class 'transformers_modules.chatglm3-6b.modeling_chatglm.ChatGLMForConditionalGeneration'>)
     # has 6243584000 parameters, 6243584000 (100.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
     print_model_parameter_summary(model)
@@ -745,46 +741,12 @@ def before_fine_tune(_temperature=0.01):
     get_sample_chat(model, tokenizer, _temperature)
 
 
-# 加载微调后的模型
-# property 'eos_token' of 'ChatGLMTokenizer' object has no setter
-# 将 checkpoint-400/tokenizer_config.json 中的 eos_token 去掉
-# property 'pad_token' of 'ChatGLMTokenizer' object has no setter
-# 将 checkpoint-400/tokenizer_config.json 中的 pad_token 去掉
-# property 'unk_token' of 'ChatGLMTokenizer' object has no setter
-# 将 checkpoint-400/tokenizer_config.json 中的 unk_token 去掉
-# File "D:\Users\admin\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 1585, in set_input_embeddings
-#     base_model.set_input_embeddings(value)
-#   File "D:\Users\admin\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 1587, in set_input_embeddings
-#     raise NotImplementedError
-# 在源模型的 modeling_chatglm.py 中 ChatGLMModel 类第 770 行 加入以下代码
-#     def set_input_embeddings(self, value):
-#         self.embedding.word_embeddings = value
-def load_model_and_tokenizer(model_dir: Union[str, Path]) -> tuple[ModelType, TokenizerType]:
-    model_dir = _resolve_path(model_dir)
-    if (model_dir / 'adapter_config.json').exists():
-        model = AutoPeftModelForCausalLM.from_pretrained(
-            model_dir, trust_remote_code=True, device_map='auto'
-        )
-        # base_model_name_or_path='D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\models\\ZhipuAI\\chatglm3-6b'
-        tokenizer_dir = model.peft_config['default'].base_model_name_or_path
-    else:
-        model = AutoModelForCausalLM.from_pretrained(
-            model_dir, trust_remote_code=True, device_map='auto'
-        )
-        tokenizer_dir = model_dir
-    tokenizer = AutoTokenizer.from_pretrained(
-        tokenizer_dir, trust_remote_code=True
-    )
-    return model.eval(), tokenizer
-
-
 # 微调以后
 def after_fine_tune(_fine_tune_dir: str, _temperature=0.1):
     # 单独为了 cumsum_cuda_kernel 关闭
     torch.use_deterministic_algorithms(False)
 
-    model, tokenizer = load_model_and_tokenizer(_fine_tune_dir)
-    model = model.eval()
+    model, tokenizer = load_chatglm_model_and_tokenizer(_use_checkpoint=True, _checkpoint_path=_fine_tune_dir)
     # model (<class 'peft.peft_model.PeftModelForCausalLM'>) has 6245533696 parameters,
     # 0 (0.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
     print_model_parameter_summary(model)

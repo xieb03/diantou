@@ -191,22 +191,19 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
         return content
 
 
-# 打印历史对话
-def print_history_message_list(history_message_list, _with_index=True, _start_index=1):
-    index = _start_index
-    for message in history_message_list:
-        role = message["role"]
-        content = message["content"].strip()
-        if _with_index:
-            print(F"{index} {role}:")
-        else:
-            print(F"{role}:")
-        content = content.replace("\n", "\n\t")
-        print(F'\t{content}')
-
-        # 有 assistant 意味着要开始一轮的对话
-        if role == "assistant":
-            index += 1
+# 将 get_chat_completion_content 更名，方便与下面的 get_chatglm_completion_content 区分
+def get_chatgpt_completion_content(user_prompt=None, system_prompt=None, messages=None,
+                                   model="gpt-3.5-turbo", temperature=0.1,
+                                   print_token_count=False, print_cost_time=False, print_response=False,
+                                   history_message_list: List = None,
+                                   using_history_message_list=True, tools=None, print_messages=False):
+    return get_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt, messages=messages,
+                                       model=model, temperature=temperature,
+                                       print_token_count=print_token_count, print_cost_time=print_cost_time,
+                                       print_response=print_response,
+                                       history_message_list=history_message_list,
+                                       using_history_message_list=using_history_message_list, tools=tools,
+                                       print_messages=print_messages)
 
 
 # 一个封装 OpenAI 接口的函数，参数为 Prompt，返回对应结果
