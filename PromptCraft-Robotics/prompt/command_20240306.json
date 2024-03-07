@@ -1,0 +1,794 @@
+[
+    {
+        "role": "user",
+        "content": "起飞"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()"
+    },
+    {
+        "role": "user",
+        "content": "飞向汽车上方"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('car'))"
+    },
+    {
+        "role": "user",
+        "content": "向右平移5米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] + 5, current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向下降3米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
+    },
+    {
+        "role": "user",
+        "content": "飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "飞向第一个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower1'))"
+    },
+    {
+        "role": "user",
+        "content": "飞向太阳能板"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))"
+    },
+    {
+        "role": "user",
+        "content": "设置偏航角为90度"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.set_yaw(90)"
+    },
+    {
+        "role": "user",
+        "content": "飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "向左平移8米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] - 8, current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向上升5米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
+    },
+    {
+        "role": "user",
+        "content": "飞向第二个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('turbine2'))"
+    },
+    {
+        "role": "user",
+        "content": "飞向第三个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower3'))"
+    },
+    {
+        "role": "user",
+        "content": "向左平移10米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] - 10, current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向上升7米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
+    },
+    {
+        "role": "user",
+        "content": "向右平移12米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1] + 12, current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向下降6米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
+    },
+    {
+        "role": "user",
+        "content": "向下降7米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])"
+    },
+    {
+        "role": "user",
+        "content": "飞向汽车上方并向右平移5米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to(aw.get_position('car'))\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向下降3米并飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "飞向太阳能板并设置偏航角为90度"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\naw.set_yaw(90)"
+    },
+    {
+        "role": "user",
+        "content": "向上升5米并飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "向左平移8米并飞向第一个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('tower1'))"
+    },
+    {
+        "role": "user",
+        "content": "向上升7米并向右平移12米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向下降6米并飞向第二个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine2'))"
+    },
+    {
+        "role": "user",
+        "content": "飞向第三个塔并向左平移10米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向上升4米并飞向汽车上方"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('car'))"
+    },
+    {
+        "role": "user",
+        "content": "飞向人群并向左平移8米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "向下降7米并飞向太阳能板"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('solarpanels'))"
+    },
+    {
+        "role": "user",
+        "content": "向右平移10米并飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "向上升6米并飞向第一个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])\naw.fly_to(aw.get_position('tower1'))"
+    },
+    {
+        "role": "user",
+        "content": "向左平移12米并飞向第二个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('turbine2'))"
+    },
+    {
+        "role": "user",
+        "content": "向下降5米并飞向第三个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('tower3'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后飞向汽车上方"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\naw.fly_to(aw.get_position('car'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向右平移5米，接着向下降3米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后飞向第一个塔，并向左平移8米，最后向上升5米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\naw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
+    },
+    {
+        "role": "user",
+        "content": "首先向右平移12米，接着向下降6米，然后飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向上升7米，最后飞向太阳能板"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\naw.fly_to(aw.get_position('solarpanels'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向下降5米，然后飞向人群，并向左平移8米，最后向上升6米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向左平移10米，接着向上升4米，最后飞向第二个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向第三个塔，然后向右平移12米，最后向下降6米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
+    },
+    {
+        "role": "user",
+        "content": "飞向第一个塔，然后向左平移8米，最后向上升5米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
+    },
+    {
+        "role": "user",
+        "content": "飞向太阳能板，然后向上升7米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
+    },
+    {
+        "role": "user",
+        "content": "向下降5米，然后飞向人群，并向左平移8米，最后向上升6米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
+    },
+    {
+        "role": "user",
+        "content": "飞向汽车上方，然后向右平移5米，最后向下降3米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
+    },
+    {
+        "role": "user",
+        "content": "飞向人群，然后向下降6米，最后飞向第三个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('tower3'))"
+    },
+    {
+        "role": "user",
+        "content": "飞向第二个风力发电机，然后向左平移10米，最后向上升4米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])"
+    },
+    {
+        "role": "user",
+        "content": "首先向左平移12米，然后飞向汽车上方，最后向下降6米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向汽车上方，然后向右平移5米，接着向下降3米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向上升5米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向第一个塔，然后向左平移8米，最后向上升7米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
+    },
+    {
+        "role": "user",
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后飞向第三个塔，接着向右平移12米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\naw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先向下降6米，然后飞向汽车上方，最后向左平移8米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向太阳能板，然后向下降7米，最后飞向第一个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('tower1'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向左平移8米，接着向上升6米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
+    },
+    {
+        "role": "user",
+        "content": "首先向右平移10米，然后向下降5米，最后飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移12米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向第三个塔，然后向右平移12米，最后向下降6米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
+    },
+    {
+        "role": "user",
+        "content": "首先向下降6米，然后飞向汽车上方，最后向左平移8米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向太阳能板，然后向下降7米，最后飞向第一个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('tower1'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向左平移8米，接着向上升6米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向汽车上方，然后向右平移5米，接着向下降3米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向上升5米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向第一个塔，然后向左平移8米，最后向上升7米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
+    },
+    {
+        "role": "user",
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向第三个塔，然后向右平移12米，最后向下降6米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
+    },
+    {
+        "role": "user",
+        "content": "首先向下降6米，然后飞向汽车上方，最后向左平移8米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向太阳能板，然后向下降7米，最后飞向第一个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('tower1'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向左平移8米，接着向上升6米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向汽车上方，然后向右平移5米，接着向下降3米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 5, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 3])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向上升5米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向第一个塔，然后向左平移8米，最后向上升7米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('tower1'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])"
+    },
+    {
+        "role": "user",
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向下降7米，接着飞向汽车上方"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('car'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向左平移8米，然后向上升7米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向太阳能板，然后向右平移12米，最后向下降6米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向右平移10米，接着向上升5米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 5])"
+    },
+    {
+        "role": "user",
+        "content": "首先向下降6米，然后飞向第二个风力发电机，最后向左平移8米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向人群，然后向左平移10米，最后向上升4米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('crowd'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向下降5米，接着飞向第一个塔"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('tower1'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升6米，然后向右平移12米，最后飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 6])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向下降7米，然后飞向汽车上方，最后向左平移8米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 7])\naw.fly_to(aw.get_position('car'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 8, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升7米，然后向右平移10米，最后飞向人群"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 7])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 10, current_position[1], current_position[2]])\naw.fly_to(aw.get_position('crowd'))"
+    },
+    {
+        "role": "user",
+        "content": "首先飞向太阳能板，然后向下降6米，最后飞向第二个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.fly_to(aw.get_position('solarpanels'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('turbine2'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向右平移8米，接着向上升4米"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 8, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])"
+    },
+    {
+        "role": "user",
+        "content": "首先向下降5米，然后飞向第三个塔，最后向左平移12米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('tower3'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 12, current_position[1], current_position[2]])"
+    },
+    {
+        "role": "user",
+        "content": "首先向右平移12米，然后向下降6米，最后飞向太阳能板"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0] + 12, current_position[1], current_position[2]])\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 6])\naw.fly_to(aw.get_position('solarpanels'))"
+    },
+    {
+        "role": "user",
+        "content": "起飞，然后向下降5米，接着飞向第三个风力发电机"
+    },
+    {
+        "role": "assistant",
+        "content": "aw.takeoff()\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] - 5])\naw.fly_to(aw.get_position('turbine3'))"
+    },
+    {
+        "role": "user",
+        "content": "首先向上升4米，然后飞向第二个风力发电机，最后向左平移10米"
+    },
+    {
+        "role": "assistant",
+        "content": "current_position = aw.get_drone_position()\naw.fly_to([current_position[0], current_position[1], current_position[2] + 4])\naw.fly_to(aw.get_position('turbine2'))\ncurrent_position = aw.get_drone_position()\naw.fly_to([current_position[0] - 10, current_position[1], current_position[2]])"
+    }
+]

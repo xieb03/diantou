@@ -165,6 +165,10 @@ def analysis_command_json(question_list=None, answer_list=None, _command_json_pa
     # 去重后，共有 37 条有效记录.
     print(F"去重后，共有 {len(final_question_list)} 条有效记录.")
 
+    # for question, answer in zip(final_question_list, final_answer_list):
+    #     print(str({"role": "user", "content": question}) + ",")
+    #     print(str({"role": "assistant", "content": answer}) + ",")
+
     return final_question_list, final_answer_list
 
 
@@ -309,9 +313,9 @@ def main():
     #
     # print(assemble_prompt_from_template(question, rag_question_list, rag_answer_list, prompt_template))
 
-    # 去重后，共有 59 条有效记录.
-    # train 一共保存了 47 条数据.
-    # dev 一共保存了 12 条数据.
+    # 去重后，共有 130 条有效记录.
+    # train 一共保存了 104 条数据.
+    # dev 一共保存了 26 条数据.
     covert_command_to_lora(_command_json_path="prompt/command.json", _fix_json_path="prompt/command_fix_{split}.json")
 
 
