@@ -53,6 +53,7 @@ BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + r"quietnight\bge-reranker-l
 CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
 
 PYTHON_CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
+JSON_CODE_BLOCK_REGEX = re.compile(r"```json(.*?)```", re.DOTALL)
 
 
 # 打印历史对话

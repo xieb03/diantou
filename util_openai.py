@@ -164,7 +164,8 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
     # from 20240225，gpt-3.5-turbo-0125
     # assert_equal(true_model, "gpt-3.5-turbo-0125")
     # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
-    assert true_model in ["gpt-35-turbo", "gpt-3.5-turbo-0125"]
+    if true_model not in ["gpt-3.5-turbo-0125", "gpt-3.5-turbo-16k-0613", "gpt-4-0613"]:
+        print(F"IMPORTANT: {true_model}")
 
     # assert_equal(true_model, "gpt-35-turbo")
 

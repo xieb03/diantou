@@ -13,14 +13,14 @@ AIRSIM_FUNCTION_REGEX = re.compile("(aw\\..+?\\(+?)", re.IGNORECASE)
 CHROMADB_COLLECTION_NAME = "normal"
 
 
-# 分析 command.json 的一些统计值
-@func_timer(arg=False)
-def analysis_command_json(_command_json_path="prompt/command.json", _debug=False):
-    all_function_list = ["aw.takeoff", "aw.land", "aw.get_drone_position", "aw.fly_to", "aw.fly_path", "aw.set_yaw",
-                         "aw.get_yaw", "aw.get_position"]
-
-    with open(_command_json_path, "r", encoding="UTF8") as fp:
-        command_list = json.load(fp)
+# 从文件中获得 question_list, answer_list
+def get_question_answer_list_from_file(_command_json_path_or_command_list, _is_file=True):
+    if _is_file:
+        assert is_file_exist(_command_json_path_or_command_list), F"文件 '{_command_json_path_or_command_list} 不存在."
+        with open(_command_json_path_or_command_list, "r", encoding="UTF8") as fp:
+            command_list = json.load(fp)
+    else:
+        command_list = _command_json_path_or_command_list
 
     length = len(command_list)
     # 一共有 100 条数据.
@@ -29,11 +29,6 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
     question_list = list()
     answer_list = list()
 
-    function_count_in_each_command_dict = defaultdict(int)
-    function_count_dict = dict.fromkeys(all_function_list, 0)
-    # sub_function_count_dict = defaultdict(int)
-    function_count_detail_dict = {function: list() for function in all_function_list}
-    wrong_function_dict = defaultdict(int)
     for i in range(0, length, 2):
         user_command = command_list[i]
         assert user_command["role"] == "user", F"第 {i // 2} 段并不是 user."
@@ -45,6 +40,24 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
         # 注意 answer 包括整个 content，而不仅仅是 python 代码
         answer_list.append(answer)
 
+    return question_list, answer_list
+
+
+# 分析 command.json 的一些统计值
+def analysis_command_json(question_list=None, answer_list=None, _command_json_path="prompt/command.json", _debug=False):
+    if question_list is None or answer_list is None:
+        question_list, answer_list = get_question_answer_list_from_file(_command_json_path, _is_file=True)
+
+    all_function_list = ["aw.takeoff", "aw.land", "aw.get_drone_position", "aw.fly_to", "aw.fly_path", "aw.set_yaw",
+                         "aw.get_yaw", "aw.get_position"]
+
+    function_count_in_each_command_dict = defaultdict(int)
+    function_count_dict = dict.fromkeys(all_function_list, 0)
+    # sub_function_count_dict = defaultdict(int)
+    # function_count_detail_dict = {function: list() for function in all_function_list}
+    wrong_function_dict = defaultdict(int)
+
+    for question, answer in zip(question_list, answer_list):
         # 优先用三引号寻找代码
         python_code = extract_python_code(answer)
         # 如果没有找到，那么直接按照 python 代码处理
@@ -53,7 +66,7 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
 
         # 检查 python 代码是否能编译通过，注意这里只检查代码的合理性
         assert check_python_code_syntax_error(python_code), (
-                Colors.RED + f"获取的 python 代码编译有问题，请重新试过." + Colors.ENDC)
+                Colors.RED + f"获取的 python 代码编译有问题，请重新试过: {python_code}" + Colors.ENDC)
 
         function_list = AIRSIM_FUNCTION_REGEX.findall(python_code)
         function_count = len(function_list)
@@ -66,7 +79,7 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
             else:
                 function_count_dict[main_function] += 1
                 # sub_function_count_dict[function] += 1
-                function_count_detail_dict[main_function].append(function)
+                # function_count_detail_dict[main_function].append(function)
 
     function_count_in_each_command_dict = dict(sorted(function_count_in_each_command_dict.items(),
                                                       key=operator.itemgetter(1), reverse=True))
@@ -74,10 +87,10 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
                                       key=operator.itemgetter(1), reverse=True))
     # sub_function_count_dict = dict(sorted(sub_function_count_dict.items(),
     #                                       key=lambda x: (x[1], x[0]), reverse=True))
-    function_count_detail_dict = dict(sorted(function_count_detail_dict.items(),
-                                             key=lambda x: len(x[1]), reverse=True))
-    for value in function_count_detail_dict.values():
-        value.sort()
+    # function_count_detail_dict = dict(sorted(function_count_detail_dict.items(),
+    #                                          key=lambda x: len(x[1]), reverse=True))
+    # for value in function_count_detail_dict.values():
+    #     value.sort()
 
     # question_list 和 answer_list 去重
     question_dict = defaultdict(int)
@@ -111,6 +124,7 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
         # 2: 1
         print("-" * 80)
         print_dict(function_count_in_each_command_dict)
+        print("-" * 80)
         # aw.fly_to: 184
         # aw.set_yaw: 124
         # aw.takeoff: 97
@@ -119,16 +133,18 @@ def analysis_command_json(_command_json_path="prompt/command.json", _debug=False
         # aw.fly_path: 16
         # aw.get_yaw: 0
         # aw.get_position: 0
-        print("-" * 80)
+
         # 主函数的调用次数
         print_dict(function_count_dict)
-        # print("-" * 80)
+        print("-" * 80)
+
         # # 子函数（含参）的调用次数
         # print_dict(sub_function_count_dict)
-        print("-" * 80)
-        # 每个主函数中的所有子函数
-        print_dict(function_count_detail_dict)
-        print("-" * 80)
+        # print("-" * 80)
+
+        # # 每个主函数中的所有子函数
+        # print_dict(function_count_detail_dict)
+        # print("-" * 80)
 
     if len(wrong_function_dict) > 0:
         print(Colors.RED + str(wrong_function_dict) + Colors.ENDC)
