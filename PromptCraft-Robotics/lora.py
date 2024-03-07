@@ -659,6 +659,7 @@ def get_sample_chat(_model, _tokenizer, _temperature=0.1):
     response, history = _model.chat(_tokenizer, "你好", history=[], temperature=_temperature)
     # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
     print(response)
+    print("-" * 80)
     # print_history_message_list(history)
 
     # 1. 尝试放松身心，如冥想、深呼吸等。
@@ -672,6 +673,7 @@ def get_sample_chat(_model, _tokenizer, _temperature=0.1):
     response, history = _model.chat(_tokenizer, "晚上睡不着应该怎么办，回复字数不要超过 100 个", history=history,
                                     temperature=_temperature)
     print(response)
+    print("-" * 80)
     # print_history_message_list(history)
 
     # response, history = _model.chat(_tokenizer,
@@ -683,10 +685,11 @@ def get_sample_chat(_model, _tokenizer, _temperature=0.1):
     # # print_history_message_list(history)
 
     response, history = _model.chat(_tokenizer,
-                                    "aw.fly_to() 是什么含义，如果不知道就说不知道",
+                                    "fly_to() 是什么含义，如果不知道就说不知道",
                                     temperature=_temperature)
     # 抱歉，我无法提供关于 "aw.fly_to()" 的详细信息，因为我无法确定您所提到的 "aw" 代表什么。如果您能提供更多上下文或信息，我将尽力帮助您。
     print(response)
+    print("-" * 80)
     # print_history_message_list(history)
 
     with open("prompt/system_prompt.txt", "r", encoding="UTF8") as f:
@@ -699,18 +702,21 @@ def get_sample_chat(_model, _tokenizer, _temperature=0.1):
                                     system_prompt, role="system",
                                     temperature=_temperature)
     print(response)
+    print("-" * 80)
     # print_history_message_list(history)
 
     response, history = _model.chat(_tokenizer,
                                     user_prompt, history=history,
                                     temperature=_temperature)
     print(response)
+    print("-" * 80)
     # print_history_message_list(history)
 
     response, history = _model.chat(_tokenizer,
                                     "向上升7米", history=history,
                                     temperature=_temperature)
     print(response)
+    print("-" * 80)
     # print_history_message_list(history)
 
 
@@ -720,7 +726,7 @@ def get_sample_chat(_model, _tokenizer, _temperature=0.1):
 # You can also file an issue at https://github.com/pytorch/pytorch/issues to help us prioritize adding deterministic support for this operation.
 # 通过 torch.use_deterministic_algorithms(True, warn_only=True)，可以禁止抛出异常而只是 warn，方便调试
 # _temperature 必须要 > 0
-def before_fine_tune(_temperature=0.1):
+def before_fine_tune(_temperature=0.01):
     # 单独为了 cumsum_cuda_kernel 关闭
     torch.use_deterministic_algorithms(False)
 
@@ -791,7 +797,9 @@ def after_fine_tune(_fine_tune_dir: str, _temperature=0.1):
 
 
 # chatGLM 自带的微调例子
-def fine_tune_using_advertise(_save_dir, _model_dir=CHATGLM3_6B_model_dir, _config_file="./finetune_configs/lora.yaml"):
+def fine_tune_using_advertise(_save_dir, _model_dir=CHATGLM3_6B_model_dir, _temperature=0.1,
+                              _config_file="./finetune_configs/lora.yaml", _with_fine_tune=False,
+                              _checkpoint=r"./output/checkpoint-250"):
     # tensorflow sed random seed fail.
     # Loading checkpoint shards: 100%|██████████| 7/7 [00:01<00:00,  3.68it/s]
     # model (<class 'transformers_modules.chatglm3-6b.modeling_chatglm.ChatGLMForConditionalGeneration'>) has 6243584000 parameters, 6243584000 (100.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
@@ -899,7 +907,8 @@ def fine_tune_using_advertise(_save_dir, _model_dir=CHATGLM3_6B_model_dir, _conf
     # 100%|██████████| 250/250 [09:38<00:00,  2.31s/it]
     # {'train_runtime': 578.2234, 'train_samples_per_second': 5.188, 'train_steps_per_second': 0.432, 'train_loss': 3.8679921875, 'epoch': 0.03}
     # 'main' spent 584.3999s.
-    fine_tune(data_dir=_save_dir, model_dir=_model_dir, config_file=_config_file)
+    if _with_fine_tune:
+        fine_tune(data_dir=_save_dir, model_dir=_model_dir, config_file=_config_file)
 
     # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
     # 1. 尝试放松身心，如深呼吸、冥想或热水泡澡。
@@ -924,7 +933,8 @@ def fine_tune_using_advertise(_save_dir, _model_dir=CHATGLM3_6B_model_dir, _conf
     # aw.fly_to([0, 7, 0])
     # ```
     # The first line takes off the drone, and the second line flies the drone to a height of 7 meters. Note that we are using the "fly\_to" function to move the drone to a specific position, rather than using the "moveToPositionAsync()" or "moveToZAsync()" functions. This is because we already know the height we want to fly the drone to, and we want to use that height as the y-coordinate of the "fly\_to" function.
-    # before_fine_tune()
+    print("_" * 20 + "before_fine_tune" + "_" * 20)
+    before_fine_tune(_temperature=_temperature)
 
     # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
     # 1. 尝试放松身心，如冥想、深呼吸等。
@@ -964,32 +974,226 @@ def fine_tune_using_advertise(_save_dir, _model_dir=CHATGLM3_6B_model_dir, _conf
     # - The function updates the position of the drone to the specified coordinates.
     #
     # Please note that this will raise the drone to a new position based on the current position and the specified height. If the drone is already at a height of 7 meters or higher, this function will simply set the position of the drone to the same position.
-    # after_fine_tune(r"./output/checkpoint-250")
+    print("_" * 20 + "after_fine_tune" + "_" * 20)
+    after_fine_tune(_checkpoint, _temperature=_temperature)
 
 
 # 微调 craft_robotics 项目
-def fine_tune_using_craft_robotics(_save_dir, _model_dir=CHATGLM3_6B_model_dir,
-                                   _config_file="./finetune_configs/lora_cr.yaml"):
-    fine_tune(data_dir=_save_dir, model_dir=_model_dir, config_file=_config_file)
+def fine_tune_using_craft_robotics(_save_dir, _model_dir=CHATGLM3_6B_model_dir, _temperature=0.1,
+                                   _config_file="./finetune_configs/lora_cr.yaml", _with_fine_tune=False,
+                                   _checkpoint=r"./output_cr/checkpoint-100"):
+    # tensorflow sed random seed fail.
+    # Loading checkpoint shards: 100%|██████████| 7/7 [00:01<00:00,  3.77it/s]
+    # model (<class 'transformers_modules.chatglm3-6b.modeling_chatglm.ChatGLMForConditionalGeneration'>) has 6243584000 parameters, 6243584000 (100.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
+    # model (<class 'peft.peft_model.PeftModelForCausalLM'>) has 6245533696 parameters, 1949696 (0.03%) are trainable, the dtype is torch.float16，占 11.63G 显存.
+    # trainable params: 1,949,696 || all params: 6,245,533,696 || trainable%: 0.031217444255383614
+    # --> model has 1.949696M params
+    #
+    # Map: 100%|██████████| 47/47 [00:00<00:00, 5671.57 examples/s]
+    # Map: 100%|██████████| 12/12 [00:00<00:00, 3010.27 examples/s]
+    # train_dataset: Dataset({
+    #     features: ['input_ids', 'labels'],
+    #     num_rows: 47
+    # })
+    # val_dataset: Dataset({
+    #     features: ['input_ids', 'output_ids'],
+    #     num_rows: 12
+    # })
+    # test_dataset: Dataset({
+    #     features: ['input_ids', 'output_ids'],
+    #     num_rows: 12
+    # })
+    # Map: 100%|██████████| 12/12 [00:00<00:00, 2407.98 examples/s]
+    # You are using an old version of the checkpointing format that is deprecated (We will also silently ignore `gradient_checkpointing_kwargs` in case you passed it).Please update to the new format on your modeling file. To use the new format, you need to completely remove the definition of the method `_set_gradient_checkpointing` in your model.
+    # max_steps is given, it will override any value given in num_train_epochs
+    # total  gpu memory:  12.89 G
+    # torch  gpu memory:  11.67 G
+    # tensor gpu memory:  11.66 G
+    # ***** Running training *****
+    #   Num examples = 47
+    #   Num Epochs = 25
+    #   Instantaneous batch size per device = 12
+    #   Total train batch size (w. parallel, distributed & accumulation) = 12
+    #   Gradient Accumulation steps = 1
+    #   Total optimization steps = 100
+    #   Number of trainable parameters = 1,949,696
+    #   0%|          | 0/100 [00:00<?, ?it/s]D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    # C:\Users\admin\.cache\huggingface\modules\transformers_modules\chatglm3-6b\modeling_chatglm.py:231: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at ..\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:263.)
+    #   context_layer = torch.nn.functional.scaled_dot_product_attention(query_layer, key_layer, value_layer,
+    #  10%|█         | 10/100 [04:26<37:10, 24.78s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-10
+    # {'loss': 1.8856, 'grad_norm': 2.236332654953003, 'learning_rate': 4.5e-05, 'epoch': 2.5}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-10\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-10\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  20%|██        | 20/100 [07:30<17:11, 12.89s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-20
+    # {'loss': 1.4884, 'grad_norm': 2.4879562854766846, 'learning_rate': 4e-05, 'epoch': 5.0}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-20\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-20\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  30%|███       | 30/100 [11:57<28:41, 24.59s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-30
+    # {'loss': 1.1386, 'grad_norm': 2.265348196029663, 'learning_rate': 3.5e-05, 'epoch': 7.5}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-30\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-30\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  40%|████      | 40/100 [14:59<12:46, 12.78s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-40
+    # {'loss': 0.8615, 'grad_norm': 1.8875480890274048, 'learning_rate': 3e-05, 'epoch': 10.0}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-40\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-40\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  50%|█████     | 50/100 [19:27<20:37, 24.75s/it]***** Running Evaluation *****
+    #   Num examples = 12
+    #   Batch size = 12
+    # {'loss': 0.6352, 'grad_norm': 1.408206820487976, 'learning_rate': 2.5e-05, 'epoch': 12.5}
+    #
+    #   0%|          | 0/1 [00:00<?, ?it/s]Building prefix dict from the default dictionary ...
+    # Loading model from cache C:\Users\admin\AppData\Local\Temp\jieba.cache
+    # Loading model cost 0.302 seconds.
+    # Prefix dict has been built successfully.
+    #
+    #  50%|█████     | 50/100 [21:00<20:37, 24.75s/it]
+    # 100%|██████████| 1/1 [00:00<00:00,  2.91it/s]
+    #                                              Saving model checkpoint to ./output_cr\tmp-checkpoint-50
+    # {'eval_rouge-1': 7.489983333333332, 'eval_rouge-2': 1.1792583333333335, 'eval_rouge-l': 4.688416666666667, 'eval_bleu-4': 0.01257658005902929, 'eval_runtime': 93.2644, 'eval_samples_per_second': 0.129, 'eval_steps_per_second': 0.011, 'epoch': 12.5}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-50\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-50\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  60%|██████    | 60/100 [24:04<09:20, 14.00s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-60
+    # {'loss': 0.5162, 'grad_norm': 1.687022089958191, 'learning_rate': 2e-05, 'epoch': 15.0}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-60\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-60\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  70%|███████   | 70/100 [28:43<12:27, 24.93s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-70
+    # {'loss': 0.3885, 'grad_norm': 1.0744001865386963, 'learning_rate': 1.5e-05, 'epoch': 17.5}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-70\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-70\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  80%|████████  | 80/100 [31:42<04:11, 12.59s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-80
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-80\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-80\special_tokens_map.json
+    # {'loss': 0.3218, 'grad_norm': 1.1946592330932617, 'learning_rate': 1e-05, 'epoch': 20.0}
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    #  90%|█████████ | 90/100 [36:05<04:03, 24.31s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-90
+    # {'loss': 0.2728, 'grad_norm': 1.0228019952774048, 'learning_rate': 5e-06, 'epoch': 22.5}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-90\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-90\special_tokens_map.json
+    # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
+    #   warnings.warn(
+    # 100%|██████████| 100/100 [39:03<00:00, 12.54s/it]***** Running Evaluation *****
+    #   Num examples = 12
+    #   Batch size = 12
+    # {'loss': 0.2436, 'grad_norm': 1.102130651473999, 'learning_rate': 0.0, 'epoch': 25.0}
+    #
+    #
+    # 100%|██████████| 100/100 [40:35<00:00, 12.54s/it]
+    # 100%|██████████| 1/1 [00:00<00:00, 32.74it/s]
+    #                                              Saving model checkpoint to ./output_cr\tmp-checkpoint-100
+    # {'eval_rouge-1': 7.112908333333333, 'eval_rouge-2': 0.7180333333333334, 'eval_rouge-l': 4.044475, 'eval_bleu-4': 0.00926650683021399, 'eval_runtime': 91.9505, 'eval_samples_per_second': 0.131, 'eval_steps_per_second': 0.011, 'epoch': 25.0}
+    # tokenizer config file saved in ./output_cr\tmp-checkpoint-100\tokenizer_config.json
+    # Special tokens file saved in ./output_cr\tmp-checkpoint-100\special_tokens_map.json
+    # {'train_runtime': 2435.9387, 'train_samples_per_second': 0.493, 'train_steps_per_second': 0.041, 'train_loss': 0.77522705078125, 'epoch': 25.0}
+    # 'main' spent 2441.9455s.
+    #
+    #
+    # Training completed. Do not forget to share your model on huggingface.co/models =)
+    #
+    #
+    # 100%|██████████| 100/100 [40:35<00:00, 24.36s/it]
+    if _with_fine_tune:
+        fine_tune(data_dir=_save_dir, model_dir=_model_dir, config_file=_config_file)
 
-    # before_fine_tune()
-    # after_fine_tune(r"./output_cr/checkpoint-250")
+    # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
+    # --------------------------------------------------------------------------------
+    # 1. 尝试放松身心，如深呼吸、冥想或热水泡澡。
+    # 2. 避免刺激性食物和饮料，如咖啡、茶和巧克力。
+    # 3. 保持规律的睡眠时间表。
+    # 4. 减少使用电子设备的时间，尤其是在睡前。
+    # 5. 尝试进行轻度的身体运动，如瑜伽或散步。
+    # 6. 如果需要，可以使用柔和的音乐或白噪音帮助入睡。
+    # 7. 避免在晚上过度兴奋，如看惊悚电影或电视节目。
+    # 8. 睡前限制饮水量，以减少夜间尿频的影响。
+    # 9. 建立一个舒适的睡眠环境，如保持房间凉爽、安静和黑暗。
+    # 10. 如果你经常睡不着，可以考虑咨询专业医生或睡眠专家。
+    # --------------------------------------------------------------------------------
+    # 抱歉，作为人工智能助手，我无法确定 fly_to() 具体代表什么含义，因为我无法访问互联网进行实时查询。如果您能提供更多上下文信息，我会尽力帮助您解答。
+    # --------------------------------------------------------------------------------
+    # Sure, I'll be happy to help you with the AirSim simulator for drones. Please let me know what task you would like me to complete, and I'll provide you with the necessary Python code and explanation.
+    # --------------------------------------------------------------------------------
+    # I understand the instructions. Please let me know what task you would like me to complete.
+    # --------------------------------------------------------------------------------
+    # To lift the drone up by 7 meters, we can use the `aw.takeoff()` function to take off, and then use the `aw.fly_to()` function to fly to a new position. Here's the code:
+    # ```python
+    # aw.takeoff()
+    # aw.fly_to([0, 7, 0])
+    # ```
+    # The `aw.takeoff()` function takes off the drone, and the `aw.fly_to()` function takes the drone to the new position specified by the `[0, 7, 0]` tuple, which is 7 meters above the current position of the drone.
+    #
+    # Note that we are using the `[0, 7, 0]` tuple because the yaw angle is not specified. By default, the yaw angle is set to 0 degrees. Therefore, the drone will lift off vertically and fly directly upwards. If we want the drone to lift off at an angle, we can use the `aw.set_yaw()` function to set the yaw angle before taking off. For example, if we want the drone to lift off vertically at a 45-degree angle, we can use the following code:
+    # ```python
+    # aw.set_yaw(45)
+    # aw.takeoff()
+    # aw.fly_to([0, 7, 0])
+    # ```
+    # This will take off the drone vertically at a 45-degree angle, and then fly directly upwards to a new position at a height of 7 meters.
+    print("_" * 20 + "before_fine_tune" + "_" * 20)
+    before_fine_tune(_temperature=_temperature)
+
+    # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
+    # --------------------------------------------------------------------------------
+    # 1. 尝试放松身心，如冥想、深呼吸等。
+    # 2. 保持规律作息，尽量每天按时上床睡觉。
+    # 3. 减少使用电子产品，尤其是睡前。
+    # 4. 适量锻炼，但避免剧烈运动。
+    # 5. 睡前适当饮水，避免过多液体摄入。
+    # 6. 调整环境，保持安静、舒适。
+    # 7. 避免刺激性食物、饮料。
+    # 8. 尝试阅读、听轻音乐等有助于入睡。
+    # 9. 如果长期失眠，请咨询专业医生。
+    # --------------------------------------------------------------------------------
+    # 抱歉，我无法回答您的问题，因为我不知道"fly_to()"是什么含义。如果您可以提供更多的上下文信息，我将尽力帮助您。
+    # --------------------------------------------------------------------------------
+    # Sure, I'll be happy to help you with the AirSim simulator for drones. Please let me know what task you would like me to complete, and I'll provide you with the necessary Python code and explanation.
+    # --------------------------------------------------------------------------------
+    # I understand the instructions. Please let me know what task you would like me to complete.
+    # --------------------------------------------------------------------------------
+    # To raise the drone up by 7 meters, we can use the `aw.fly_to()` function to move the drone to a new position above the initial position. Here's the code to achieve this:
+    # ```python
+    # aw.takeoff()
+    # aw.fly_to([0, 0, 7])
+    # ```
+    # This code will take off the drone, fly it to a position 7 meters above the ground, and then land it. The `fly_to()` function will automatically calculate the path to the new position based on the drone's current position and orientation.
+    #
+    # Note that this code assumes that the initial position of the drone is at sea level. If the initial position is above sea level, we can simply use the `aw.fly_to()` function without taking off the drone first.
+    print("_" * 20 + "after_fine_tune" + "_" * 20)
+    after_fine_tune(_checkpoint, _temperature=_temperature)
 
 
 @func_timer(arg=True)
 def main():
     fix_all_seed(_simple=False, _warn_only=False)
+    temperature = 0.01
 
     # D:\PycharmProjects\xiebo\diantou\bigdata\data\AdvertiseGen\train.json 共有 114599 行.
     # D:\PycharmProjects\xiebo\diantou\bigdata\data\AdvertiseGen\dev.json 共有 1070 行.
     # convert_adgen(BIGDATA_DATA_PATH + 'AdvertiseGen', BIGDATA_DATA_PATH + 'AdvertiseGen_fix')
 
     # save_dir = BIGDATA_DATA_PATH + 'AdvertiseGen_fix'
-    # fine_tune_using_advertise(save_dir, _model_dir=CHATGLM3_6B_model_dir, _config_file="./finetune_configs/lora.yaml")
+    # fine_tune_using_advertise(save_dir, _model_dir=CHATGLM3_6B_model_dir, _temperature=temperature,
+    #                           _config_file="./finetune_configs/lora.yaml", _with_fine_tune=False,
+    #                           _checkpoint=r"./output/checkpoint-250")
 
     save_dir = r'D:/PycharmProjects/xiebo/diantou/PromptCraft-Robotics/prompt/'
-    fine_tune_using_craft_robotics(save_dir, _model_dir=CHATGLM3_6B_model_dir,
-                                   _config_file="./finetune_configs/lora_cr.yaml")
+    fine_tune_using_craft_robotics(save_dir, _model_dir=CHATGLM3_6B_model_dir, _temperature=temperature,
+                                   _config_file="./finetune_configs/lora_cr.yaml", _with_fine_tune=False,
+                                   _checkpoint=r"./output_cr/checkpoint-100")
 
 
 if __name__ == '__main__':
