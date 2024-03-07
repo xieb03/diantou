@@ -4,20 +4,6 @@ from airsim_wrapper import *
 from rag_related import *
 from recorder import Recorder
 
-# 获取 rag 的 chromadb 的 collection
-collection = ChromadbPersistentCollection(collection_name=CHROMADB_COLLECTION_NAME)
-
-# 一些指令转移到历史记录里面，这样不用每次都提示一大堆
-# prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
-#                    "You can refer to these records but should use the actual distance, direction, and coordinates "
-#                    "from the new question. Specifically, do not use the location of related objects in historical "
-#                    "records, but use code to find the actual location. "
-#                    "You must explain how you use the records, however, if you feel that the relevant records "
-#                    "are unreasonable or useless, you can ignore them, but must tell me the reasons."
-#                    "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
-
-prompt_template = "new question: {question}\n\n{count} relevant records: \n{records}"
-
 
 # 开启 chatgpt_airsim
 def start_chatgpt_airsim(_with_text=True, _queue: Queue = None, _use_chatglm=True,
@@ -53,6 +39,20 @@ def start_chatgpt_airsim(_with_text=True, _queue: Queue = None, _use_chatglm=Tru
     print(Colors.BLUE + f"\n{response}\n" + Colors.ENDC)
 
     # print("Welcome to the AirSim chatbot! I am ready to help you with your AirSim questions and commands.")
+
+    # 获取 rag 的 chromadb 的 collection
+    collection = ChromadbPersistentCollection(collection_name=CHROMADB_COLLECTION_NAME)
+
+    # 一些指令转移到历史记录里面，这样不用每次都提示一大堆
+    # prompt_template = ("You will be shown a new question, and some relevant historical dialogue records. "
+    #                    "You can refer to these records but should use the actual distance, direction, and coordinates "
+    #                    "from the new question. Specifically, do not use the location of related objects in historical "
+    #                    "records, but use code to find the actual location. "
+    #                    "You must explain how you use the records, however, if you feel that the relevant records "
+    #                    "are unreasonable or useless, you can ignore them, but must tell me the reasons."
+    #                    "\n\nnew question: {question}\n\n{count} relevant records: \n{records}")
+
+    prompt_template = "new question: {question}\n\n{count} relevant records: \n{records}"
 
     while True:
         if _with_text:
