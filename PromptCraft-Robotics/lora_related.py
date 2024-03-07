@@ -945,35 +945,38 @@ def fine_tune_using_craft_robotics(_save_dir, _model_dir=CHATGLM3_6B_model_dir, 
                                    _config_file="./finetune_configs/lora_cr.yaml", _with_fine_tune=False,
                                    _checkpoint=r"./output_cr/checkpoint-100"):
     # tensorflow sed random seed fail.
-    # Loading checkpoint shards: 100%|██████████| 7/7 [00:01<00:00,  3.77it/s]
+    # Loading checkpoint shards: 100%|██████████| 7/7 [00:01<00:00,  3.67it/s]
     # model (<class 'transformers_modules.chatglm3-6b.modeling_chatglm.ChatGLMForConditionalGeneration'>) has 6243584000 parameters, 6243584000 (100.00%) are trainable, the dtype is torch.float16，占 11.63G 显存.
     # model (<class 'peft.peft_model.PeftModelForCausalLM'>) has 6245533696 parameters, 1949696 (0.03%) are trainable, the dtype is torch.float16，占 11.63G 显存.
     # trainable params: 1,949,696 || all params: 6,245,533,696 || trainable%: 0.031217444255383614
     # --> model has 1.949696M params
     #
-    # Map: 100%|██████████| 47/47 [00:00<00:00, 5671.57 examples/s]
-    # Map: 100%|██████████| 12/12 [00:00<00:00, 3010.27 examples/s]
+    # Generating train split: 104 examples [00:00, 6521.46 examples/s]
+    # Generating validation split: 26 examples [00:00, 6522.24 examples/s]
+    # Generating test split: 26 examples [00:00, 6521.46 examples/s]
+    # Map: 100%|██████████| 104/104 [00:00<00:00, 5797.09 examples/s]
+    # Map: 100%|██████████| 26/26 [00:00<00:00, 6521.46 examples/s]
+    # Map: 100%|██████████| 26/26 [00:00<00:00, 5218.04 examples/s]
     # train_dataset: Dataset({
     #     features: ['input_ids', 'labels'],
-    #     num_rows: 47
+    #     num_rows: 104
     # })
     # val_dataset: Dataset({
     #     features: ['input_ids', 'output_ids'],
-    #     num_rows: 12
+    #     num_rows: 26
     # })
     # test_dataset: Dataset({
     #     features: ['input_ids', 'output_ids'],
-    #     num_rows: 12
+    #     num_rows: 26
     # })
-    # Map: 100%|██████████| 12/12 [00:00<00:00, 2407.98 examples/s]
     # You are using an old version of the checkpointing format that is deprecated (We will also silently ignore `gradient_checkpointing_kwargs` in case you passed it).Please update to the new format on your modeling file. To use the new format, you need to completely remove the definition of the method `_set_gradient_checkpointing` in your model.
     # max_steps is given, it will override any value given in num_train_epochs
-    # total  gpu memory:  12.89 G
+    # total  gpu memory:  13.33 G
     # torch  gpu memory:  11.67 G
     # tensor gpu memory:  11.66 G
     # ***** Running training *****
-    #   Num examples = 47
-    #   Num Epochs = 25
+    #   Num examples = 104
+    #   Num Epochs = 12
     #   Instantaneous batch size per device = 12
     #   Total train batch size (w. parallel, distributed & accumulation) = 12
     #   Gradient Accumulation steps = 1
@@ -983,92 +986,96 @@ def fine_tune_using_craft_robotics(_save_dir, _model_dir=CHATGLM3_6B_model_dir, 
     #   warnings.warn(
     # C:\Users\admin\.cache\huggingface\modules\transformers_modules\chatglm3-6b\modeling_chatglm.py:231: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at ..\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:263.)
     #   context_layer = torch.nn.functional.scaled_dot_product_attention(query_layer, key_layer, value_layer,
-    #  10%|█         | 10/100 [04:26<37:10, 24.78s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-10
-    # {'loss': 1.8856, 'grad_norm': 2.236332654953003, 'learning_rate': 4.5e-05, 'epoch': 2.5}
+    #  10%|█         | 10/100 [03:18<46:59, 31.33s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-10
+    # {'loss': 1.9589, 'grad_norm': 2.233711004257202, 'learning_rate': 4.5e-05, 'epoch': 1.11}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-10\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-10\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  20%|██        | 20/100 [07:30<17:11, 12.89s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-20
-    # {'loss': 1.4884, 'grad_norm': 2.4879562854766846, 'learning_rate': 4e-05, 'epoch': 5.0}
+    #  20%|██        | 20/100 [05:00<28:07, 21.09s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-20
+    # {'loss': 1.726, 'grad_norm': 2.2656426429748535, 'learning_rate': 4e-05, 'epoch': 2.22}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-20\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-20\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  30%|███       | 30/100 [11:57<28:41, 24.59s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-30
-    # {'loss': 1.1386, 'grad_norm': 2.265348196029663, 'learning_rate': 3.5e-05, 'epoch': 7.5}
+    #  30%|███       | 30/100 [06:42<17:29, 14.99s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-30
+    # {'loss': 1.4106, 'grad_norm': 2.0179901123046875, 'learning_rate': 3.5e-05, 'epoch': 3.33}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-30\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-30\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  40%|████      | 40/100 [14:59<12:46, 12.78s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-40
-    # {'loss': 0.8615, 'grad_norm': 1.8875480890274048, 'learning_rate': 3e-05, 'epoch': 10.0}
+    #  40%|████      | 40/100 [08:23<10:44, 10.74s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-40
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-40\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-40\special_tokens_map.json
+    # {'loss': 1.1532, 'grad_norm': 2.0942482948303223, 'learning_rate': 3e-05, 'epoch': 4.44}
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  50%|█████     | 50/100 [19:27<20:37, 24.75s/it]***** Running Evaluation *****
-    #   Num examples = 12
+    #  50%|█████     | 50/100 [10:06<06:40,  8.01s/it]***** Running Evaluation *****
+    #   Num examples = 26
     #   Batch size = 12
-    # {'loss': 0.6352, 'grad_norm': 1.408206820487976, 'learning_rate': 2.5e-05, 'epoch': 12.5}
+    # {'loss': 0.9213, 'grad_norm': 1.497626543045044, 'learning_rate': 2.5e-05, 'epoch': 5.56}
     #
-    #   0%|          | 0/1 [00:00<?, ?it/s]Building prefix dict from the default dictionary ...
+    #   0%|          | 0/3 [00:00<?, ?it/s]
+    #  67%|██████▋   | 2/3 [00:06<00:03,  3.21s/it]
+    # 100%|██████████| 3/3 [00:12<00:00,  4.25s/it]Building prefix dict from the default dictionary ...
     # Loading model from cache C:\Users\admin\AppData\Local\Temp\jieba.cache
-    # Loading model cost 0.302 seconds.
+    # Loading model cost 0.314 seconds.
     # Prefix dict has been built successfully.
     #
-    #  50%|█████     | 50/100 [21:00<20:37, 24.75s/it]
-    # 100%|██████████| 1/1 [00:00<00:00,  2.91it/s]
+    #  50%|█████     | 50/100 [12:06<06:40,  8.01s/it]
+    # 100%|██████████| 3/3 [00:12<00:00,  4.25s/it]
     #                                              Saving model checkpoint to ./output_cr\tmp-checkpoint-50
-    # {'eval_rouge-1': 7.489983333333332, 'eval_rouge-2': 1.1792583333333335, 'eval_rouge-l': 4.688416666666667, 'eval_bleu-4': 0.01257658005902929, 'eval_runtime': 93.2644, 'eval_samples_per_second': 0.129, 'eval_steps_per_second': 0.011, 'epoch': 12.5}
+    # {'eval_rouge-1': 5.58535, 'eval_rouge-2': 0.2382576923076923, 'eval_rouge-l': 3.7411499999999993, 'eval_bleu-4': 0.006030430359978863, 'eval_runtime': 120.1245, 'eval_samples_per_second': 0.216, 'eval_steps_per_second': 0.025, 'epoch': 5.56}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-50\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-50\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  60%|██████    | 60/100 [24:04<09:20, 14.00s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-60
-    # {'loss': 0.5162, 'grad_norm': 1.687022089958191, 'learning_rate': 2e-05, 'epoch': 15.0}
+    #  60%|██████    | 60/100 [13:46<04:44,  7.12s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-60
+    # {'loss': 0.8227, 'grad_norm': 1.8712657690048218, 'learning_rate': 2e-05, 'epoch': 6.67}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-60\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-60\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  70%|███████   | 70/100 [28:43<12:27, 24.93s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-70
-    # {'loss': 0.3885, 'grad_norm': 1.0744001865386963, 'learning_rate': 1.5e-05, 'epoch': 17.5}
+    #  70%|███████   | 70/100 [15:27<02:07,  4.26s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-70
+    # {'loss': 0.6921, 'grad_norm': 1.431992769241333, 'learning_rate': 1.5e-05, 'epoch': 7.78}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-70\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-70\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  80%|████████  | 80/100 [31:42<04:11, 12.59s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-80
+    #  80%|████████  | 80/100 [17:07<01:04,  3.24s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-80
+    # {'loss': 0.6496, 'grad_norm': 1.7917826175689697, 'learning_rate': 1e-05, 'epoch': 8.89}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-80\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-80\special_tokens_map.json
-    # {'loss': 0.3218, 'grad_norm': 1.1946592330932617, 'learning_rate': 1e-05, 'epoch': 20.0}
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    #  90%|█████████ | 90/100 [36:05<04:03, 24.31s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-90
-    # {'loss': 0.2728, 'grad_norm': 1.0228019952774048, 'learning_rate': 5e-06, 'epoch': 22.5}
+    #  90%|█████████ | 90/100 [18:48<00:27,  2.80s/it]Saving model checkpoint to ./output_cr\tmp-checkpoint-90
+    # {'loss': 0.5844, 'grad_norm': 1.6837605237960815, 'learning_rate': 5e-06, 'epoch': 10.0}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-90\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-90\special_tokens_map.json
     # D:\Users\admin\anaconda3\Lib\site-packages\torch\utils\checkpoint.py:460: UserWarning: torch.utils.checkpoint: please pass in use_reentrant=True or use_reentrant=False explicitly. The default value of use_reentrant will be updated to be False in the future. To maintain current behavior, pass use_reentrant=True. It is recommended that you use use_reentrant=False. Refer to docs for more details on the differences between the two variants.
     #   warnings.warn(
-    # 100%|██████████| 100/100 [39:03<00:00, 12.54s/it]***** Running Evaluation *****
-    #   Num examples = 12
+    # 100%|██████████| 100/100 [21:59<00:00, 29.30s/it]***** Running Evaluation *****
+    # {'loss': 0.5638, 'grad_norm': 1.6716049909591675, 'learning_rate': 0.0, 'epoch': 11.11}
+    #   Num examples = 26
     #   Batch size = 12
-    # {'loss': 0.2436, 'grad_norm': 1.102130651473999, 'learning_rate': 0.0, 'epoch': 25.0}
     #
+    #   0%|          | 0/3 [00:00<?, ?it/s]
+    #  67%|██████▋   | 2/3 [00:07<00:03,  3.53s/it]
     #
-    # 100%|██████████| 100/100 [40:35<00:00, 12.54s/it]
-    # 100%|██████████| 1/1 [00:00<00:00, 32.74it/s]
+    # 100%|██████████| 100/100 [23:54<00:00, 29.30s/it]
+    # 100%|██████████| 3/3 [00:14<00:00,  5.32s/it]
     #                                              Saving model checkpoint to ./output_cr\tmp-checkpoint-100
-    # {'eval_rouge-1': 7.112908333333333, 'eval_rouge-2': 0.7180333333333334, 'eval_rouge-l': 4.044475, 'eval_bleu-4': 0.00926650683021399, 'eval_runtime': 91.9505, 'eval_samples_per_second': 0.131, 'eval_steps_per_second': 0.011, 'epoch': 25.0}
+    # {'eval_rouge-1': 8.649707692307693, 'eval_rouge-2': 0.5124961538461539, 'eval_rouge-l': 5.041776923076924, 'eval_bleu-4': 0.008850109955027092, 'eval_runtime': 115.1359, 'eval_samples_per_second': 0.226, 'eval_steps_per_second': 0.026, 'epoch': 11.11}
     # tokenizer config file saved in ./output_cr\tmp-checkpoint-100\tokenizer_config.json
     # Special tokens file saved in ./output_cr\tmp-checkpoint-100\special_tokens_map.json
-    # {'train_runtime': 2435.9387, 'train_samples_per_second': 0.493, 'train_steps_per_second': 0.041, 'train_loss': 0.77522705078125, 'epoch': 25.0}
-    # 'main' spent 2441.9455s.
     #
     #
     # Training completed. Do not forget to share your model on huggingface.co/models =)
     #
     #
-    # 100%|██████████| 100/100 [40:35<00:00, 24.36s/it]
+    # 100%|██████████| 100/100 [23:56<00:00, 14.36s/it]
+    # {'train_runtime': 1436.1053, 'train_samples_per_second': 0.836, 'train_steps_per_second': 0.07, 'train_loss': 1.04825927734375, 'epoch': 11.11}
+    # 'main' spent 1442.5476s.
     if _with_fine_tune:
         fine_tune(data_dir=_save_dir, model_dir=_model_dir, config_file=_config_file)
 
