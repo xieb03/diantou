@@ -1,5 +1,6 @@
 import sys
 
+import umap
 from sklearn.model_selection import train_test_split
 
 sys.path.append("../")
@@ -295,6 +296,58 @@ def covert_command_to_lora(_command_json_path: str, _fix_json_path: str, _debug:
         print(F"{split} 一共保存了 {count} 条数据.")
 
 
+# umap 可视化
+def umap_visualization():
+    collection = ChromadbPersistentCollection(collection_name=CHROMADB_COLLECTION_NAME)
+
+    # 104
+    print(collection.count())
+    results = collection.collection.get(include=["embeddings"], limit=collection.count())
+    dataset_embeddings = results['embeddings']
+
+    n_components = 2
+    # 可以用类似于 scikit-learn 的方式，先 fit 再 transform，也可以直接 fit_transform，前者更慢
+    # umap_transform = umap.UMAP(n_neighbors=15, n_components=n_components, random_state=0, transform_seed=42).fit(
+    #     embeddings)
+    # umap_embeddings = np.zeros((len(embeddings), n_components))
+    # for i, embedding in enumerate(tqdm(embeddings)):
+    #     umap_embeddings[i] = umap_transform.transform([embedding])
+
+    # UserWarning: n_jobs value -1 overridden to 1 by setting random_state. Use no seed for parallelism.
+    #   warn(f"n_jobs value {self.n_jobs} overridden to 1 by setting random_state. Use no seed for parallelism.")
+    # 如果 n_jobs = -1，设定 random_state 会去掉并行，但保证输出结果的可复现
+    umap_transform = umap.UMAP(n_neighbors=15, n_components=n_components, n_jobs=1, random_state=0,
+                               transform_seed=42).fit(dataset_embeddings)
+    dataset_embeddings = umap_transform.transform(dataset_embeddings)
+
+    # [[ 9.508402   5.671052 ]
+    #  [ 7.261736   4.745227 ]
+    #  [ 6.127557   7.15037  ]
+    #  [ 7.395507   6.882504 ]
+    # (104, 2)
+    print(dataset_embeddings.shape)
+
+    query = "向前飞 10 米"
+    query_embedding = umap_transform.transform(collection.embedding_function(query))
+    # (1, 2)
+    print(query_embedding.shape)
+
+    all_similar_answer = collection.query_one(query, include=["documents", "distances", "uris", "embeddings"])
+    retrieved_embeddings = umap_transform.transform(all_similar_answer['embeddings'])
+    # (6, 2)
+    print(retrieved_embeddings.shape)
+
+    plt.figure()
+    plt.scatter(query_embedding[:, 0], query_embedding[:, 1], s=150, marker="X", color="r", zorder=1)
+    plt.scatter(retrieved_embeddings[:, 0], retrieved_embeddings[:, 1], s=100, facecolors="none", edgecolors="g",
+                zorder=2)
+    plt.scatter(dataset_embeddings[:, 0], dataset_embeddings[:, 1], s=10, color="gray", zorder=3)
+    plt.gca().set_aspect('equal', adjustable='datalim')
+    plt.title("UMAP Embeddings")
+    plt.axis("off")
+    plt.show()
+
+
 @func_timer(arg=True)
 def main():
     fix_all_seed()
@@ -317,7 +370,9 @@ def main():
     # 去重后，共有 130 条有效记录.
     # train 一共保存了 104 条数据.
     # dev 一共保存了 26 条数据.
-    covert_command_to_lora(_command_json_path="prompt/command.json", _fix_json_path="prompt/command_fix_{split}.json")
+    # covert_command_to_lora(_command_json_path="prompt/command.json", _fix_json_path="prompt/command_fix_{split}.json")
+
+    umap_visualization()
 
 
 if __name__ == '__main__':

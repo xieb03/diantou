@@ -25,6 +25,8 @@ from typing import List
 
 import numpy as np
 from IPython.display import Image, display, HTML
+# noinspection PyUnresolvedReferences
+from tqdm import tqdm
 from watermark import watermark
 
 PATH_SEPARATOR = os.path.sep

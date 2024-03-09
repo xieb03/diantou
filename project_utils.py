@@ -10,6 +10,7 @@ from util_chatglm import *
 from util_chromadb import *
 from util_openai import *
 from util_path import *
+from util_plot import *
 
 
 # 'check_edge_tts' spent 12.0146s.
