@@ -1,6 +1,7 @@
 from base64 import b64decode
 from threading import RLock
 
+import gradio as gr
 import tiktoken
 import whisper
 import zhconv
@@ -342,27 +343,31 @@ def check_f_string():
 
 
 # 测试 gradio
-def check_gradio():
-    import gradio as gr
+def check_summarize_gradio():
+    def summarize(prompt: str, article: str, temperature=1.0) -> List[Tuple[str, str]]:
+        user_prompt = F"{prompt}\n{article}"
+        response = get_chatgpt_completion_content(user_prompt=user_prompt, temperature=temperature)
 
-    def interact(chatbot_list: List[Tuple[str, str]], user_prompt: str) -> List[Tuple[str, str]]:
-        response = get_chatgpt_completion_content(user_prompt=user_prompt)
-        chatbot_list.append((user_prompt, response))
-
-        return chatbot_list
+        return [(user_prompt, response)]
 
     def reset() -> List:
         return list()
 
     with gr.Blocks() as demo:
-        gr.Markdown(F" gradio demo")
+        gr.Markdown(F"# Summarization\nFill in any article you like and let the chatbot summarize it for you")
         chatbot = gr.Chatbot()
-        input_textbox = gr.Textbox(label="input", value="")
+        prompt_box = gr.Textbox(label="Prompt", value="请帮我总结一下下面的文章，在 100 字以内.")
+        article_box = gr.Textbox(label="Article", interactive=True, value="")
+
+        with gr.Column():
+            gr.Markdown(F"# Temperature\n Temperature is used to control the output of the chatbot.")
+            temperature_slide = gr.Slider(minimum=0.0, maximum=2.0, value=1.0, step=0.1, label="Temperature")
+
         with gr.Row():
             send_button = gr.Button(value="send")
             reset_button = gr.Button(value="reset")
 
-        send_button.click(fn=interact, inputs=[chatbot, input_textbox], outputs=[chatbot])
+        send_button.click(fn=summarize, inputs=[prompt_box, article_box, temperature_slide], outputs=[chatbot])
         reset_button.click(fn=reset, outputs=[chatbot])
 
     demo.launch(share=True)
@@ -655,7 +660,7 @@ def main():
     # print_closeai()
     # check_f_string()
     # check_chatgpt_prompt_engineering()
-    check_gradio()
+    # check_summarize_gradio()
 
     pass
 
