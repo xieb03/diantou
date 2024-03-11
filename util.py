@@ -21,7 +21,7 @@ from functools import partial
 from functools import wraps
 from random import shuffle
 # noinspection PyUnresolvedReferences
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from IPython.display import Image, display, HTML

@@ -341,6 +341,33 @@ def test_f_string():
     """)
 
 
+# 测试 gradio
+def test_gradio():
+    import gradio as gr
+
+    def interact(chatbot_list: List[Tuple[str, str]], user_prompt: str) -> List[Tuple[str, str]]:
+        response = get_chatgpt_completion_content(user_prompt=user_prompt)
+        chatbot_list.append((user_prompt, response))
+
+        return chatbot_list
+
+    def reset() -> List:
+        return list()
+
+    with gr.Blocks() as demo:
+        gr.Markdown(F" gradio demo")
+        chatbot = gr.Chatbot()
+        input_textbox = gr.Textbox(label="input", value="")
+        with gr.Row():
+            send_button = gr.Button(value="send")
+            reset_button = gr.Button(value="reset")
+
+        send_button.click(fn=interact, inputs=[chatbot, input_textbox], outputs=[chatbot])
+        reset_button.click(fn=reset, outputs=[chatbot])
+
+    demo.launch(share=True)
+
+
 # https://www.promptingguide.ai/zh
 # 大模型提示工程指南，注意，不同的 chatgpt 版本，效果可能有很大的不同
 def test_chatgpt_prompt_engineering():
@@ -628,6 +655,7 @@ def main():
     # print_closeai()
     # test_f_string()
     # test_chatgpt_prompt_engineering()
+    test_gradio()
 
     pass
 
