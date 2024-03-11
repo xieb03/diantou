@@ -325,7 +325,7 @@ def check_whisper_text_local():
     print(get_whisper_text_local(mp3_path))
 
 
-def test_f_string():
+def check_f_string():
     prompt = """
     {instruction}
 
@@ -342,7 +342,7 @@ def test_f_string():
 
 
 # 测试 gradio
-def test_gradio():
+def check_gradio():
     import gradio as gr
 
     def interact(chatbot_list: List[Tuple[str, str]], user_prompt: str) -> List[Tuple[str, str]]:
@@ -370,7 +370,7 @@ def test_gradio():
 
 # https://www.promptingguide.ai/zh
 # 大模型提示工程指南，注意，不同的 chatgpt 版本，效果可能有很大的不同
-def test_chatgpt_prompt_engineering():
+def check_chatgpt_prompt_engineering():
     # prompt = "The sky is "
     # # clear and blue, with a few fluffy white clouds scattered across the horizon.
     # print(get_chat_completion_content(user_prompt=prompt))
@@ -653,9 +653,9 @@ def main():
     # check_openai_interfaces()
     # check_whisper_text_local()
     # print_closeai()
-    # test_f_string()
-    # test_chatgpt_prompt_engineering()
-    test_gradio()
+    # check_f_string()
+    # check_chatgpt_prompt_engineering()
+    check_gradio()
 
     pass
 
