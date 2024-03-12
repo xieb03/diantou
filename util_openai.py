@@ -80,6 +80,11 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
     # token_count = 0
     # encoding = tiktoken.encoding_for_model(model)
 
+    # https://platform.openai.com/docs/models
+    # turbo 一般指向最新的模型副本
+    if model not in ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-turbo-preview"]:
+        print(F"IMPORTANT: {model}")
+
     client = Client.instance()
 
     if user_prompt is not None or system_prompt is not None:
@@ -160,12 +165,14 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
     completion_token_count = response.usage.completion_tokens
     total_token_count = prompt_token_count + completion_token_count
     true_model = response.model
+
+    # 上面的 turbo 对应的真实版本
     # from 20240204，gpt-3.5-turbo-0613
     # assert_equal(true_model, "gpt-3.5-turbo-0613")
     # from 20240225，gpt-3.5-turbo-0125
     # assert_equal(true_model, "gpt-3.5-turbo-0125")
     # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
-    if true_model not in ["gpt-3.5-turbo-0125", "gpt-3.5-turbo-16k-0613", "gpt-4-0613"]:
+    if true_model not in ["gpt-3.5-turbo-0125", "gpt-3.5-turbo-16k-0613", "gpt-4-0613", "gpt-4-0125-preview"]:
         print(F"IMPORTANT: {true_model}")
 
     # assert_equal(true_model, "gpt-35-turbo")
