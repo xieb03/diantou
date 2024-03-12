@@ -317,7 +317,7 @@ def get_whisper_text_local(_path, _model=None, _model_name="base", _language="zh
 
 # 从本地获得 whisper 的模型
 def get_whisper_model_local(_model_name="base"):
-    assert _model_name in {"base", "small", "medium"}
+    assert _model_name in {"base", "small", "medium", "large-v3"}, _model_name
     return whisper.load_model(_model_name, download_root=BIGDATA_WHISPER_PATH)
 
 

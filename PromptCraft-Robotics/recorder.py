@@ -52,7 +52,7 @@ class Recorder:
         self.start_button.config(state="disabled")
         self.stop_button.config(state="disabled")
 
-        # 为了给中文增加标点符号，同时尽量用普通话尽心转译
+        # 为了给中文增加标点符号，同时尽量用普通话进行转译
         text = get_whisper_text_local(self.file_path, _model=self.model,
                                       _initial_prompt="以下是普通话的句子，这是一个指令。")
         self.label.config(text=f"识别结果为：{text}")
