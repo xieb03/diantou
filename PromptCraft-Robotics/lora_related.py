@@ -1112,8 +1112,8 @@ def fine_tune_using_craft_robotics(_save_dir, _model_dir=CHATGLM3_6B_model_dir, 
     # aw.fly_to([0, 7, 0])
     # ```
     # This will take off the drone vertically at a 45-degree angle, and then fly directly upwards to a new position at a height of 7 meters.
-    # print("_" * 20 + "before_fine_tune" + "_" * 20)
-    # before_fine_tune(_temperature=_temperature)
+    print("_" * 20 + "before_fine_tune" + "_" * 20)
+    before_fine_tune(_temperature=_temperature)
 
     # 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
     # --------------------------------------------------------------------------------
@@ -1141,8 +1141,8 @@ def fine_tune_using_craft_robotics(_save_dir, _model_dir=CHATGLM3_6B_model_dir, 
     # This code will take off the drone, fly it to a position 7 meters above the ground, and then land it. The `fly_to()` function will automatically calculate the path to the new position based on the drone's current position and orientation.
     #
     # Note that this code assumes that the initial position of the drone is at sea level. If the initial position is above sea level, we can simply use the `aw.fly_to()` function without taking off the drone first.
-    # print("_" * 20 + "after_fine_tune" + "_" * 20)
-    # after_fine_tune(_checkpoint, _temperature=_temperature)
+    print("_" * 20 + "after_fine_tune" + "_" * 20)
+    after_fine_tune(_checkpoint, _temperature=_temperature)
 
 
 @func_timer(arg=True)
@@ -1161,7 +1161,7 @@ def main():
 
     save_dir = r'D:/PycharmProjects/xiebo/diantou/PromptCraft-Robotics/prompt/'
     fine_tune_using_craft_robotics(save_dir, _model_dir=CHATGLM3_6B_model_dir, _temperature=temperature,
-                                   _config_file="./finetune_configs/lora_cr.yaml", _with_fine_tune=True,
+                                   _config_file="./finetune_configs/lora_cr.yaml", _with_fine_tune=False,
                                    _checkpoint=r"./output_cr/checkpoint-100")
 
 
