@@ -201,6 +201,11 @@ def delete_all_blank(_str):
     return re.sub("\\s+", "", _str)
 
 
+# 将多个空格变为一个
+def replace_multiple_spaces(_str):
+    return re.sub(r' +', ' ', _str)
+
+
 # 播放程序结束音乐
 def play_music(_file_name=os.path.join(os.path.split(os.path.realpath(__file__))[0], "end_music.mp3")):
     os.system("open {}".format(_file_name))

@@ -1258,7 +1258,32 @@ def check_bge_reranker():
     print(scores)
 
 
-# noinspection PyUnusedLocal
+# scan 数据集，利用 LtM 进行测试
+#  40%|████      | 4/10 [00:40<01:03, 10.54s/it]jump around left thrice and run right thrice
+# The output of “jump around left thrice and run right thrice” concatenates: the output of “jump around left thrice”, the output of “run right thrice”. “jump around left thrice” outputs (“TURN LEFT” + “JUMP”) * 3. “run right thrice” outputs (“TURN RIGHT” + “RUN”) * 3. So concatenating the output of “jump around left thrice” and the output of “run right thrice” leads to (“TURN LEFT” + “JUMP”) * 3 + (“TURN RIGHT” + “RUN”) * 3. So the output of “jump around left thrice and run right thrice” is (“TURN LEFT” + “JUMP”) * 3 + (“TURN RIGHT” + “RUN”) * 3.
+# I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN
+# I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN
+# --------------------------------------------------------------------------------
+#  60%|██████    | 6/10 [00:59<00:39, 10.00s/it]jump opposite right after walk around right thrice
+# The output of “jump opposite right after walk around right thrice” concatenates: the output of “walk around right thrice”, the output of “jump opposite right”. “walk around right thrice” outputs (“TURN RIGHT” + “WALK”) * 3. “jump opposite right” outputs “TURN RIGHT” * 2 + “JUMP”. So concatenating the output of “walk around right thrice” and the output of “jump opposite right” leads to (“TURN RIGHT” + “WALK”) * 3 + (“TURN RIGHT” * 2 + “JUMP”). So the output of “jump opposite right after walk around right thrice” is (“TURN RIGHT” + “WALK”) * 3 + (“TURN RIGHT” * 2 + “JUMP”).
+# I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_TURN_RIGHT I_JUMP
+# I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_TURN_RIGHT I_JUMP
+# --------------------------------------------------------------------------------
+#  70%|███████   | 7/10 [01:10<00:30, 10.08s/it]look around left after jump around left twice
+# The output of “look around left after jump around left twice” concatenates: the output of “jump around left twice”, the output of “look around left”. “jump around left twice” outputs (“TURN LEFT” + “JUMP”) * 6. “look around left” outputs “LOOK LEFT” * 4. So concatenating the output of “jump around left twice” and the output of “look around left” leads to (“TURN LEFT” + “JUMP”) * 6 + “LOOK LEFT” * 4. So the output of “look around left after jump around left twice” is (“TURN LEFT” + “JUMP”) * 6 + “LOOK LEFT” * 4.
+# I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK
+# I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_LOOK_LEFT I_LOOK_LEFT I_LOOK_LEFT I_LOOK_LEFT
+# --------------------------------------------------------------------------------
+# 100%|██████████| 10/10 [01:39<00:00,  9.92s/it]
+# walk twice after look opposite left
+# The output of “walk twice after look opposite left” concatenates: the output of “look opposite left”, the output of “walk twice”. “look opposite left” outputs “LOOK LEFT” * 2. “walk twice” outputs “WALK” * 2. So concatenating the output of “look opposite left” and the output of “walk twice” leads to “LOOK LEFT” * 2 + “WALK” * 2. So the output of “walk twice after look opposite left” is “LOOK LEFT” * 2 + “WALK” * 2.
+# I_TURN_LEFT I_TURN_LEFT I_LOOK I_WALK I_WALK
+# I_LOOK_LEFT I_LOOK_LEFT I_WALK I_WALK
+# --------------------------------------------------------------------------------
+# ['turn opposite right thrice and turn opposite left', 'run right twice after walk right twice', 'look around right twice and turn left thrice', 'jump around left thrice and run right thrice', 'run thrice and walk opposite left', 'jump opposite right after walk around right thrice', 'look around left after jump around left twice', 'look opposite right twice and jump opposite left twice', 'look opposite right thrice after look around left', 'walk twice after look opposite left']
+# ['I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_LEFT I_TURN_LEFT', 'I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN', 'I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_LEFT I_TURN_LEFT I_TURN_LEFT', 'I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN', 'I_RUN I_RUN I_RUN I_TURN_LEFT I_TURN_LEFT I_WALK', 'I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_TURN_RIGHT I_JUMP', 'I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK', 'I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_LEFT I_TURN_LEFT I_JUMP I_TURN_LEFT I_TURN_LEFT I_JUMP', 'I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK', 'I_TURN_LEFT I_TURN_LEFT I_LOOK I_WALK I_WALK']
+# ['I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_LEFT I_TURN_LEFT', 'I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN', 'I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_LEFT I_TURN_LEFT I_TURN_LEFT', 'I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN', 'I_RUN I_RUN I_RUN I_TURN_LEFT I_TURN_LEFT I_WALK', 'I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_TURN_RIGHT I_JUMP', 'I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_LOOK_LEFT I_LOOK_LEFT I_LOOK_LEFT I_LOOK_LEFT', 'I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_LEFT I_TURN_LEFT I_JUMP I_TURN_LEFT I_TURN_LEFT I_JUMP', 'I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_LEFT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_TURN_RIGHT I_LOOK', 'I_LOOK_LEFT I_LOOK_LEFT I_WALK I_WALK']
+# 0.6
 def check_scan_dataset():
     # DatasetDict({
     #     train: Dataset({
@@ -1271,7 +1296,6 @@ def check_scan_dataset():
     #     })
     # })
     scan_ds = dataset_download(path="scan", name="simple")
-    scan_train = scan_ds["train"]
     scan_test = scan_ds["test"]
     # {'commands': 'jump opposite right twice and turn opposite right thrice',
     # 'actions': 'I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT'}
@@ -1279,12 +1303,13 @@ def check_scan_dataset():
     # 可以转化为 pandas.DataFrane
     assert_equal(scan_test.to_pandas().shape, (4182, 2))
 
-    command_0 = scan_train[0]["commands"]
-    action_0 = scan_train[0]["actions"]
-    command_1 = scan_train[1]["commands"]
-    action_1 = scan_train[1]["actions"]
-    command_2 = scan_train[2]["commands"]
-    action_2 = scan_train[2]["actions"]
+    # scan_train = scan_ds["train"]
+    # command_0 = scan_train[0]["commands"]
+    # action_0 = scan_train[0]["actions"]
+    # command_1 = scan_train[1]["commands"]
+    # action_1 = scan_train[1]["actions"]
+    # command_2 = scan_train[2]["commands"]
+    # action_2 = scan_train[2]["actions"]
 
     # # few-shot
     # few_shot_prompt = F'Q: {command_0}, A: {action_0}, Q: {command_1}, A: {action_1}, Q: {command_2}, A: '
@@ -1306,75 +1331,304 @@ def check_scan_dataset():
     # action = get_completion_content(zero_shot_ltm_prompt, strip=True)
     # print(action)
 
-    # Stage 1.Command decomposition：指令拆解
-    cd_few_shot = ('Q: "look opposite right thrice after walk" '
-                   'A: "look opposite right thrice" can be solved by: "look opposite right", "look opposite right '
-                   'thrice". "walk" can be solved by "walk". So, "look opposite right thrice after walk" can be '
-                   'solved by: "walk", "look opposite right", "look opposite right thrice". '
-                   'Q: "look around right thrice and walk" '
-                   'A: "look around right thrice" can be solved by: "look right", "look around right", "look around '
-                   'right thrice". "walk" can be solved by "walk". So, "look around right thrice and walk" can be '
-                   'solved by: "look right", "look around right", "look around right thrice", "walk". ')
-
+    # # Stage 1.Command decomposition：指令拆解
     # cd_few_shot = ('Q: "look opposite right thrice after walk" '
-    #                'A: "look opposite right thrice" can be solved by: "look opposite right", "look opposite right thrice". '
-    #                '"walk" can be solved by "walk". So, "look opposite right thrice after walk" can be '
+    #                'A: "look opposite right thrice" can be solved by: "look opposite right", "look opposite right '
+    #                'thrice". "walk" can be solved by "walk". So, "look opposite right thrice after walk" can be '
     #                'solved by: "walk", "look opposite right", "look opposite right thrice". '
-    #                'Q: "look around right and walk" '
-    #                'A: "look around right " can be solved by: "look right", "look around right". '
-    #                '"walk" can be solved by "walk". So, "look around right and walk" can be '
-    #                'solved by: "look right", "look around right", "walk". ')
+    #                'Q: "look around right thrice and walk" '
+    #                'A: "look around right thrice" can be solved by: "look right", "look around right", "look around '
+    #                'right thrice". "walk" can be solved by "walk". So, "look around right thrice and walk" can be '
+    #                'solved by: "look right", "look around right", "look around right thrice", "walk". ')
+    #
+    # # cd_few_shot = ('Q: "look opposite right thrice after walk" '
+    # #                'A: "look opposite right thrice" can be solved by: "look opposite right", "look opposite right thrice". '
+    # #                '"walk" can be solved by "walk". So, "look opposite right thrice after walk" can be '
+    # #                'solved by: "walk", "look opposite right", "look opposite right thrice". '
+    # #                'Q: "look around right and walk" '
+    # #                'A: "look around right " can be solved by: "look right", "look around right". '
+    # #                '"walk" can be solved by "walk". So, "look around right and walk" can be '
+    # #                'solved by: "look right", "look around right", "walk". ')
+    #
+    # prompt_cd = cd_few_shot + F'Q："{command_1}" A:'
+    # response_cd = get_completion_content(prompt_cd, strip=True, temperature=0.5)
+    # # "run opposite left" can be solved by: "run", "opposite left". "walk right" can be solved by: "walk", "walk right".
+    # # So, "run opposite left after walk right" can be solved by: "walk", "walk right", "run", "opposite left".
+    # print(response_cd)
+    #
+    # # Stage 2.Command mapping：指令翻译，将拆解后的短指令逐一翻译，并不断拼接到 few-shot 中，最终获得原始长指令的总翻译结果
+    # cm_few_shot = ('Q: "jump left" '
+    #                'A: The output of "jump left" concatenates: the output of "turn left", the output of "jump". "turn '
+    #                'left" outputs "TURN LEFT". "jump" outputs "JUMP". So concatenating the output of "turn '
+    #                'left" and the output of "jump" leads to "TURN LEFT" + "JUMP". So the output of "jump left" '
+    #                'is "TURN LEFT" + "JUMP". '
+    #                'Q: "run and look twice" '
+    #                'A: The output of "run and look twice" concatenates: the output of "run", the output of "look '
+    #                'twice". "run" outputs "RUN". "look twice" outputs "LOOK" * 2. So concatenating the output of '
+    #                'run" and the output of "look twice" leads to "RUN" + "LOOK" * 2. So the output of "run and '
+    #                'look twice" is "RUN" + "LOOK" * 2. '
+    #                'Q: "walk opposite left" '
+    #                'A: The output of "walk opposite left" concatenates: the output of "turn opposite left", the output of '
+    #                '"walk". "turn opposite left" outputs "TURN LEFT" * 2. "walk" outputs "WALK". So concatenating the '
+    #                'output of "turn opposite left" and the output of "walk" leads to "TURN LEFT" * 2 + "WALK". So the '
+    #                'output of "walk opposite left" is "TURN LEFT" * 2 + "WALK" ')
+    #
+    # prompt_cm_1 = cm_few_shot + 'Q: "walk right" A：'
+    # response_cm_1 = get_completion_content(prompt_cm_1, strip=True, temperature=0.5)
+    # # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
+    # # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
+    # # So the output of "walk right" is "TURN RIGHT" + "WALK".
+    # print(response_cm_1)
+    #
+    # prompt_cm_2 = prompt_cm_1 + response_cm_1 + 'Q: "run left" A：'
+    # response_cm_2 = get_completion_content(prompt_cm_2, strip=True, temperature=0.5)
+    # # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
+    # # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
+    # # So the output of "walk right" is "TURN RIGHT" + "WALK".
+    # print(response_cm_2)
+    #
+    # prompt_cm_3 = prompt_cm_2 + response_cm_2 + 'Q: "run opposite left" A：'
+    # response_cm_3 = get_completion_content(prompt_cm_3, strip=True, temperature=0.5)
+    # # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
+    # # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
+    # # So the output of "walk right" is "TURN RIGHT" + "WALK".
+    # print(response_cm_3)
+    #
+    # prompt_cm = prompt_cm_3 + response_cm_3 + F'Q: "{command_1}" A：'
+    # print(prompt_cm)
+    # response_cm = get_completion_content(prompt_cm, strip=True, temperature=0.5)
+    # print(response_cm)
 
-    prompt_cd = cd_few_shot + F'Q："{command_1}" A:'
-    response_cd = get_completion_content(prompt_cd, strip=True, temperature=0.5)
-    # "run opposite left" can be solved by: "run", "opposite left". "walk right" can be solved by: "walk", "walk right".
-    # So, "run opposite left after walk right" can be solved by: "walk", "walk right", "run", "opposite left".
-    print(response_cd)
+    cd_few_shot = 'Q: “look right after look twice” \
+                   A: “look right after look twice” can be solved by: “look right”, “look twice”. \
+                   Q: “jump opposite right thrice and walk” \
+                   A: “jump opposite right thrice” can be solved by: “jump opposite right”, “jump opposite right thrice”. \
+                   “walk” can be solved by: “walk”. So, “jump opposite right thrice and walk” can be solved by: “jump \
+                   opposite right”, “jump opposite right thrice”, “walk”. \
+                   Q: “run left twice and run right” \
+                   A: “run left twice” can be solved by: “run left”, “run left twice”. “run right” can be solved by “run right”. \
+                   So, “run left twice and run right” can.be solved by: “run left”, “run left twice”, “run right”. \
+                   Q: “run opposite right” \
+                   A: “run opposite right” can be solved by “run opposite right”. \
+                   Q: “look opposite right thrice after walk” \
+                   A: “look opposite right thrice” can be solved by: “look opposite right”, “look opposite right thrice”. \
+                   “walk” can be solved by “walk”. So, “look opposite right thrice after walk” can be solved by: “look \
+                   opposite right”, “look opposite right thrice”, “walk”. \
+                   Q: “jump around right” \
+                   A: “jump around right” can be solved by: “jump right”, “jump around right”. So, “jump around right” \
+                   can be solved by: “jump right”, “jump around right”. \
+                   Q: “look around right thrice and walk” \
+                   A: “look around right thrice” can be solved by: “look right”, “look around right”, “look around right \
+                   thrice”. “walk” can be solved by “walk”. So, “look around right thrice and walk” can be solved by: \
+                   “look right”, “look around right”, “look around right thrice”, “walk”. \
+                   Q: “turn right after run right thrice” \
+                   A: “turn right” can be solved by: “turn right”. “run right thrice” can be solved by: “run right”, “run \
+                   right thrice”. So, “turn right after run right thrice” can be solved by: “turn right”, “run right”, “run right \
+                   thrice”. \
+                   '
 
-    # Stage 2.Command mapping：指令翻译，将拆解后的短指令逐一翻译，并不断拼接到 few-shot 中，最终获得原始长指令的总翻译结果
-    cm_few_shot = ('Q: "jump left" '
-                   'A: The output of "jump left" concatenates: the output of "turn left", the output of "jump". "turn '
-                   'left" outputs "TURN LEFT". "jump" outputs "JUMP". So concatenating the output of "turn '
-                   'left" and the output of "jump" leads to "TURN LEFT" + "JUMP". So the output of "jump left" '
-                   'is "TURN LEFT" + "JUMP". '
-                   'Q: "run and look twice" '
-                   'A: The output of "run and look twice" concatenates: the output of "run", the output of "look '
-                   'twice". "run" outputs "RUN". "look twice" outputs "LOOK" * 2. So concatenating the output of '
-                   'run" and the output of "look twice" leads to "RUN" + "LOOK" * 2. So the output of "run and '
-                   'look twice" is "RUN" + "LOOK" * 2. '
-                   'Q: "walk opposite left" '
-                   'A: The output of "walk opposite left" concatenates: the output of "turn opposite left", the output of '
-                   '"walk". "turn opposite left" outputs "TURN LEFT" * 2. "walk" outputs "WALK". So concatenating the '
-                   'output of "turn opposite left" and the output of "walk" leads to "TURN LEFT" * 2 + "WALK". So the '
-                   'output of "walk opposite left" is "TURN LEFT" * 2 + "WALK" ')
+    cm_few_shot = 'Q: “turn left” \
+                   A: “turn left” outputs “TURN LEFT”. \
+                   Q: “turn right” \
+                   A: “turn right” outputs “TURN RIGHT”. \
+                   Q: “jump left” \
+                   A: The output of “jump left” concatenates: the output of “turn left”, the output of “jump”. “turn left” \
+                   outputs “TURN LEFT”. “jump” outputs “JUMP”. So concatenating the output of “turn left” and the output of “jump” \
+                   leads to “TURN LEFT” + “JUMP”. So the output of “jump left” is “TURN LEFT” + “JUMP”. \
+                   Q: “run right” \
+                   A: The output of “run right” concatenates: the output of “turn right”, the output of “run”. “turn right” \
+                   outputs “TURN RIGHT”. “run” outputs “RUN”. So concatenating the output of “turn right” and the \
+                   output of “run” leads to “TURN RIGHT” + “RUN”. So the output of “run right” is “TURN RIGHT” + \
+                   “RUN”. \
+                   Q: “look twice” \
+                   A: The output of “look twice” concatenates: the output of “look”, the output of “look”. “look” outputs \
+                   “LOOK”. So repeating the output of “look” two times leads to “LOOK” * 2. So the output of “look \
+                   twice” is “LOOK” * 2. \
+                   Q: “run and look twice” \
+                   A: The output of “run and look twice” concatenates: the output of “run”, the output of “look twice”. \
+                   “run” outputs “RUN”. “look twice” outputs “LOOK” * 2. So concatenating the output of “run” and the \
+                   output of “look twice” leads to “RUN” + “LOOK” * 2. So the output of “run and look twice” is “RUN” + \
+                   “LOOK” * 2. \
+                   Q: “jump right thrice” \
+                   A: The output of “jump right thrice” concatenates: the output of “jump right”, the output of “jump \
+                   right”, the output of “jump right”. “jump right” outputs “TURN RIGHT” + “JUMP”. So repeating the \
+                   output of “jump right” three times leads to (“TURN RIGHT” + “JUMP”) * 3. So the output of “jump \
+                   right thrice” is (“TURN RIGHT” + “JUMP”) * 3. \
+                   Q: “walk after run” \
+                   A: The output of “walk after run” concatenates: the output of “run”, the output of “walk”. “run” outputs \
+                   “RUN”. “walk” outputs “WALK”. So concatenating the output of “run” and the output of “walk” leads to \
+                   “RUN” + “WALK”. So the output of “walk after run” is “RUN” + “WALK”. \
+                   Q: “turn opposite left” \
+                   A: The output of “turn opposite left” concatenates: the output of “turn left”, the output of “turn left”. \
+                   “turn left” outputs “TURN LEFT”. So repeating the output of “turn left” twice leads to “TURN LEFT” * \
+                   2. So the output of “turn opposite left” is “TURN LEFT” * 2. \
+                   Q: “turn around left” \
+                   A: The output of “turn around left” concatenates: the output of “turn left”, the output of “turn left”, the \
+                   output of “turn left”, the output of “turn left”. “turn left” outputs “TURN LEFT”. So repeating the output \
+                   of “turn left” four times leads to “TURN LEFT” * 4. So the output of “turn around left” is “TURN LEFT” \
+                   * 4. \
+                   Q: “turn opposite right” \
+                   A: The output of “turn opposite right” concatenates: the output of “turn right”, the output of “turn \
+                   right”. “turn right” outputs “TURN RIGHT”. So repeating the output of “turn right” twice leads to \
+                   “TURN RIGHT” * 2. So the output of “turn opposite right” is “TURN RIGHT” * 2. \
+                   Q: “turn around right” \
+                   A: The output of “turn around right” concatenates: the output of “turn right”, the output of “turn right”, \
+                   the output of “turn right”, the output of “turn right”. “turn right” outputs “TURN RIGHT”. So repeating \
+                   the output of “turn right” four times leads to “TURN RIGHT” * 4. So the output of “turn around right” \
+                   is “TURN RIGHT” * 4. \
+                   Q: “walk opposite left” \
+                   A: The output of “walk opposite left” concatenates: the output of “turn opposite left”, the output of \
+                   “walk”. “turn opposite left” outputs “TURN LEFT” * 2. “walk” outputs “WALK”. So concatenating the \
+                   output of “turn opposite left” and the output of “walk” leads to “TURN LEFT” * 2 + “WALK”. So the \
+                   output of “walk opposite left” is “TURN LEFT” * 2 + “WALK”. \
+                   Q: “walk around left” \
+                   A: The output of “walk around left” concatenates: the output of “walk left”, the output of “walk left”, \
+                   the output of “walk left”, the output of “walk left”. “walk left” outputs “TURN LEFT” + “WALK”. So \
+                   repeating the output of “walk around left” four times leads to (“TURN LEFT” + “WALK”) * 4. So the \
+                   output of “walk around left” is (“TURN LEFT” + “WALK”) * 4. \
+                  '
 
-    prompt_cm_1 = cm_few_shot + 'Q: "walk right" A：'
-    response_cm_1 = get_completion_content(prompt_cm_1, strip=True, temperature=0.5)
-    # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
-    # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
-    # So the output of "walk right" is "TURN RIGHT" + "WALK".
-    print(response_cm_1)
+    def extract_phrases(text):
+        # 查找最后一个 "solved by:" 后面的所有内容
+        last_solved_by = text.rsplit("solved by:", 1)[-1]
 
-    prompt_cm_2 = prompt_cm_1 + response_cm_1 + 'Q: "run left" A：'
-    response_cm_2 = get_completion_content(prompt_cm_2, strip=True, temperature=0.5)
-    # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
-    # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
-    # So the output of "walk right" is "TURN RIGHT" + "WALK".
-    print(response_cm_2)
+        # 使用正则表达式提取引号中的短语
+        phrases = re.findall(r'“([^”]*)”', last_solved_by)
 
-    prompt_cm_3 = prompt_cm_2 + response_cm_2 + 'Q: "run opposite left" A：'
-    response_cm_3 = get_completion_content(prompt_cm_3, strip=True, temperature=0.5)
-    # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
-    # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
-    # So the output of "walk right" is "TURN RIGHT" + "WALK".
-    print(response_cm_3)
+        return phrases
 
-    prompt_cm = prompt_cm_3 + response_cm_3 + F'Q: "{command_1}" A：'
-    print(prompt_cm)
-    response_cm = get_completion_content(prompt_cm, strip=True, temperature=0.5)
-    print(response_cm)
+    def transform_expression(s):
+        # Regular expression pattern
+        pattern = r'is .*'
+
+        # Find the match
+        match = re.search(pattern, s)
+
+        s = match.group()
+        if s.endswith("."):
+            s = s[3: -1].replace('“', '"').replace('”', '"')
+        else:
+            s = s[3:].replace('“', '"').replace('”', '"')
+
+        # 多个乘数变成一个
+        # (“TURN RIGHT” + “LOOK”) * 4 * 2
+        pattern = r'(\d+) \* (\d+)'
+        matches = re.findall(pattern, s)
+        while matches:
+            for match in matches:
+                replacement = str(int(match[0]) * int(match[1]))
+                s = s.replace(f'{match[0]} * {match[1]}', replacement)
+            matches = re.findall(pattern, s)
+
+        # Step 1: Handle multiplications
+        pattern = r'"([^"]+)" \* (\d+)'
+        matches = re.findall(pattern, s)
+        for match in matches:
+            replacement = ' '.join([f'"{match[0]}"'] * int(match[1]))
+            s = s.replace(f'"{match[0]}" * {match[1]}', replacement)
+
+        # Step 1.5: Handle multiplications
+        # ("TURN RIGHT" * 2) * 3 + "TURN LEFT" * 2
+        # ("TURN RIGHT" + "WALK") * 2 + ("TURN RIGHT" + "RUN") * 2
+        # 注意要用非贪婪
+        pattern = r'\((.+?)\) \* (\d+)'
+        matches = re.findall(pattern, s)
+        while matches:
+            for match in matches:
+                replacement = ' '.join([f'{match[0]}'] * int(match[1]))
+                s = s.replace(f'({match[0]}) * {match[1]}', replacement)
+            matches = re.findall(pattern, s)
+
+        # Step 2: Replace spaces within quotes with underscores
+        pattern = r'"([^"]+)"'
+        matches = re.findall(pattern, s)
+        for match in matches:
+            replacement = match.replace(' ', '_')
+            s = s.replace(f'"{match}"', f'"{replacement}"')
+
+        # Step 3: Add 'I_' prefix within quotes
+        pattern = r'"([^"]+)"'
+        matches = re.findall(pattern, s)
+        for match in matches:
+            replacement = 'I_' + match
+            s = s.replace(f'"{match}"', f'"{replacement}"')
+
+        # Step 4: Remove quotes
+        s = s.replace('"', '')
+        s = s.replace(' +', '')
+        s = s.replace(')', '')
+        s = s.replace('(', '')
+
+        s = replace_multiple_spaces(s)
+
+        return s
+
+    def scan_predict(dataset):
+        # 转化为dataframe
+        data_frame = dataset.to_pandas()
+        # 最后一列标记为 unknown
+        data_frame['actions_predict'] = 'unknown'
+        # 在字典中循环
+        # 注意要先 tqdm 再 enumerate
+        for i, data in enumerate(tqdm(dataset)):
+            # 阶段一：拆解命令
+            prompt_cd = cd_few_shot + 'Q：“%s” A:' % data['commands']
+            response_cd = get_completion_content(prompt_cd, strip=True, temperature=0)
+            # 拆解命令结果
+            cd_result = extract_phrases(response_cd)
+            # 阶段二：短命令翻译
+            cm_few_shot_temp = cm_few_shot
+            sub_qs = cd_result
+            for qs in sub_qs:
+                cm_few_shot_temp += 'Q:“%s” A：' % qs
+                response_cm = get_completion_content(cm_few_shot_temp, strip=True, temperature=0)
+                cm_few_shot_temp += response_cm
+            # 对原始问题提问
+            prompt_cm = cm_few_shot_temp + 'Q：“%s” A:' % data['commands']
+            response_cm = get_completion_content(prompt_cm, strip=True, temperature=0)
+            # 将结果保存在dataframe的对应位置
+            data_frame['actions_predict'][i] = transform_expression(response_cm)
+
+            if data_frame['actions_predict'][i] != data_frame['actions'][i]:
+                print(data['commands'])
+                print(response_cm)
+                print(F"{data_frame['actions'][i]}")
+                print(F"{data_frame['actions_predict'][i]}")
+                print("-" * 80)
+
+        return data_frame
+
+    scan_test = scan_test.select(range(10), keep_in_memory=True)
+
+    final_data_frame = scan_predict(scan_test)
+    print(final_data_frame["commands"].to_list())
+    print(final_data_frame["actions"].to_list())
+    print(final_data_frame["actions_predict"].to_list())
+
+    # noinspection PyUnresolvedReferences
+    # 0.6
+    print((final_data_frame['actions'] == final_data_frame['actions_predict']).mean())
+
+    assert_equal(transform_expression("is (“TURN RIGHT” * 2) * 3 + “TURN LEFT” * 2."),
+                 "I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_LEFT I_TURN_LEFT")
+
+    assert_equal(transform_expression("is (“TURN RIGHT” + “WALK”) * 2 + (“TURN RIGHT” + “RUN”) * 2."),
+                 "I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN")
+
+    assert_equal(
+        transform_expression("is (“TURN RIGHT” + “WALK”) * 2 + (“TURN RIGHT”                    + “RUN”) * 2."),
+        "I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN")
+
+    assert_equal(
+        transform_expression("is (“TURN RIGHT” + “WALK”) * 3 + (“TURN RIGHT” * 2 + “JUMP”)."),
+        "I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_WALK I_TURN_RIGHT I_TURN_RIGHT I_JUMP")
+
+    assert_equal(
+        transform_expression("is (“TURN RIGHT” + “LOOK”) * 4 * 2 + “TURN LEFT” * 3."),
+        "I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_LEFT I_TURN_LEFT I_TURN_LEFT")
 
 
+@func_timer(arg=True)
 def main():
     # check_gpu(True)
 
