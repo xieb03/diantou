@@ -1258,6 +1258,7 @@ def check_bge_reranker():
     print(scores)
 
 
+# noinspection PyUnusedLocal
 def check_scan_dataset():
     # DatasetDict({
     #     train: Dataset({
@@ -1274,7 +1275,7 @@ def check_scan_dataset():
     scan_test = scan_ds["test"]
     # {'commands': 'jump opposite right twice and turn opposite right thrice',
     # 'actions': 'I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT'}
-    print(scan_train[0])
+    # print(scan_train[0])
     # 可以转化为 pandas.DataFrane
     assert_equal(scan_test.to_pandas().shape, (4182, 2))
 
@@ -1284,6 +1285,94 @@ def check_scan_dataset():
     action_1 = scan_train[1]["actions"]
     command_2 = scan_train[2]["commands"]
     action_2 = scan_train[2]["actions"]
+
+    # # few-shot
+    # few_shot_prompt = F'Q: {command_0}, A: {action_0}, Q: {command_1}, A: {action_1}, Q: {command_2}, A: '
+    # print(few_shot_prompt)
+    #
+    # action = get_completion_content(few_shot_prompt, strip=True)
+    # 能够发现，简单的以问题+答案组成的few-shot，在当前SCAN数据集上仍然无法进行较为准确的预测。
+    # 事实上，根据原论文的描述，简单的few-shot提示方法在SCAN数据集上的准确率不到17%。
+    # print(action, " vs ", action_2)
+
+    # few-shot-LtM
+    # zero_shot_ltm_prompt = F"In order to translate '{command_0}', we need to first solve "
+    # # 很明显，在Zero-shot-LtM的情况下，模型的核心问题仍然还是无法精准理解问题，更别谈进行有效的潜在语义关系学习了。
+    # # 当然，究其原因还是因为对于很多完全脱离自然语言语义规则的问题，简单提示模板是很难让模型完成有意义的问题拆解的，
+    # # 例如对于SCAN数据集中的指令翻译问题，由于本身指令翻译的规则就不是自然语言规则，模型也从未学习过相关规则，此时在Zero-shot的情况下是很难让模型进行问题拆解的，
+    # # 或者说此时模型拆解的问题也几乎不会有助于最终的指令翻译任务，拆解的子问题是毫无意义的。
+    # print(zero_shot_ltm_prompt)
+    #
+    # action = get_completion_content(zero_shot_ltm_prompt, strip=True)
+    # print(action)
+
+    # Stage 1.Command decomposition：指令拆解
+    cd_few_shot = ('Q: "look opposite right thrice after walk" '
+                   'A: "look opposite right thrice" can be solved by: "look opposite right", "look opposite right '
+                   'thrice". "walk" can be solved by "walk". So, "look opposite right thrice after walk" can be '
+                   'solved by: "walk", "look opposite right", "look opposite right thrice". '
+                   'Q: "look around right thrice and walk" '
+                   'A: "look around right thrice" can be solved by: "look right", "look around right", "look around '
+                   'right thrice". "walk" can be solved by "walk". So, "look around right thrice and walk" can be '
+                   'solved by: "look right", "look around right", "look around right thrice", "walk". ')
+
+    # cd_few_shot = ('Q: "look opposite right thrice after walk" '
+    #                'A: "look opposite right thrice" can be solved by: "look opposite right", "look opposite right thrice". '
+    #                '"walk" can be solved by "walk". So, "look opposite right thrice after walk" can be '
+    #                'solved by: "walk", "look opposite right", "look opposite right thrice". '
+    #                'Q: "look around right and walk" '
+    #                'A: "look around right " can be solved by: "look right", "look around right". '
+    #                '"walk" can be solved by "walk". So, "look around right and walk" can be '
+    #                'solved by: "look right", "look around right", "walk". ')
+
+    prompt_cd = cd_few_shot + F'Q："{command_1}" A:'
+    response_cd = get_completion_content(prompt_cd, strip=True, temperature=0.5)
+    # "run opposite left" can be solved by: "run", "opposite left". "walk right" can be solved by: "walk", "walk right".
+    # So, "run opposite left after walk right" can be solved by: "walk", "walk right", "run", "opposite left".
+    print(response_cd)
+
+    # Stage 2.Command mapping：指令翻译，将拆解后的短指令逐一翻译，并不断拼接到 few-shot 中，最终获得原始长指令的总翻译结果
+    cm_few_shot = ('Q: "jump left" '
+                   'A: The output of "jump left" concatenates: the output of "turn left", the output of "jump". "turn '
+                   'left" outputs "TURN LEFT". "jump" outputs "JUMP". So concatenating the output of "turn '
+                   'left" and the output of "jump" leads to "TURN LEFT" + "JUMP". So the output of "jump left" '
+                   'is "TURN LEFT" + "JUMP". '
+                   'Q: "run and look twice" '
+                   'A: The output of "run and look twice" concatenates: the output of "run", the output of "look '
+                   'twice". "run" outputs "RUN". "look twice" outputs "LOOK" * 2. So concatenating the output of '
+                   'run" and the output of "look twice" leads to "RUN" + "LOOK" * 2. So the output of "run and '
+                   'look twice" is "RUN" + "LOOK" * 2. '
+                   'Q: "walk opposite left" '
+                   'A: The output of "walk opposite left" concatenates: the output of "turn opposite left", the output of '
+                   '"walk". "turn opposite left" outputs "TURN LEFT" * 2. "walk" outputs "WALK". So concatenating the '
+                   'output of "turn opposite left" and the output of "walk" leads to "TURN LEFT" * 2 + "WALK". So the '
+                   'output of "walk opposite left" is "TURN LEFT" * 2 + "WALK" ')
+
+    prompt_cm_1 = cm_few_shot + 'Q: "walk right" A：'
+    response_cm_1 = get_completion_content(prompt_cm_1, strip=True, temperature=0.5)
+    # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
+    # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
+    # So the output of "walk right" is "TURN RIGHT" + "WALK".
+    print(response_cm_1)
+
+    prompt_cm_2 = prompt_cm_1 + response_cm_1 + 'Q: "run left" A：'
+    response_cm_2 = get_completion_content(prompt_cm_2, strip=True, temperature=0.5)
+    # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
+    # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
+    # So the output of "walk right" is "TURN RIGHT" + "WALK".
+    print(response_cm_2)
+
+    prompt_cm_3 = prompt_cm_2 + response_cm_2 + 'Q: "run opposite left" A：'
+    response_cm_3 = get_completion_content(prompt_cm_3, strip=True, temperature=0.5)
+    # The output of "walk right" concatenates: the output of "turn right", the output of "walk". "turn right" outputs "TURN RIGHT". "walk" outputs "WALK".
+    # So concatenating the output of "turn right" and the output of "walk" leads to "TURN RIGHT" + "WALK".
+    # So the output of "walk right" is "TURN RIGHT" + "WALK".
+    print(response_cm_3)
+
+    prompt_cm = prompt_cm_3 + response_cm_3 + F'Q: "{command_1}" A：'
+    print(prompt_cm)
+    response_cm = get_completion_content(prompt_cm, strip=True, temperature=0.5)
+    print(response_cm)
 
 
 def main():
