@@ -499,7 +499,7 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
-    # Last updated: 2024-03-07 00:47:02中国标准时间
+    # Last updated: 2024-03-17 19:41:48中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
@@ -514,12 +514,12 @@ def main():
     # langchain       : 0.1.9
     # langchain-openai: not installed
     # tiktoken        : 0.6.0
-    # transformers    : 4.38.1
+    # transformers    : 4.38.2
     # deepspeed       : not installed
     # peft            : 0.7.1
     # rouge_chinese   : 1.0.3
     # mpi4py          : 3.1.5
-    # datasets        : 2.17.1
+    # datasets        : 2.18.0
     # jieba           : 0.42.1
     # ruamel_yaml     : 0.18.6
     # scikit-learn    : 1.4.1.post1
@@ -527,7 +527,7 @@ def main():
     # pandas          : 2.0.3
     # matplotlib      : 3.8.3
     # scipy           : 1.11.1
-    # 
+    #
     # conda environment: base
     #
     # Compiler    : MSC v.1916 64 bit (AMD64)

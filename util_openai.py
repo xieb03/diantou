@@ -434,13 +434,13 @@ def check_openai_completion(model="gpt-3.5-turbo-instruct"):
     # 注意 completion_tokens=94，因为每一组答案都消耗 token
     # 既然知道那个答案最好，为什么不直接返回这个答案，而要多次生成再比较呢？因为对于生成式模型，没有生成结束，其实它也不知道这个答案好不好。
     # 注意和 n 会产生交叉，例如 n = 2, best_of = 3，那么实际上会生成 2 组共 6 个答案，然后每一组再找最好的结果返回
-    responses = client.completions.create(
-        model=model,
-        prompt="请问什么是机器学习",
-        max_tokens=32,
-        best_of=3
-    )
-    print(responses)
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt="请问什么是机器学习",
+    #     max_tokens=32,
+    #     best_of=3
+    # )
+    # print(responses)
 
     # model：必选参数，具体调用的Completions模型名称，不同模型参数规模不同；
     # 这里需要注意，大模型领域不同于机器学习领域，后者哪怕是简单模型在某些场景下可能也会拥有比复杂模型更好的表现。
@@ -460,6 +460,141 @@ def check_openai_completion(model="gpt-3.5-turbo-instruct"):
     # best_of：默认是 1，该参数用于控制模型的生成过程。它会让模型进行多次尝试（例如，生成5个不同的响应），然后选择这些响应中得分最高的一个，注意只会选择一个；
     # logit_bias：该参数接受一个字典，用于调整特定token的概率。字典的键是token的ID，值是应用于该token的对数概率的偏置；在GPT中我们可以使用tokenizer tool查看文本Token的标记。一般不建议修改；
     # user：可选参数，使用用户的身份标记，可以通过人为设置标记，来注明当前使用者身份。对结果没有影响。需要注意的是，Completion.create函数中的user和后续介绍的对话类模型的user参数含义并不相同，需要注意区分；
+
+    # prompt = "罗杰有五个网球，他又买了两盒网球，每盒有3个网球，请问他现在总共有多少个网球？"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 罗杰现在总共有11个网球。
+    # # 能够发现，此时模型推理得到了正确的结果，罗杰目前总共由5+2*3=11个网球。
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "食堂总共有23个苹果，如果他们用掉20个苹果，然后又买了6个苹果，请问现在食堂总共有多少个苹果？"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 食堂现在总共有9个苹果。
+    # # 第二个逻辑题比第一个逻辑题稍微复杂一些——复杂之处在于逻辑上稍微转了个弯，即食堂不仅增加了6个苹果，而且还消耗了20个苹果。有增有减，大模型做出了正确判断。
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "杂耍者可以杂耍16个球。其中一半的球是高尔夫球，其中一半的高尔夫球是蓝色的。请问总共有多少个蓝色高尔夫球？"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 共有8个蓝色高尔夫球。
+    # # 第三个逻辑题的数学计算过程并不复杂，但却设计了一个语言陷阱，即一半的一半是多少。能够发现，模型无法围绕这个问题进行准确的判断，正确答案应该是16\*0.5\*0.5=4个蓝色高尔夫球。
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "艾米需要4分钟才能爬到滑梯顶部，她花了1分钟才滑下来，水滑梯将在15分钟后关闭，请问在关闭之前她能滑多少次？"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 在关闭之前，她可以滑（15-1）/（4+1）= 2.8次，所以她最多能滑3次。
+    # # 第四个逻辑题是这些逻辑题里数学计算过程最复杂的，涉及多段计算以及除法运算。正确的计算过程应该是先计算艾米一次爬上爬下总共需要5分钟，然后滑梯还有15分钟关闭，因此关闭之前能够再滑15/5=3次。
+    # print(responses.choices[0].text.strip())
+
+    # 综上来看，'gpt-3.5-turbo-instruct' 在Zero-shot的情况下，逻辑推理能力较弱，只能围绕相对简单的、只有线性运算过程的推理问题进行很好的解答，总的来看模型只正确回答了第一个问题，其他问题都答错了，模型的推理能力堪忧。
+
+    # prompt = "Q: 艾米需要8分钟才能爬到滑梯顶部，她花了2分钟才滑下来，水滑梯将在30分钟后关闭，请问在关闭之前她能滑多少次？\nA: 30 / (8 + 2) = 10\nQ: 艾米需要4分钟才能爬到滑梯顶部，她花了1分钟才滑下来，水滑梯将在15分钟后关闭，请问在关闭之前她能滑多少次？\nA: "
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 15 / (4 + 1) = 3
+    # # 如果给一个相似度非常高的 few-shot，模型可以作对
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "Q: 篮子里一共有48张卡片。其中一半的球是方形的，三分之一是蓝色的。请问总共有多少个蓝色方形卡片？\nA: 8\nQ: 杂耍者可以杂耍16个球。其中一半的球是高尔夫球，其中一半的高尔夫球是蓝色的。请问总共有多少个蓝色高尔夫球？\nA:"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 4
+    # # 如果给一个相似度非常高的 few-shot，模型可以作对
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "艾米需要4分钟才能爬到滑梯顶部，她花了1分钟才滑下来，水滑梯将在15分钟后关闭，请问在关闭之前她能滑多少次？请一步步的思考这个问题"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 先计算出15分钟内可以进行多少轮滑梯：
+    # # 已知：
+    # # - 滑梯爬上去需要4分钟，滑下来需要1分钟
+    # # - 明白15分钟内的时间限制
+    # #
+    # # 计算过程：
+    # # 1. 第一轮：爬上滑梯花费4分钟，滑下来花费1分钟，共花费了5分钟，剩余10分钟可以进行滑梯。
+    # # 2. 第二轮：爬上滑梯花费4分钟，滑下来花费1分钟，共花费了5分钟，剩余5分钟可以进行滑梯。
+    # # 3. 第三轮：爬上滑梯花费4分钟，滑下来花费1分钟，共花费了5分钟，剩余0分钟，无法进行下一轮滑梯。
+    # #
+    # # 结论：
+    # # 在关闭之前，艾米可以滑3次水滑梯。
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "艾米需要4分钟才能爬到滑梯顶部，她花了1分钟才滑下来，水滑梯将在150分钟后关闭，请问在关闭之前她能滑多少次？请一步步的思考这个问题"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 首先是计算爬到顶部和滑下来的总用时是多少，4分钟爬上去再加1分钟滑下来，总共是5分钟
+    # #
+    # # 根据题目提供的信息，滑梯将在150分钟后关闭，所以可以通过150除以5得到滑梯能滑多少次，即150÷5=30次。因此，艾米在滑梯关闭之前能滑30次。
+    # # 如果数据量比较大，模型知道列公式来进行计算，而不再是依次举例
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "杂耍者可以杂耍16个球。其中一半的球是高尔夫球，其中一半的高尔夫球是蓝色的。请问总共有多少个蓝色高尔夫球？请一步步进行推理并得出结论。"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 1.根据题意，杂耍者可以杂耍16个球，其中一半是高尔夫球，另一半是其他球。因此，高尔夫球的数量为16的一半，即 16÷2=8.
+    # # 2.根据题意，其中一半的高尔夫球是蓝色的，那么蓝色高尔夫球的数量也是8的一半，即 8÷2=4.
+    # # 3.因此，总共有4个蓝色高尔夫球，是杂耍者可以杂耍的全部蓝色高尔夫球的数量。
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "Q: 食堂总共有23个苹果，如果他们用掉20个苹果，然后又买了6个苹果，请问现在食堂总共有多少个苹果？\nA: 食堂最初有23个苹果，用掉20个，然后又买了6个，总共有23-20+6=9个苹果，答案是9。\nQ: 杂耍者可以杂耍16个球。其中一半的球是高尔夫球，其中一半的高尔夫球是蓝色的。请问总共有多少个蓝色高尔夫球？\nA:"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 杂耍者可以杂耍16个球，其中一半是高尔夫球，也就是8个。其中一半的高尔夫球是蓝色的，也就是4个。所以总共有4个蓝色高尔夫球。
+    # # 感觉 few-shot-cot 和 zero-shot-cot 类似，都能激发模型一步步的思考，一个是通过给出一步步思考的案例，另一个是直接让模型一步步思考。
+    # # 根据《Large Language Models are Zero-Shot Reasoners》论文中的结论，上从海量数据的测试结果来看，Few-shot-CoT比Zero-shot-CoT准确率更高。
+    # print(responses.choices[0].text.strip())
+
+    # prompt = "Q: 食堂总共有23个苹果，如果他们用掉20个苹果，然后又买了6个苹果，请问现在食堂总共有多少个苹果？\nA: 食堂最初有23个苹果，用掉20个，然后又买了6个，总共有23-20+6=9个苹果，答案是9。\nQ: 艾米需要4分钟才能爬到滑梯顶部，她花了1分钟才滑下来，水滑梯将在150分钟后关闭，请问在关闭之前她能滑多少次？\nA:"
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt=prompt,
+    #     max_tokens=1000,
+    # )
+    # # 在艾米滑下来的1分钟内，她可以滑1次。在剩下的149分钟里，她每4分钟滑一次，所以她还可以滑149÷4=37.25（取整）次。总共可以滑1+37=38次。
+    # # 尽管触发了一步步思考，但思考过程并不对，可能因为因为之前的推理过程和新问题差别比较大。
+    # print(responses.choices[0].text.strip())
+
+    prompt = "Q: 艾米需要4分钟才能爬到滑梯顶部，她花了1分钟才滑下来，水滑梯将在15分钟后关闭，请问在关闭之前她能滑多少次？\nA：为了解决'在关闭之前她能滑多少次？'这个问题，我们首先要解决的问题是"
+    responses = client.completions.create(
+        model=model,
+        prompt=prompt,
+        max_tokens=1000,
+    )
+    # ：在15分钟内，艾米能够滑多少次滑梯？我们可以用15分钟除以每次滑梯所需的时间（4分钟+1分钟=5分钟），得知在15分钟内，艾米最多能够滑3次滑梯。也就是说，在关闭之前，艾米最多能够滑3次滑梯。
+    print(responses.choices[0].text.strip())
 
 
 # 利用 completion 实现对话机器人，可以看到，表现并不稳定，而且补全的痕迹很明显，例如回答中包含"好吗？"，"？"等
@@ -848,7 +983,7 @@ def main():
     # check_f_string()
     # check_chatgpt_prompt_engineering()
     # check_summarize_gradio()
-    # check_openai_completion()
+    check_openai_completion()
     # check_chat_now()
 
     pass
