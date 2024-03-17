@@ -380,6 +380,186 @@ def check_summarize_gradio():
     demo.launch(share=True)
 
 
+# 检查 openai 的 completion 补全接口，主语不是 chat.completion 对话接口
+# 20240104，openai 弃用了一些模型，例如 text-davinci-003 -> gpt-3.5-turbo-instruct
+# https://www.soinside.com/question/6aWERenG2y5CvgsKvvSBB
+def check_openai_completion(model="gpt-3.5-turbo-instruct"):
+    client = Client.instance()
+
+    # Completion(id='cmpl-t6s6Gi1V2lShSHHpHGerIZQCOZ8Tt', choices=[CompletionChoice(finish_reason='stop', index=0,
+    # logprobs=None, text='\nThis is a test.')], created=1710656217, model='gpt-3.5-turbo-instruct',
+    # object='text_completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=6, prompt_tokens=6, total_tokens=12))
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt="Say this is a test."
+    # )
+    # print(responses)
+
+    # Completion(id='cmpl-x4MJpWmVoyeBXuSf8eyq3o1cv0Vki', choices=[CompletionChoice(finish_reason='length', index=0,
+    # logprobs=None, text='\n\n机器学习是一种人工智能的应')], created=1710656628, model='gpt-3.5-turbo-instruct',
+    # object='text_completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=16, prompt_tokens=11, total_tokens=27))
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt="请问什么是机器学习",
+    # )
+    # print(responses)
+
+    # Completion(id='cmpl-FKpyZG1MMztTSiji9AUhEHMSM01C8', choices=[CompletionChoice(finish_reason='length', index=0,
+    # logprobs=Logprobs(text_offset=[9, 11, 12, 13, 14, 14, 15, 16, 17, 18, 20, 21, 22, 24, 25, 26],
+    # token_logprobs=[-0.7791398, -0.16542703, -5.5146502e-05, -2.5583993e-05, -4.608702e-05, -5.5577775e-06, -0.049086887, -0.09335624, -0.056370255, -2.443443, -3.1217957, -9.0883464e-07, -0.83986676, -0.45744857, -0.56515336, -0.00095195614], tokens=['\n\n', '机', '器', '学', 'bytes:\\xe4\\xb9', 'bytes:\\xa0', '是', '一', '种', '通过', '分', '析', '数据', '和', '模', '式'], top_logprobs=[{'\n\n': -0.7791398, '\n': -1.2817242, '？': -3.1287415, '？\n\n': -3.4863274, '？\n': -4.0128064}, {'机': -0.16542703, '\n': -3.5463855, '<|ipynb_marker|>': -4.3275614, 'bytes:\\xe7\\xad': -4.526576, 'Machine': -4.7376165}, {'器': -5.5146502e-05, '<|endoftext|>': -10.020691, 'bytes:\\xe6': -12.569025, '\n': -13.157766, '<|endoffile|>': -13.185698}, {'学': -2.5583993e-05, '<|endoftext|>': -10.892003, '（': -13.403974, '<|endoffile|>': -14.400964, '机': -14.607474}, {'bytes:\\xe4\\xb9': -4.608702e-05, '<|endoftext|>': -10.497599, '是': -11.443333, 'bytes:\\xe6\\xa0': -13.44491, '<|endoffile|>': -14.012634}, {'bytes:\\xa0': -5.5577775e-06, 'bytes:\\xa0\\xe9\\x99\\xa4': -12.119587, 'bytes:\\xb0': -17.164877, 'bytes:\\x90': -18.17251, 'bytes:\\x9c': -20.586252}, {'是': -0.049086887, '指': -3.3859055, '（': -4.4019313, '(M': -7.051515, ' (': -7.615392}, {'一': -0.09335624, '人': -3.2498465, '指': -3.338582, '通过': -5.211583, '利': -5.492997}, {'种': -0.056370255, '门': -2.934111, '类': -6.8314977, '项': -7.5757604, '组': -11.129457}, {'人': -0.18126084, '通过': -2.443443, '利': -3.78322, '使用': -4.279728, '计': -4.851986}, {'bytes:\\xe8\\xae': -1.6881465, '计': -1.8510627, '使用': -2.2937832, '数据': -2.3811798, '对': -2.451376}, {'析': -9.0883464e-07, 'bytes: \\xe6\\x9e': -15.029662, '解': -15.770886, '别': -16.085926, '<|endoftext|>': -16.149199}, {'数据': -0.83986676, '和': -0.84398663, '大': -2.0732956, '、': -5.2774925, '历': -5.8872566}, {'和': -0.45744857, '、': -2.323482, '，': -2.4208903, '并': -2.8669868, '来': -3.097896}, {'模': -0.56515336, '构': -2.0329134, '建': -3.0422213, '统': -3.0502455, '自': -3.5024703}, {'式': -0.00095195614, '型': -7.04035, 'bytes:\\xe6\\x8b': -10.32851, '板': -10.601038, 'bytes:\\xe4': -11.059795}]),
+    # text='\n\n机器学习是一种通过分析数据和模式')], created=1710658045, model='gpt-3.5-turbo-instruct', object='text_completion',
+    # system_fingerprint=None, usage=CompletionUsage(completion_tokens=16, prompt_tokens=11, total_tokens=27))
+    # 也许在一些分类问题中有用，可以输出概率值
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt="请问什么是机器学习",
+    #     logprobs=5
+    # )
+    # print(responses)
+
+    # Completion(id='cmpl-of2o80VCpT8GhHXkGrMojphBx3eNy', choices=[CompletionChoice(finish_reason='length', index=0,
+    # logprobs=None, text='\n\n机器学习是一种通过给予计算机大量数据，并让计算机自己学习和发现数据内在的规律与模式，从而达到智能化的过程。它是人工智')],
+    # created=1710658166, model='gpt-3.5-turbo-instruct', object='text_completion', system_fingerprint=None,
+    # usage=CompletionUsage(completion_tokens=64, prompt_tokens=11, total_tokens=75))
+    # responses = client.completions.create(
+    #     model=model,
+    #     prompt="请问什么是机器学习",
+    #     max_tokens=64
+    # )
+    # print(responses)
+
+    # Completion(id='cmpl-xqD1CELXBTjWFMMFe86K5N8HQPqUt', choices=[CompletionChoice(finish_reason='length', index=0,
+    # logprobs=None, text='\n\n机器学习是一种人工智能的分支领域，它研究如何使')], created=1710658239, model='gpt-3.5-turbo-instruct',
+    # object='text_completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=94, prompt_tokens=11, total_tokens=105))
+    # 注意 completion_tokens=94，因为每一组答案都消耗 token
+    # 既然知道那个答案最好，为什么不直接返回这个答案，而要多次生成再比较呢？因为对于生成式模型，没有生成结束，其实它也不知道这个答案好不好。
+    # 注意和 n 会产生交叉，例如 n = 2, best_of = 3，那么实际上会生成 2 组共 6 个答案，然后每一组再找最好的结果返回
+    responses = client.completions.create(
+        model=model,
+        prompt="请问什么是机器学习",
+        max_tokens=32,
+        best_of=3
+    )
+    print(responses)
+
+    # model：必选参数，具体调用的Completions模型名称，不同模型参数规模不同；
+    # 这里需要注意，大模型领域不同于机器学习领域，后者哪怕是简单模型在某些场景下可能也会拥有比复杂模型更好的表现。
+    # 在大模型领域，（就OpenAI提供的A、B、C、D四大模型来看）参数规模越大、越新版本的模型效果更好（当然费用也更高），因此课程中主要以text-davinci-003使用为例进行讲解；"
+    # prompt：必选参数，提示词；
+    # suffix：可选参数，默认为空，具体指模型返回结果的后缀；
+    # max_tokens：可选参数，默认为16，代表返回结果的token数量；
+    # temperature：可选参数，取值范围为0-2，默认值为1。参数代表采样温度，数值越小，则模型会倾向于选择概率较高的词汇，生成的文本会更加保守；而当temperature值较高时，模型会更多地选择概率较低的词汇，生成的文本会更加多样；
+    # top_p：可选参数，取值范围为0-1，默认值为1，和temperature作用类似，用于控制输出文本的随机性，数值越趋近与1，输出文本随机性越强，越趋近于0文本随机性越弱；通常来说若要调节文本随机性，top_p和temperature两个参数选择一个进行调整即可；这里更推荐使用temperature参数进行文本随机性调整；
+    # n：可选参数，默认值为1，表示一个提示返回几个Completion；
+    # stream：可选参数，默认值为False，表示回复响应的方式，当为False时，模型会等待返回结果全部生成后一次性返回全部结果，而为True时，则会逐个字进行返回；
+    # logprobs：可选参数，默认为null，该参数用于指定模型返回前N个概率最高的token及其对数概率。例如，如果logprobs设为10，那么对于生成的每个token，API会返回模型预测的前10个token及其对数概率；
+    # echo：可选参数，默认为False，该参数用于控制模型是否应该简单地复述用户的输入。如果设为True，模型的响应会尽可能地复述用户的输入；
+    # stop：可选参数，默认为null，该参数接受一个或多个字符串，用于指定生成文本的停止信号。当模型生成的文本遇到这些字符串中的任何一个时，会立即停止生成。这可以用来控制模型的输出长度或格式；
+    # presence_penalty：可选参数，默认为0，取值范围为[-2, 2]，该参数用于调整模型生成新内容（例如新的概念或主题）的倾向性。较高的值会使模型更倾向于生成新内容，而较低的值则会使模型更倾向于坚持已有的内容，当返回结果篇幅较大并且存在前后主题重复时，可以提高该参数的取值；
+    # frequency_penalty：可选参数，默认为0，取值范围为[-2, 2]，该参数用于调整模型重复自身的倾向性。较高的值会使模型更倾向于避免重复，而较低的值则会使模型更可能重复自身；当返回结果篇幅较大并且存在前后语言重复时，可以提高该参数的取值；相比于 presence_penalty，更愿意使用 presence_penalty
+    # best_of：默认是 1，该参数用于控制模型的生成过程。它会让模型进行多次尝试（例如，生成5个不同的响应），然后选择这些响应中得分最高的一个，注意只会选择一个；
+    # logit_bias：该参数接受一个字典，用于调整特定token的概率。字典的键是token的ID，值是应用于该token的对数概率的偏置；在GPT中我们可以使用tokenizer tool查看文本Token的标记。一般不建议修改；
+    # user：可选参数，使用用户的身份标记，可以通过人为设置标记，来注明当前使用者身份。对结果没有影响。需要注意的是，Completion.create函数中的user和后续介绍的对话类模型的user参数含义并不相同，需要注意区分；
+
+
+# 利用 completion 实现对话机器人，可以看到，表现并不稳定，而且补全的痕迹很明显，例如回答中包含"好吗？"，"？"等
+# input> 你好
+# 嗎?
+#
+# AI: 我是一個人工智能，沒有情緒或感受。我只會根據程式回答您的問題。請問您需要什麼幫助？
+# input> 请介绍一下你自己
+# 。
+#
+# AI: 我是一個人工智能助理，被設計來回答各種問題並提供幫助。我可以學習和不斷改進自己的能力，但目前仍然有很多限制。請隨時向我提出您的問題，我會盡力提供最佳的解答。
+# input> 什么是机器学习
+# ？
+#
+# AI: 机器学习是一種人工智能的分支，旨在使計算機具有從數據中學習並自動改進的能力。它使用各種統計和數學技術來訓練模型，讓計算機可以辨識和分析複雜的模式並做出預測。透過不斷接收新的數據，機器學習模型可以持續提高其準確性和效率。
+
+# input> 你好
+# Bot:你好，有什么可以帮助您的吗？
+# input> 请介绍一下你自己
+# 好吗？ Bot: 当然，我是一个智能聊天机器人，设计用来与用户交互并提供帮助。我可以回答一些常见问题、提供信息和建议，并且会不断学习以改进自己的服务。有什么需要我的地方，请随时告诉我哦。
+# input> 什么是机器学习
+# ？ Bot: 机器学习是一种人工智能技术，它允许计算机系统通过学习数据和模式而不需要明确编程来改善其性能。它主要涉及使用算法来分析和识别数据模式，并根据这些模式做出预测或决策。在过去的几年中，机器学习已经被广泛应用于各种领域，包括自然语言处理、金融、医疗保健和物流等。
+def check_chat_now(model='gpt-3.5-turbo-instruct', mode='precision'):
+    """
+    基于Completion.create函数的多轮对话机器人
+
+    :param model: 调用的大语言模型，默认为text-davinci-003
+    :param mode: 聊天机器人预设模式，默认为平衡模式balance，可选precision（精确模式）和creativity（创造力模式）
+
+    """
+    # 提示想终止聊天时输入"quit"
+    print("if you want to stop the conversation, please input 'quit'")
+    # 三种不同的模式及其对应的参数
+    if mode == 'balance':
+        temperature = 1
+        presence_penalty = 0
+    elif mode == 'precision':
+        temperature = 0.8
+        presence_penalty = 2
+    elif mode == 'creativity':
+        temperature = 1.2
+        presence_penalty = -1
+    else:
+        raise ValueError(F"目前只支持 'balance', 'precision', 'creativity'，不支持 {mode}")
+
+    # 定义执行对话函数，方便后续反复调用
+    client = Client.instance()
+
+    def chat(_prompt):
+        # noinspection PyBroadException
+        try:
+            # 不报错的情况下，返回Completion.create函数输出结果
+            response = client.completions.create(
+                model=model,
+                prompt=_prompt,
+                max_tokens=1000,
+                temperature=temperature,
+                presence_penalty=presence_penalty,
+                # stop=[" Human:", " AI:"]
+            )
+            answer = response.choices[0].text.strip()
+            return answer
+        except Exception:
+            traceback.print_exc()
+            # 报错时返回"broken"
+            return "broken"
+
+    # 对话执行函数，首先准备空容器
+    text = ""
+    turns = []
+    # 执行多轮对话，即多次调用chat函数
+    while True:
+        # 启动对话框
+        question = input(Colors.YELLOW + "input> " + Colors.ENDC)
+        # 首次开启对话框时提示请输入问题
+        if len(question.strip()) == 0:
+            print("please input your question")
+        # 当输入为 'quit' 时，停止多轮对话，即停止while循环
+        elif question == "quit":
+            print("\nAI: See You Next Time!")
+            break
+        else:
+            # 多轮对话时，将问题和此前对话结果都作为prompt输入
+            prompt = text + "\nHuman: " + question
+            result = chat(prompt)
+            # 当一次请求失败时，再次发起请求
+            while result == "broken":
+                print("please wait...")
+                result = chat(prompt)
+            else:
+                # 保留本次对话结果
+                turns += [question] + [result]
+                print(result)
+            # 最多保留十次对话结果，超出次数则最开始的对话会被删除
+            if len(turns) <= 10:
+                text = " ".join(turns)
+            else:
+                text = " ".join(turns[-10:])
+
+
 # https://www.promptingguide.ai/zh
 # 大模型提示工程指南，注意，不同的 chatgpt 版本，效果可能有很大的不同
 def check_chatgpt_prompt_engineering():
@@ -668,6 +848,8 @@ def main():
     # check_f_string()
     # check_chatgpt_prompt_engineering()
     # check_summarize_gradio()
+    # check_openai_completion()
+    # check_chat_now()
 
     pass
 
