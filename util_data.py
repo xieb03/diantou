@@ -17,9 +17,14 @@ datasets.logging.set_verbosity_info()
 # split: 如何划分数据集
 #       If `None`, will return a `dict` with all splits (typically `datasets.Split.TRAIN` and `datasets.Split.TEST`).
 #       If given, will return a single Dataset.
-def dataset_download(path, name=None, split=None):
-    dataset = load_dataset(path=path, name=name, split=split, cache_dir=BIGDATA_DATA_PATH)
+# keep_in_memory: 是否保存在内存中，默认是 None，即如果设置了环境变量 IN_MEMORY_MAX_SIZE，那么数据集的大小小于这个值即可以放入内存，否则为 False
+def dataset_download(path, name=None, split=None, keep_in_memory=None, _return=True):
+    dataset = load_dataset(path=path, name=name, split=split, keep_in_memory=keep_in_memory,
+                           cache_dir=BIGDATA_DATA_PATH)
     print(dataset)
+
+    if _return:
+        return dataset
 
 
 @func_timer(arg=True)

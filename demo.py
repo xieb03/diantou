@@ -1258,8 +1258,36 @@ def check_bge_reranker():
     print(scores)
 
 
+def check_scan_dataset():
+    # DatasetDict({
+    #     train: Dataset({
+    #         features: ['commands', 'actions'],
+    #         num_rows: 16728
+    #     })
+    #     test: Dataset({
+    #         features: ['commands', 'actions'],
+    #         num_rows: 4182
+    #     })
+    # })
+    scan_ds = dataset_download(path="scan", name="simple")
+    scan_train = scan_ds["train"]
+    scan_test = scan_ds["test"]
+    # {'commands': 'jump opposite right twice and turn opposite right thrice',
+    # 'actions': 'I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT'}
+    print(scan_train[0])
+    # 可以转化为 pandas.DataFrane
+    assert_equal(scan_test.to_pandas().shape, (4182, 2))
+
+    command_0 = scan_train[0]["commands"]
+    action_0 = scan_train[0]["actions"]
+    command_1 = scan_train[1]["commands"]
+    action_1 = scan_train[1]["actions"]
+    command_2 = scan_train[2]["commands"]
+    action_2 = scan_train[2]["actions"]
+
+
 def main():
-    check_gpu(True)
+    # check_gpu(True)
 
     # check_mul()
     # check_mean_op()
@@ -1275,6 +1303,8 @@ def main():
     # check_chatglm3()
     # check_bge_zh()
     # check_bge_reranker()
+
+    check_scan_dataset()
 
 
 if __name__ == '__main__':

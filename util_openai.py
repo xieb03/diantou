@@ -71,11 +71,10 @@ def get_token_count(_str: str, _model="gpt-3.5-turbo", _encoding=None):
 
 # user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
 # 历史消息队列
-def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=None,
-                                model="gpt-3.5-turbo", temperature=0.1,
-                                print_token_count=False, print_cost_time=False, print_response=False,
+def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0.1,
+                                messages=None, print_token_count=False, print_cost_time=False, print_response=False,
                                 history_message_list: List = None,
-                                using_history_message_list=True, tools=None, print_messages=False):
+                                using_history_message_list=True, tools=None, print_messages=False, strip=False):
     start_time = time.time()
     # token_count = 0
     # encoding = tiktoken.encoding_for_model(model)
@@ -113,6 +112,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
         total_messages.extend(messages)
 
     # 如果不要求用历史对话，那么需要将本轮的对话也记录到历史对话中
+    # 否则上面已经自动记录其中
     if not using_history and history_message_list is not None:
         history_message_list.extend(total_messages)
 
@@ -154,8 +154,11 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
     choice = choices[0]
     message = choice.message
     content = message.content
+    if strip:
+        content = content.strip()
     finish_reason = choice.finish_reason
 
+    # 主要是判断是不是被截断，例如 length
     if finish_reason not in {"tool_calls", "stop"}:
         print("IMPORTANT: finish_reason = {finish_reason}.")
 
@@ -198,6 +201,104 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, messages=N
         return message
     else:
         return content
+
+
+# 检查 openai 的 completion 补全接口，注意不是 chat.completion 对话接口
+# 历史消息队列
+def get_completion_content(user_prompt=None, model="gpt-3.5-turbo-instruct", temperature=1,
+                           presence_penalty=0, stop=None, messages=None,
+                           max_tokens=1000, history_message_list: List = None,
+                           using_history_message_list=True, strip=False, print_messages=False, print_token_count=False,
+                           print_cost_time=False, print_response=False):
+    start_time = time.time()
+
+    if model not in ["gpt-3.5-turbo-instruct"]:
+        print(F"IMPORTANT: {model}")
+
+    client = Client.instance()
+
+    if user_prompt is not None:
+        assert messages is None, "user_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者不为空，但是后者也不为空."
+    else:
+        assert messages is not None, "user_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者为空，后者也为空."
+
+    total_messages = ""
+    using_history = using_history_message_list and history_message_list is not None and len(history_message_list) != 0
+
+    # 如果明确要求用历史对话，而且传入了历史对话，那么历史对话也要也要进入 prompt
+    # 因为 closeAI 是负载均衡的，每次会随机请求不同的服务器，因此是不具备 openAI 自动保存一段历史对话的能力的，需要自己用历史对话来恢复
+    if using_history:
+        total_messages = "".join(history_message_list)
+
+    if messages is None:
+        total_messages += user_prompt
+    else:
+        total_messages += messages
+
+    # 如果不要求用历史对话，那么需要将本轮的对话也记录到历史对话中
+    # 否则上面已经自动记录其中
+    if not using_history and history_message_list is not None:
+        history_message_list.extend(total_messages)
+
+    if print_messages:
+        print("messages:")
+        print_history_message_list(total_messages)
+        print()
+
+    # Completion(id='cmpl-x4MJpWmVoyeBXuSf8eyq3o1cv0Vki', choices=[CompletionChoice(finish_reason='length', index=0,
+    # logprobs=None, text='\n\n机器学习是一种人工智能的应')], created=1710656628, model='gpt-3.5-turbo-instruct',
+    # object='text_completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=16, prompt_tokens=11, total_tokens=27))
+    response = client.completions.create(
+        model=model,
+        prompt=user_prompt,
+        temperature=temperature,
+        presence_penalty=presence_penalty,
+        max_tokens=max_tokens,
+        stop=stop
+    )
+
+    if print_response:
+        print(response)
+
+    choices = response.choices
+    choice_count = len(choices)
+    # 目前只取第一条
+    choice = choices[0]
+    text = choice.text
+    finish_reason = choice.finish_reason
+
+    if strip:
+        text = text.strip()
+
+    # 主要是判断是不是被截断，例如 length
+    if finish_reason not in {"stop"}:
+        print("IMPORTANT: finish_reason = {finish_reason}.")
+
+    prompt_token_count = response.usage.prompt_tokens
+    completion_token_count = response.usage.completion_tokens
+    total_token_count = prompt_token_count + completion_token_count
+    true_model = response.model
+
+    if true_model not in ["gpt-3.5-turbo-instruct"]:
+        print(F"IMPORTANT: {true_model}")
+
+    # 无论如何，都保存到历史对话中
+    # if not using_history and history_message_list is not None:
+    if history_message_list is not None:
+        history_message_list.append(text)
+
+    end_time = time.time()
+    cost_time = end_time - start_time
+
+    if print_token_count:
+        print(F"prompt_token_count = {prompt_token_count}, completion_token_count = {completion_token_count}, "
+              F"total_token_count = {total_token_count}.")
+
+    if print_cost_time:
+        print(F"choice_count = {choice_count}, cost time = {cost_time:.1F}s, finish_reason = {finish_reason}.")
+        print()
+
+    return text
 
 
 # 将 get_chat_completion_content 更名，方便与下面的 get_chatglm_completion_content 区分
@@ -380,12 +481,10 @@ def check_summarize_gradio():
     demo.launch(share=True)
 
 
-# 检查 openai 的 completion 补全接口，主语不是 chat.completion 对话接口
+# 检查 openai 的 completion 补全接口，注意不是 chat.completion 对话接口
 # 20240104，openai 弃用了一些模型，例如 text-davinci-003 -> gpt-3.5-turbo-instruct
 # https://www.soinside.com/question/6aWERenG2y5CvgsKvvSBB
-def check_openai_completion(model="gpt-3.5-turbo-instruct"):
-    client = Client.instance()
-
+def check_openai_completion():
     # Completion(id='cmpl-t6s6Gi1V2lShSHHpHGerIZQCOZ8Tt', choices=[CompletionChoice(finish_reason='stop', index=0,
     # logprobs=None, text='\nThis is a test.')], created=1710656217, model='gpt-3.5-turbo-instruct',
     # object='text_completion', system_fingerprint=None, usage=CompletionUsage(completion_tokens=6, prompt_tokens=6, total_tokens=12))
@@ -588,13 +687,9 @@ def check_openai_completion(model="gpt-3.5-turbo-instruct"):
     # print(responses.choices[0].text.strip())
 
     prompt = "Q: 艾米需要4分钟才能爬到滑梯顶部，她花了1分钟才滑下来，水滑梯将在15分钟后关闭，请问在关闭之前她能滑多少次？\nA：为了解决'在关闭之前她能滑多少次？'这个问题，我们首先要解决的问题是"
-    responses = client.completions.create(
-        model=model,
-        prompt=prompt,
-        max_tokens=1000,
-    )
+    text = get_completion_content(prompt, strip=True)
     # ：在15分钟内，艾米能够滑多少次滑梯？我们可以用15分钟除以每次滑梯所需的时间（4分钟+1分钟=5分钟），得知在15分钟内，艾米最多能够滑3次滑梯。也就是说，在关闭之前，艾米最多能够滑3次滑梯。
-    print(responses.choices[0].text.strip())
+    print(text)
 
 
 # 利用 completion 实现对话机器人，可以看到，表现并不稳定，而且补全的痕迹很明显，例如回答中包含"好吗？"，"？"等
@@ -617,11 +712,10 @@ def check_openai_completion(model="gpt-3.5-turbo-instruct"):
 # 好吗？ Bot: 当然，我是一个智能聊天机器人，设计用来与用户交互并提供帮助。我可以回答一些常见问题、提供信息和建议，并且会不断学习以改进自己的服务。有什么需要我的地方，请随时告诉我哦。
 # input> 什么是机器学习
 # ？ Bot: 机器学习是一种人工智能技术，它允许计算机系统通过学习数据和模式而不需要明确编程来改善其性能。它主要涉及使用算法来分析和识别数据模式，并根据这些模式做出预测或决策。在过去的几年中，机器学习已经被广泛应用于各种领域，包括自然语言处理、金融、医疗保健和物流等。
-def check_chat_now(model='gpt-3.5-turbo-instruct', mode='precision'):
+def check_chat_now(mode='precision'):
     """
     基于Completion.create函数的多轮对话机器人
 
-    :param model: 调用的大语言模型，默认为text-davinci-003
     :param mode: 聊天机器人预设模式，默认为平衡模式balance，可选precision（精确模式）和creativity（创造力模式）
 
     """
@@ -640,22 +734,12 @@ def check_chat_now(model='gpt-3.5-turbo-instruct', mode='precision'):
     else:
         raise ValueError(F"目前只支持 'balance', 'precision', 'creativity'，不支持 {mode}")
 
-    # 定义执行对话函数，方便后续反复调用
-    client = Client.instance()
-
     def chat(_prompt):
         # noinspection PyBroadException
         try:
-            # 不报错的情况下，返回Completion.create函数输出结果
-            response = client.completions.create(
-                model=model,
-                prompt=_prompt,
-                max_tokens=1000,
-                temperature=temperature,
-                presence_penalty=presence_penalty,
-                # stop=[" Human:", " AI:"]
-            )
-            answer = response.choices[0].text.strip()
+            answer = get_completion_content(prompt, temperature=temperature, presence_penalty=presence_penalty,
+                                            # stop=[" Human:", " AI:"],
+                                            strip=True)
             return answer
         except Exception:
             traceback.print_exc()
