@@ -1259,6 +1259,20 @@ def check_bge_reranker():
 
 
 # scan 数据集，利用 LtM 进行测试
+# 如果没有开魔法，会因为超时找不到线上 hugging face 对应的 scan 数据集，因此只会找 cache_dir 指定的数据
+# Using the latest cached version of the dataset since scan couldn't be found on the Hugging Face Hub
+# Found the latest cached dataset configuration 'simple' at D:\PycharmProjects\xiebo\diantou\bigdata\data\scan\simple\1.0.0\53972e5fdb6cc7b38752356eb96ef06841e717b3 (last modified on Sun Mar 17 21:17:12 2024).
+# Using custom data configuration simple
+# Loading Dataset Infos from D:\Users\admin\anaconda3\Lib\site-packages\datasets\packaged_modules\cache
+# Overwrite dataset info from restored data version if exists.
+# Loading Dataset info from D:\PycharmProjects\xiebo\diantou\bigdata\data\/scan/simple/1.0.0/53972e5fdb6cc7b38752356eb96ef06841e717b3
+
+# 如果开了魔法，则可能会拉取最新的数据集，但如果发现当前 cache_dir 中已经是最新的，那么就不会再拉取
+# Overwrite dataset info from restored data version if exists.
+# Loading Dataset info from D:\PycharmProjects\xiebo\diantou\bigdata\data\/scan/simple/1.0.0/53972e5fdb6cc7b38752356eb96ef06841e717b3
+# Found cached dataset scan (D:/PycharmProjects/xiebo/diantou/bigdata/data/scan/simple/1.0.0/53972e5fdb6cc7b38752356eb96ef06841e717b3)
+# Loading Dataset info from D:/PycharmProjects/xiebo/diantou/bigdata/data/scan/simple/1.0.0/53972e5fdb6cc7b38752356eb96ef06841e717b3
+
 #  40%|████      | 4/10 [00:40<01:03, 10.54s/it]jump around left thrice and run right thrice
 # The output of “jump around left thrice and run right thrice” concatenates: the output of “jump around left thrice”, the output of “run right thrice”. “jump around left thrice” outputs (“TURN LEFT” + “JUMP”) * 3. “run right thrice” outputs (“TURN RIGHT” + “RUN”) * 3. So concatenating the output of “jump around left thrice” and the output of “run right thrice” leads to (“TURN LEFT” + “JUMP”) * 3 + (“TURN RIGHT” + “RUN”) * 3. So the output of “jump around left thrice and run right thrice” is (“TURN LEFT” + “JUMP”) * 3 + (“TURN RIGHT” + “RUN”) * 3.
 # I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_LEFT I_JUMP I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN I_TURN_RIGHT I_RUN
@@ -1295,7 +1309,7 @@ def check_scan_dataset():
     #         num_rows: 4182
     #     })
     # })
-    scan_ds = dataset_download(path="scan", name="simple")
+    scan_ds = dataset_download(path="scan", name="simple", _info=True)
     scan_test = scan_ds["test"]
     # {'commands': 'jump opposite right twice and turn opposite right thrice',
     # 'actions': 'I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_JUMP I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT I_TURN_RIGHT'}
