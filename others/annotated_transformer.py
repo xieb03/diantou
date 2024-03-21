@@ -53,7 +53,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         self.proj = nn.Linear(d_model, vocab)
 
-    # log(softmax(x)
+    # log(softmax(x))
     def forward(self, x):
         return log_softmax(self.proj(x), dim=-1)
 
@@ -90,7 +90,9 @@ class LayerNorm(nn.Module):
         # 首先可以把这个函数理解为类型转换函数，将一个不可训练的类型 Tensor 转换成可以训练的类型 parameter 并将这个 parameter 绑定到这个 module 里面
         # net.parameter() 中就有这个绑定的 parameter，所以在参数优化的时候可以进行优化的，所以经过类型转换这个 self.v 变成了模型的一部分，成为了模型中根据训练可以改动的参数了。
         # 使用这个函数的目的也是想让某些变量在学习的过程中不断的修改其值以达到最优化。
+        # torch.Size([512])
         self.a_2 = nn.Parameter(torch.ones(features))
+        # torch.Size([512])
         self.b_2 = nn.Parameter(torch.zeros(features))
         self.eps = eps
 
@@ -113,6 +115,9 @@ class ReslayerConnection(nn.Module):
 
     def forward(self, x, sublayer):
         """Apply residual connection to any sublayer with the same size."""
+        # torch.Size([1, 1, 512])
+        # torch.Size([1, 2, 512])
+        # torch.Size([1, 3, 512])
         return x + self.dropout(sublayer(self.norm(x)))
 
 
@@ -129,9 +134,12 @@ class EncoderLayer(nn.Module):
         self.res_layer_2 = ReslayerConnection(size, dropout)
         self.size = size
 
-    def forward(self, x, mask):
+    def forward(self, x, src_mask):
         """Follow Figure 1 (left) for connections."""
-        x = self.res_layer_1(x, lambda _x: self.self_attn(_x, _x, _x, mask))
+        # torch.Size([1, 10, 512])
+        print(1111, x.shape)
+        x = self.res_layer_1(x, lambda _x: self.self_attn(_x, _x, _x, src_mask))
+        print(22222, x.shape)
         return self.res_layer_2(x, self.feed_forward)
 
 
@@ -168,9 +176,9 @@ class DecoderLayer(nn.Module):
 
     def forward(self, x, memory, src_mask, tgt_mask):
         """Follow Figure 1 (right) for connections."""
-        m = memory
         x = self.res_layer_1(x, lambda _x: self.self_attn(_x, _x, _x, tgt_mask))
-        x = self.res_layer_2(x, lambda _x: self.src_attn(_x, m, m, src_mask))
+        # 注意这里有一个 decoder 和 encoder 的交叉多头注意力
+        x = self.res_layer_2(x, lambda _x: self.src_attn(_x, memory, memory, src_mask))
         return self.res_layer_3(x, self.feed_forward)
 
 
@@ -263,7 +271,7 @@ def attention(query, key, value, mask=None, dropout=None):
 # 3. Similarly, self-attention layers in the decoder allow each position in the decoder to attend to all positions in the decoder up to and including that position.
 #   We need to prevent leftward information flow in the decoder to preserve the auto-regressive property.
 #   We implement this inside of scaled dot-product attention by masking out (setting to ) all values in the input of the softmax which correspond to illegal connections.
-# 注意这里并不是显式的拼接了 h = 8 个结果，而是利用 dmodel = dk * h 这样的大矩阵直接进行计算，省去了 for 循环
+# 注意这里并不是显式的拼接了 h = 8 个结果，而是利用 dk * h 这样的大矩阵直接进行计算，省去了 for 循环，而为了方便，一般直接另 dk = dmodel / h，其中 dmodel 是 embedding 的维度，dk 是 Q/K/V 的维度
 class MultiHeadedAttention(nn.Module):
     def __init__(self, h=8, d_model=512, dropout=0.1):
         """Take in model size and number of heads."""
@@ -286,17 +294,26 @@ class MultiHeadedAttention(nn.Module):
         nbatches = query.size(0)
 
         # 1) Do all the linear projections in batch from d_model => h x d_k
+        # torch.Size([1, 8, 1, 64])
+        # torch.Size([1, 8, 2, 64])
+        # torch.Size([1, 8, 3, 64])
         query, key, value = [
             lin(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
             for lin, x in zip(self.linears, (query, key, value))
         ]
 
         # 2) Apply attention on all the projected vectors in batch.
+        # torch.Size([1, 8, 1, 64])
+        # torch.Size([1, 8, 2, 64])
+        # torch.Size([1, 8, 3, 64])
         x, self.attn = attention(
             query, key, value, mask=mask, dropout=self.dropout
         )
 
         # 3) "Concat" using a view and apply a final linear.
+        # torch.Size([1, 1, 512])
+        # torch.Size([1, 2, 512])
+        # torch.Size([1, 3, 512])
         x = (
             x.transpose(1, 2)
             .contiguous()
@@ -334,10 +351,19 @@ class PositionwiseFeedForward(nn.Module):
 class Embeddings(nn.Module):
     def __init__(self, d_model, vocab):
         super(Embeddings, self).__init__()
+        # 11 * 512
         self.lut = nn.Embedding(vocab, d_model)
+        # 512
         self.d_model = d_model
 
     def forward(self, x):
+        # torch.Size([1, 1])
+        # torch.Size([1, 2])
+        # torch.Size([1, 3])
+        print(x.shape)
+        # torch.Size([1, 1, 512])
+        # torch.Size([1, 2, 512])
+        # torch.Size([1, 3, 512])
         return self.lut(x) * math.sqrt(self.d_model)
 
 
@@ -351,7 +377,8 @@ class Embeddings(nn.Module):
 # In addition, we apply dropout to the sums of the embeddings and the positional encodings in both the encoder and decoder stacks. For the base model, we use a rate of dropout=0.1.
 # We also experimented with using learned positional embeddings (cite) instead, and found that the two versions produced nearly identical results.
 # We chose the sinusoidal version because it may allow the model to extrapolate to sequence lengths longer than the ones encountered during training.
-# todo：这里为什么用 dmodel 而不是 dk
+# 注意，dmodel 才是 embedding 的维度，而 dk 只是注意力机制中 Q/K/V 的维度，只是一般为了简化，我们令 dk = dmodel / h，即 h 个头恰好组成 dmodel 维度
+# 这样处理，在注意力机制中，我们实际上是用 dk * h 大小的矩阵来直接运算，而不是分别运算 h 个 dk，再进行 concat
 class PositionalEncoding(nn.Module):
     """Implement the PE function."""
 
@@ -361,17 +388,47 @@ class PositionalEncoding(nn.Module):
 
         # Compute the positional encodings once in log space.
         pe = torch.zeros(max_len, d_model)
+        # torch.Size([5000, 1])
+        # tensor([[   0],
+        #         [   1],
+        #         [   2],
+        #         ...,
+        #         [4997],
+        #         [4998],
+        #         [4999]])
         position = torch.arange(0, max_len).unsqueeze(1)
+        # torch.Size([256]), 1 / 10000^(2i / 512)
+        # tensor([1.0000e+00, 3.9811e-01, 1.5849e-01, 6.3096e-02, 2.5119e-02, 1.0000e-02,
+        #         3.9811e-03, 1.5849e-03, 6.3096e-04, 2.5119e-04])
         div_term = torch.exp(
             torch.arange(0, d_model, 2) * -(math.log(max_len * 2) / d_model)
         )
+        # tensor([[0.0000e+00, 0.0000e+00, 0.0000e+00,  ..., 0.0000e+00, 0.0000e+00,
+        #          0.0000e+00],
+        #         [1.0000e+00, 3.9811e-01, 1.5849e-01,  ..., 1.5849e-03, 6.3096e-04,
+        #          2.5119e-04],
+        #         [2.0000e+00, 7.9621e-01, 3.1698e-01,  ..., 3.1698e-03, 1.2619e-03,
+        #          5.0238e-04],
+        #         ...,
+        #         [4.9970e+03, 1.9893e+03, 7.9197e+02,  ..., 7.9197e+00, 3.1529e+00,
+        #          1.2552e+00],
+        #         [4.9980e+03, 1.9897e+03, 7.9213e+02,  ..., 7.9213e+00, 3.1535e+00,
+        #          1.2554e+00],
+        #         [4.9990e+03, 1.9901e+03, 7.9229e+02,  ..., 7.9229e+00, 3.1542e+00,
+        #          1.2557e+00]])
+        # print(position * div_term)
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
+        # torch.Size([1, 5000, 512])
+        # 5000 个位置，每个位置是 512 维的向量
         pe = pe.unsqueeze(0)
         # 通过 register_buffer() 登记过的张量：会自动成为模型中的参数，随着模型移动（gpu/cpu）而移动，但是不会随着梯度进行更新。
         self.register_buffer("pe", pe)
 
     def forward(self, x):
+        # torch.Size([1, 1, 512])
+        # torch.Size([1, 2, 512])
+        # torch.Size([1, 3, 512])
         x = x + self.pe[:, : x.size(1)].requires_grad_(False)
         return self.dropout(x)
 
@@ -403,6 +460,7 @@ def example_positional():
 
 
 # Here we define a function from hyperparameters to a full model.
+# 注意一共有 3 * n 个多注意力头，分别是 encoder 的、decoder 的，encoder 和 decoder 交叉的
 def make_model(src_vocab, tgt_vocab, n=6, d_model=512, d_ff=2048, h=8, dropout=0.1, max_len=5000):
     """Helper: Construct a model from hyperparameters."""
     c = copy.deepcopy
@@ -434,7 +492,6 @@ def make_model(src_vocab, tgt_vocab, n=6, d_model=512, d_ff=2048, h=8, dropout=0
 def inference_test():
     test_model = make_model(src_vocab=11, tgt_vocab=11, n=2)
     list_model_parameter_summary(test_model)
-    print_model_parameter_summary(test_model)
     test_model.eval()
 
     # torch.int64
@@ -444,6 +501,7 @@ def inference_test():
 
     # torch.Size([1, 10, 512])
     # src_mask 相当于没有用，因为没有 0 元素
+    # 一开始先将所有的 memory 算好
     memory = test_model.encode(src, src_mask)
     # tensor([[0]])，初始值，后面每一次循环会递增一个值，例如会变成 tensor([[0, 3]])
     ys = torch.zeros(1, 1).type_as(src)
@@ -462,12 +520,16 @@ def inference_test():
         # 第 0 次：torch.Size([1, 1, 512])
         # 第 1 次：torch.Size([1, 2, 512])
         # 第 2 次：torch.Size([1, 3, 512])
+        # 注意这里有重复计算，以 torch.Size([1, 3, 512]) 为例，其中 torch.Size([1, 1:2, 512]) 就是上一步算过的
         print(out.shape)
-        print(out)
+        # 第 0 次：torch.Size([1, 512])
+        # 第 1 次：torch.Size([1, 512])
+        # 第 2 次：torch.Size([1, 512])
+        print(out[:, -1].shape)
+
+        # 只考虑最后一次输出的概率（注意这里不是概率，而是 log(softmax(x))
         prob = test_model.generator(out[:, -1])
-        print(prob)
         _, next_word = torch.max(prob, dim=1)
-        print(torch.max(prob, dim=1))
         next_word = next_word.data[0]
         ys = torch.cat(
             [ys, torch.empty(1, 1).type_as(src.data).fill_(next_word)], dim=1
@@ -487,6 +549,7 @@ def main():
     # print(torch.ones(attn_shape).masked_fill(torch.triu(torch.ones(attn_shape), diagonal=1) == 0, -1e9))
     # print(torch.triu(torch.ones(attn_shape), diagonal=1).type(torch.uint8) == 0)
     # example_mask()
+    # example_positional()
     inference_test()
 
 
