@@ -533,6 +533,7 @@ def main():
     # numpy           : 1.24.3
     # pandas          : 2.2.1
     # matplotlib      : 3.8.3
+    # seaborn         : 0.13.2
     # scipy           : 1.11.1
     #
     # conda environment: base

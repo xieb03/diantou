@@ -9,6 +9,7 @@ from torch.nn.functional import log_softmax
 import math
 import copy
 import pandas as pd
+from torch.optim.lr_scheduler import LambdaLR
 import altair as alt
 # spacy是一款工业级自然语言处理工具。spaCy 是一个在 Python 和 Cython 中用于高级自然语言处理的库。它基于最新的研究成果，并从一开始就设计成可用于实际产品。
 # spaCy 提供了预训练的流程，并目前支持70多种语言的分词和训练。它具有最先进的速度和神经网络模型，用于标记、解析、命名实体识别、文本分类等任务，
@@ -20,7 +21,7 @@ import warnings
 
 # http://nlp.seas.harvard.edu/annotated-transformer/
 # https://github.com/harvardnlp/annotated-transformer/blob/master/AnnotatedTransformer.ipynb
-
+# https://zhuanlan.zhihu.com/p/559495068
 
 class EncoderDecoder(nn.Module):
     """
@@ -82,6 +83,18 @@ class Encoder(nn.Module):
 
 # That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself.
 # We apply dropout (cite) to the output of each sub-layer, before it is added to the sub-layer input and normalized.
+# Q: Transformer 为什么用 LayerNorm 不使用 BatchNorm？
+# 为什么要归一化？
+# 使数据的分布稳定，降低数据的方差。将数据化成均值为 0 方差为 1，防止落入激活函数饱和区，训练过程平稳
+# 为什么不用BatchNorm？
+# 不同归一化方法操作的维度不同，对于输入[N, C, H, W]维度的图片：
+#   BatchNorm 在 C 维度上，计算 (N, H, W) 的统计量，拉平各个 C 里面的差异。
+#   LayerNorm 在 N 维度上，计算 (C, H, W) 的统计量，拉平各个 N 里面的差异。
+# 注意，这个图只是在CV中的例子，在NLP中，LayerNorm的操作对象是：
+#   对于输入 [N, L, E] 维度的文本（Batch size, seq len, embedding size）
+#   计算 (E) 的统计量，而不是（L, E）
+# 从数据的角度解释：CV 通常用 BatchNorm，NLP 通常用 LayerNorm。图像数据一个 Channel 内的关联性比较大，不同 Channel 的信息需要保持差异性。文本数据一个 Batch 内的不同样本关联性不大。
+# 从Pad的角度解释：不同句子的长度不同，在句子的末尾归一化会受到 pad 的影响，使得统计量不置信。
 class LayerNorm(nn.Module):
     """Construct a layernorm module (See citation for details)."""
 
@@ -102,6 +115,50 @@ class LayerNorm(nn.Module):
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
 
+# PreNorm 和 PostNorm 的区别，为什么 PreNorm 最终效果不如 PostNorm？
+# preNorm: x_t+1 = x_t + Ft(Norm(x_t))
+# PostNorm: x_t+1 = Norm(x_t + Ft((x_t))
+# 目前比较明确的结论是：同一设置之下，Pre Norm结构往往更容易训练，但最终效果通常不如Post Norm。Pre Norm更容易训练好理解，因为它的恒等路径更突出，但为什么它效果反而没那么好呢？
+# 另外，笔者自己也做过对比实验，显示Post Norm的结构迁移性能更加好，也就是说在Pretraining中，Pre Norm和Post Norm都能做到大致相同的结果，但是Post Norm的Finetune效果明显更好。
+# 可能读者会反问《On Layer Normalization in the Transformer Architecture》不是显示Pre Norm要好于Post Norm吗？这是不是矛盾了？
+# 其实这篇文章比较的是在完全相同的训练设置下Pre Norm的效果要优于Post Norm，这只能显示出Pre Norm更容易训练，因为Post Norm要达到自己的最优效果，不能用跟Pre Norm一样的训练配置（比如Pre Norm可以不加Warmup但Post Norm通常要加），所以结论并不矛盾。
+# 说白了，Pre Norm 结构无形地增加了模型的宽度而降低了模型的深度，而我们知道深度通常比宽度更重要，所以是无形之中的降低深度导致最终效果变差了。
+# 而 Post Norm 刚刚相反，它每 Norm 一次就削弱一次恒等分支的权重，所以 Post Norm 反而是更突出残差分支的，因此 Post Norm 中的层数更加 “足秤”，一旦训练好之后效果更优。
+# 前段时间号称能训练1000层Transformer的DeepNet想必不少读者都听说过，在其论文《DeepNet: Scaling Transformers to 1,000 Layers》中对Pre Norm的描述是：
+# However, the gradients of Pre-LN at bottom layers tend to be larger than at top layers, leading to a degradation in performance compared with Post-LN.
+# 不少读者当时可能并不理解这段话的逻辑关系，但看了前一节内容的解释后，想必会有新的理解。
+# 简单来说，所谓“the gradients of Pre-LN at bottom layers tend to be larger than at top layers”，就是指Pre Norm结构会过度倾向于恒等分支（bottom layers），
+# 从而使得Pre Norm倾向于退化（degradation）为一个“浅而宽”的模型，最终不如同一深度的Post Norm。这跟前面的直观理解本质上是一致的。
+# Q: Transformer如何缓解梯度消失？
+# 什么是梯度消失？
+# 它指的是（主要是在模型的初始阶段）越靠近输入的层梯度越小，趋于零甚至等于零，而我们主要用的是基于梯度的优化器，所以梯度消失意味着我们没有很好的信号去调整优化前面的层。
+# 换句话说，前面的层也许几乎没有得到更新，一直保持随机初始化的状态；只有比较靠近输出的层才更新得比较好，但这些层的输入是前面没有更新好的层的输出，所以输入质量可能会很糟糕（因为经过了一个近乎随机的变换），
+# 因此哪怕后面的层更新好了，总体效果也不好。最终，我们会观察到很反直觉的现象：模型越深，效果越差，哪怕训练集都如此。
+# 如何解决梯度消失？
+# 解决梯度消失的一个标准方法就是残差链接，正式提出于 ResNet 中。残差的思想非常简单直接：你不是担心输入的梯度会消失吗？那我直接给它补上一个梯度为常数的项不就行了？最简单地，将模型变成 y=x+F (x)
+# 这样一来，由于多了一条“直通”路 x ，就算 F(x) 中的 x 梯度消失了，x 的梯度基本上也能得以保留，从而使得深层模型得到有效的训练。
+# LayerNorm 能缓解梯度消失吗？
+# 在 BERT 和 Transformer 里边，使用的是 Post Norm 设计，它把 Norm 操作加在了残差之后：
+# 我们知道，残差有利于解决梯度消失，但是在 Post Norm 中，残差这条通道被严重削弱了，越靠近输入，削弱得越严重，残差 “名存实亡”。所以说，在 Post Norm 的 BERT 模型中，LN 不仅不能缓解梯度消失，它还是梯度消失的 “元凶” 之一。
+# 虽然Post Norm 会带来一定的梯度消失问题，但其实它也有其他方面的好处。最明显的是，它稳定了前向传播的数值，并且保持了每个模块的一致性。其次，梯度消失也不全是 “坏处”，其实对于 Finetune 阶段来说，它反而是好处。
+# 在 Finetune 的时候，我们通常希望优先调整靠近输出层的参数，不要过度调整靠近输入层的参数，以免严重破坏预训练效果。而梯度消失意味着越靠近输入层，其结果对最终输出的影响越弱，这正好是 Finetune 时所希望的。
+# 所以，预训练好的 Post Norm 模型，往往比 Pre Norm 模型有更好的 Finetune 效果。
+# Adam如何解决梯度消失？
+# 其实，最关键的原因是，在当前的各种自适应优化技术下，我们已经不大担心梯度消失问题了。
+# 这是因为，当前 NLP 中主流的优化器是 Adam 及其变种。对于 Adam 来说，由于包含了动量和二阶矩校正，所以近似来看，它的更新量大致上为
+# 可以看到，分子分母是都是同量纲的，因此分式结果其实就是 (1)的量级，而更新量就是 (η)量级。也就是说，理论上只要梯度的绝对值大于随机误差，那么对应的参数都会有常数量级的更新量；
+# 这跟 SGD 不一样，SGD 的更新量是正比于梯度的，只要梯度小，更新量也会很小，如果梯度过小，那么参数几乎会没被更新。
+# 所以，Post Norm 的残差虽然被严重削弱，但是在 base、large 级别的模型中，它还不至于削弱到小于随机误差的地步，因此配合 Adam 等优化器，它还是可以得到有效更新的，也就有可能成功训练了。
+# 当然，只是有可能，事实上越深的 Post Norm 模型确实越难训练，比如要仔细调节学习率和 Warmup 等。
+# Warmup 如何解决梯度消失？
+# Warmup 是在训练开始阶段，将学习率从 0 缓增到指定大小，而不是一开始从指定大小训练。如果不进行 Wamrup，那么模型一开始就快速地学习，由于梯度消失，模型对越靠后的层越敏感，也就是越靠后的层学习得越快，然后后面的层是以前面的层的输出为输入的，前面的层根本就没学好，所以后面的层虽然学得快，但却是建立在糟糕的输入基础上的。
+# 很快地，后面的层以糟糕的输入为基础到达了一个糟糕的局部最优点，此时它的学习开始放缓（因为已经到达了它认为的最优点附近），同时反向传播给前面层的梯度信号进一步变弱，这就导致了前面的层的梯度变得不准。但 Adam 的更新量是常数量级的，梯度不准，但更新量依然是常数量级，意味着可能就是一个常数量级的随机噪声了，于是学习方向开始不合理，前面的输出开始崩盘，导致后面的层也一并崩盘。
+# 所以，如果 Post Norm 结构的模型不进行 Wamrup，我们能观察到的现象往往是：loss 快速收敛到一个常数附近，然后再训练一段时间，loss 开始发散，直至 NAN。如果进行 Wamrup，那么留给模型足够多的时间进行 “预热”，在这个过程中，主要是抑制了后面的层的学习速度，并且给了前面的层更多的优化时间，以促进每个层的同步优化。
+# 这里的讨论前提是梯度消失，如果是 Pre Norm 之类的结果，没有明显的梯度消失现象，那么不加 Warmup 往往也可以成功训练。
+# Q: BERT 权重初始标准差为什么是0.02？
+# 喜欢扣细节的同学会留意到，BERT 默认的初始化方法是标准差为 0.02 的截断正态分布，由于是截断正态分布，所以实际标准差会更小，大约是 0.02/1.1368472≈0.0176。这个标准差是大还是小呢？对于 Xavier 初始化来说，一个 n×n 的矩阵应该用 1/n 的方差初始化，而 BERT base 的 n 为 768，算出来的标准差是$1/\sqrt{768}≈0.0361$。这就意味着，这个初始化标准差是明显偏小的，大约只有常见初始化标准差的一半。
+# 为什么 BERT 要用偏小的标准差初始化呢？事实上，这还是跟 Post Norm 设计有关，偏小的标准差会导致函数的输出整体偏小，从而使得 Post Norm 设计在初始化阶段更接近于恒等函数，从而更利于优化。具体来说，按照前面的假设，如果 x 的方差是 1，F (x) 的方差是$σ^2$，那么初始化阶段，Norm 操作就相当于除以$\sqrt{1+σ^2}$。如果 σ 比较小，那么残差中的 “直路” 权重就越接近于 1，那么模型初始阶段就越接近一个恒等函数，就越不容易梯度消失。
+# 正所谓 “我们不怕梯度消失，但我们也不希望梯度消失”，简单地将初始化标注差设小一点，就可以使得 σ 变小一点，从而在保持 Post Norm 的同时缓解一下梯度消失，何乐而不为？那能不能设置得更小甚至全零？一般来说初始化过小会丧失多样性，缩小了模型的试错空间，也会带来负面效果。综合来看，缩小到标准的 1/2，是一个比较靠谱的选择了。
 class ReslayerConnection(nn.Module):
     """
     A residual connection followed by a layer norm.
@@ -239,10 +296,17 @@ def example_mask():
 # where the query, keys, values, and output are all vectors. The output is computed as a weighted sum of the values,
 # where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.
 #
-# We call our particular attention "Scaled Dot-Product Attention". The input consists of queries and keys of dimension dk,
-# and values of dimension dv. We compute the dot products of the query with all keys, divide each by dk^0.5, and apply a softmax function to obtain the weights on the values.
+# We call our particular attention "Scaled Dot-Product Attention". The input consists of queries and keys of dimension d_k,
+# and values of dimension d_v. We compute the dot products of the query with all keys, divide each by d_k^0.5, and apply a softmax function to obtain the weights on the values.
 # In practice, we compute the attention function on a set of queries simultaneously, packed together into a matrix K.
 # The keys and values are also packed together into matrices K and V. We compute the matrix of outputs as:
+# Q: 为什么在进行 softmax 之前需要除以 d_k^0.5
+# 论文中的解释是：向量的点积结果会很大，将 softmax 函数 push 到梯度很小的区域，scaled 会缓解这种现象。
+# 结论：假设向量 q 和 k 的各个分量 qi, ki 是互相独立的随机变量，均值是 0，方差是 1，那么 q · k 的均值是 0 方差是 d_k。除以 d_k^0.5 可以将方差恢复为1。
+# softmax+交叉熵会让输入过大/过小的梯度消失吗？
+# 不会。因为交叉熵有一个log。log_softmax的梯度和刚才算出来的不同，就算输入的某一个x过大也不会梯度消失。
+# softmax+MSE会有什么问题？为什么我们在分类的时候不使用MSE作为损失函数？
+# 刚才的解释就可以说明这个问题。因为MSE中没有log，所以softmax+MSE会造成梯度消失。
 def attention(query, key, value, mask=None, dropout=None):
     """Compute 'Scaled Dot Product Attention'"""
     d_k = query.size(-1)
@@ -258,7 +322,7 @@ def attention(query, key, value, mask=None, dropout=None):
 
 # Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions.
 # With a single attention head, averaging inhibits this.
-# In this work we employ h = 8 parallel attention layers, or heads. For each of these we use dk = dv = dmodel / h = 64.
+# In this work we employ h = 8 parallel attention layers, or heads. For each of these we use d_k = d_v = d_model / h = 64.
 # Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.
 # The Transformer uses multi-head attention in three different ways: previous decoder layer, and the memory keys and values come from the
 # 1. In "encoder-decoder attention" layers, the queries come from the output of the encoder.
@@ -271,7 +335,12 @@ def attention(query, key, value, mask=None, dropout=None):
 # 3. Similarly, self-attention layers in the decoder allow each position in the decoder to attend to all positions in the decoder up to and including that position.
 #   We need to prevent leftward information flow in the decoder to preserve the auto-regressive property.
 #   We implement this inside of scaled dot-product attention by masking out (setting to ) all values in the input of the softmax which correspond to illegal connections.
-# 注意这里并不是显式的拼接了 h = 8 个结果，而是利用 dk * h 这样的大矩阵直接进行计算，省去了 for 循环，而为了方便，一般直接另 dk = dmodel / h，其中 dmodel 是 embedding 的维度，dk 是 Q/K/V 的维度
+# 注意这里并不是显式的拼接了 h = 8 个结果，而是利用 d_k * h 这样的大矩阵直接进行计算，省去了 for 循环，而为了方便，一般直接另 d_k = d_model / h，其中 d_model 是 embedding 的维度，d_k 是 Q/K/V 的维度
+# 为什么 Transformer 需要进行 Multi-head Attention？
+# 实验证明多头是必要的，8/16个头都可以取得更好的效果，但是超过16个反而效果不好。每个头关注的信息不同，但是头之间的差异随着层数增加而减少。并且不是所有头都有用，有工作尝试剪枝，可以得到更好的表现。
+# Transformer 为什么 Q 和 K 使用不同的权重矩阵生成？
+# 可以理解为是在不同空间上的投影。正因为有了这种不同空间的投影，增加了表达能力，这样计算得到的 attention score 矩阵的泛化能力更高。
+# 如果使用相同的 W，attention score 会退化为一个近似对角矩阵。因为在 softmax 之前，对角线上的元素都是通过自身点乘自身得到的，是许多正数的和，所以会非常大，而其他元素有正有负，没有这么大。经过 softmax 之后，对角线上的元素会接近 1。
 class MultiHeadedAttention(nn.Module):
     def __init__(self, h=8, d_model=512, dropout=0.1):
         """Take in model size and number of heads."""
@@ -281,6 +350,7 @@ class MultiHeadedAttention(nn.Module):
         self.d_k = d_model // h
         self.h = h
         # 注意是生成了 4 个，前 3 个用于 Q, K, V 的生成，最后一个用于结果
+        # torch.Size([512, 512])
         self.linears = clones(nn.Linear(d_model, d_model), 4)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
@@ -329,7 +399,7 @@ class MultiHeadedAttention(nn.Module):
 # In addition to attention sub-layers, each of the layers in our encoder and decoder contains a fully connected feed-forward network,
 # which is applied to each position separately and identically. This consists of two linear transformations with a ReLU activation in between.
 # While the linear transformations are the same across different positions, they use different parameters from layer to layer.
-# Another way of describing this is as two convolutions with kernel size 1. The dimensionality of input and output is dmodel=512, and the inner-layer has dimensionality dff=2048
+# Another way of describing this is as two convolutions with kernel size 1. The dimensionality of input and output is d_model=512, and the inner-layer has dimensionality dff=2048
 class PositionwiseFeedForward(nn.Module):
     """Implements FFN equation."""
 
@@ -344,10 +414,13 @@ class PositionwiseFeedForward(nn.Module):
 
 
 # Embeddings and Softmax
-# Similarly to other sequence transduction models, we use learned embeddings to convert the input tokens and output tokens to vectors of dimension dmodel.
+# Similarly to other sequence transduction models, we use learned embeddings to convert the input tokens and output tokens to vectors of dimension d_model.
 # We also use the usual learned linear transformation and softmax function to convert the decoder output to predicted next-token probabilities.
 # In our model, we share the same weight matrix between the two embedding layers and the pre-softmax linear transformation.
-# In the embedding layers, we multiply those weights by dmodel^0.5
+# In the embedding layers, we multiply those weights by d_model^0.5
+# 为什么要乘以 d_model^0.5
+# 如果使用 Xavier 初始化，Embedding 的方差为 1/d_model，当d_model非常大时，矩阵中的每一个值都会减小。通过乘一个 d_model^0.5 可以将方差恢复到1。
+# 因为Position Encoding是通过三角函数算出来的，值域为[-1, 1]。所以当加上 Position Encoding 时，需要放大 embedding 的数值，否则规模不一致相加后会丢失信息。
 class Embeddings(nn.Module):
     def __init__(self, d_model, vocab):
         super(Embeddings, self).__init__()
@@ -371,14 +444,14 @@ class Embeddings(nn.Module):
 # Since our model contains no recurrence and no convolution, in order for the model to make use of the order of the sequence,
 # we must inject some information about the relative or absolute position of the tokens in the sequence.
 # To this end, we add “positional encodings” to the input embeddings at the bottoms of the encoder and decoder stacks.
-# The positional encodings have the same dimension dmodel as the embeddings, so that the two can be summed.
+# The positional encodings have the same dimension d_model as the embeddings, so that the two can be summed.
 # There are many choices of positional encodings, learned and fixed.
 # In this work, we use sine and cosine functions of different frequencies.
 # In addition, we apply dropout to the sums of the embeddings and the positional encodings in both the encoder and decoder stacks. For the base model, we use a rate of dropout=0.1.
 # We also experimented with using learned positional embeddings (cite) instead, and found that the two versions produced nearly identical results.
 # We chose the sinusoidal version because it may allow the model to extrapolate to sequence lengths longer than the ones encountered during training.
-# 注意，dmodel 才是 embedding 的维度，而 dk 只是注意力机制中 Q/K/V 的维度，只是一般为了简化，我们令 dk = dmodel / h，即 h 个头恰好组成 dmodel 维度
-# 这样处理，在注意力机制中，我们实际上是用 dk * h 大小的矩阵来直接运算，而不是分别运算 h 个 dk，再进行 concat
+# 注意，d_model 才是 embedding 的维度，而 d_k 只是注意力机制中 Q/K/V 的维度，只是一般为了简化，我们令 d_k = d_model / h，即 h 个头恰好组成 d_model 维度
+# 这样处理，在注意力机制中，我们实际上是用 d_k * h 大小的矩阵来直接运算，而不是分别运算 h 个 d_k，再进行 concat
 class PositionalEncoding(nn.Module):
     """Implement the PE function."""
 
@@ -539,6 +612,335 @@ def inference_test():
     print("Example Untrained Model Prediction:", ys)
 
 
+# First we define a batch object that holds the src and target sentences for training, as well as constructing the masks.
+class Batch:
+    """Object for holding a batch of data with mask during training."""
+
+    def __init__(self, src, tgt=None, pad=2):  # 2 = <blank>
+        self.src = src
+        self.src_mask = (src != pad).unsqueeze(-2)
+        if tgt is not None:
+            self.tgt = tgt[:, :-1]
+            self.tgt_y = tgt[:, 1:]
+            self.tgt_mask = self.make_std_mask(self.tgt, pad)
+            self.ntokens = (self.tgt_y != pad).data.sum()
+
+    # noinspection PyUnresolvedReferences
+    @staticmethod
+    def make_std_mask(tgt, pad):
+        """Create a mask to hide padding and future words."""
+        tgt_mask = (tgt != pad).unsqueeze(-2)
+        tgt_mask = tgt_mask & subsequent_mask(tgt.size(-1)).type_as(
+            tgt_mask.data
+        )
+        return tgt_mask
+
+
+class TrainState:
+    """Track number of steps, examples, and tokens processed"""
+
+    step: int = 0  # Steps in the current epoch
+    accum_step: int = 0  # Number of gradient accumulation steps
+    samples: int = 0  # total # of examples used
+    tokens: int = 0  # total # of tokens processed
+
+
+def run_epoch(
+        data_iter,
+        model,
+        loss_compute,
+        optimizer,
+        scheduler,
+        mode="train",
+        accum_iter=1,
+        train_state=TrainState(),
+):
+    """Train a single epoch"""
+    start = time.time()
+    total_tokens = 0
+    total_loss = 0
+    tokens = 0
+    n_accum = 0
+    for i, batch in enumerate(data_iter):
+        out = model.forward(
+            batch.src, batch.tgt, batch.src_mask, batch.tgt_mask
+        )
+        loss, loss_node = loss_compute(out, batch.tgt_y, batch.ntokens)
+        # loss_node = loss_node / accum_iter
+        if mode == "train" or mode == "train+log":
+            loss_node.backward()
+            train_state.step += 1
+            train_state.samples += batch.src.shape[0]
+            train_state.tokens += batch.ntokens
+            if i % accum_iter == 0:
+                optimizer.step()
+                optimizer.zero_grad(set_to_none=True)
+                n_accum += 1
+                train_state.accum_step += 1
+            scheduler.step()
+
+        total_loss += loss
+        total_tokens += batch.ntokens
+        tokens += batch.ntokens
+        if i % 40 == 1 and (mode == "train" or mode == "train+log"):
+            lr = optimizer.param_groups[0]["lr"]
+            elapsed = time.time() - start
+            print(
+                (
+                        "Epoch Step: %6d | Accumulation Step: %3d | Loss: %6.2f "
+                        + "| Tokens / Sec: %7.1f | Learning Rate: %6.1e"
+                )
+                % (i, n_accum, loss / batch.ntokens, tokens / elapsed, lr)
+            )
+            start = time.time()
+            tokens = 0
+        del loss
+        del loss_node
+    return total_loss / total_tokens, train_state
+
+
+# Note: This part is very important. Need to train with this setup of the model.
+# This corresponds to increasing the learning rate linearly for the first warmup_steps training steps, and decreasing it thereafter proportionally to the inverse square root of the step number.
+# We used warmup_steps = 4000
+def rate(step, model_size, factor, warmup):
+    """
+    we have to default the step to 1 for LambdaLR function
+    to avoid zero raising to negative power.
+    """
+    if step == 0:
+        step = 1
+    return factor * (
+            model_size ** (-0.5) * min(step ** (-0.5), step * warmup ** (-1.5))
+    )
+
+
+# Example of the curves of this model for different model sizes and for optimization hyperparameters.
+def example_learning_schedule():
+    opts = [
+        [512, 1, 4000],  # example 1
+        [512, 1, 8000],  # example 2
+        [256, 1, 4000],  # example 3
+    ]
+
+    dummy_model = torch.nn.Linear(1, 1)
+    learning_rates = []
+
+    # we have 3 examples in opts list.
+    for idx, example in enumerate(opts):
+        # run 20000 epoch for each example
+        optimizer = torch.optim.Adam(
+            dummy_model.parameters(), lr=1, betas=(0.9, 0.98), eps=1e-9
+        )
+        lr_scheduler = LambdaLR(
+            optimizer=optimizer, lr_lambda=lambda step_: rate(step_, *example)
+        )
+        tmp = []
+        # take 20K dummy training steps, save the learning rate at each step
+        for step in range(20000):
+            tmp.append(optimizer.param_groups[0]["lr"])
+            optimizer.step()
+            lr_scheduler.step()
+        learning_rates.append(tmp)
+
+    learning_rates = torch.tensor(learning_rates)
+
+    # Enable altair to handle more than 5000 rows
+    alt.data_transformers.disable_max_rows()
+
+    opts_data = pd.concat(
+        [
+            pd.DataFrame(
+                {
+                    "Learning Rate": learning_rates[warmup_idx, :],
+                    "model_size:warmup": ["512:4000", "512:8000", "256:4000"][
+                        warmup_idx
+                    ],
+                    "step": range(20000),
+                }
+            )
+            for warmup_idx in [0, 1, 2]
+        ]
+    )
+
+    return (
+        alt.Chart(opts_data)
+        .mark_line()
+        .properties(width=600)
+        .encode(x="step", y="Learning Rate", color="model_size:warmup:N")
+        .interactive()
+    )
+
+
+# Label Smoothing
+# During training, we employed label smoothing of value e_ls=0.1.
+# This hurts perplexity, as the model learns to be more unsure, but improves accuracy and BLEU score.
+# We implement label smoothing using the KL div loss. Instead of using a one-hot target distribution,
+# we create a distribution that has confidence of the correct word and the rest of the smoothing mass distributed throughout the vocabulary.
+# 标签平滑技术通过在训练时对真实标签进行平滑处理，从而减少模型对训练数据中的噪声标签的过度依赖，提高模型的泛化性能。
+# 具体而言，标签平滑通过引入一定的噪声或模糊性来减小真实标签的置信度，从而迫使模型在训练时更加关注输入数据的特征，而不是过于依赖标签信息。这种平滑处理可以通过在交叉熵损失函数中引入额外的惩罚项或者对真实标签进行平滑化处理来实现。可以认为是一种正则化。
+# 注意，这个时候如果是过于自信的输出，例如非 0 即 1，反而会惩罚，即 loss > 0
+class LabelSmoothing(nn.Module):
+    """Implement label smoothing."""
+
+    def __init__(self, size, padding_idx, smoothing=0.0):
+        super(LabelSmoothing, self).__init__()
+        # KL 散度作为 loss，注意 input 是 log_softmax 之后的结果，而 target 默认是概率，即 log_target = False，没有经过 log，因此在计算 KS 的时候要重新取 log
+        # p 可以有 0，但是 q 不能用 0，会自动 变成 0
+        # p * log(p / q) = p * (logp - logq)
+        # if not log_target: # default
+        #     loss_pointwise = target * (target.log() - input)
+        # else:
+        #     loss_pointwise = target.exp() * (target - input)
+        self.criterion = nn.KLDivLoss(reduction="sum", log_target=False)
+        self.padding_idx = padding_idx
+        self.confidence = 1.0 - smoothing
+        self.smoothing = smoothing
+        # 种类
+        self.size = size
+        self.true_dist = None
+
+    def forward(self, x, target):
+        assert x.size(1) == self.size
+        true_dist = x.data.clone()
+        # 用同一个值来填充，下面全都是 self.smoothing / (self.size - 2)
+        # tensor([[0.1333, 0.1333, 0.1333, 0.1333, 0.1333],
+        #         [0.1333, 0.1333, 0.1333, 0.1333, 0.1333],
+        #         [0.1333, 0.1333, 0.1333, 0.1333, 0.1333],
+        #         [0.1333, 0.1333, 0.1333, 0.1333, 0.1333],
+        #         [0.1333, 0.1333, 0.1333, 0.1333, 0.1333]])
+        true_dist.fill_(value=self.smoothing / (self.size - 2))
+        # 将 src 中的值根据 dim 和 index 填充到 tensor中。这里有两个关键部分，1）将 src 中的值填充到 tensor中；2）dim 和 index 指定的位置，一个是src中的位置，另一个是tensor中的位置
+        # 三维例子
+        # self[index[i][j][k]][j][k] = src[i][j][k]  # if dim == 0
+        # self[i][index[i][j][k]][k] = src[i][j][k]  # if dim == 1
+        # self[i][j][index[i][j][k]] = src[i][j][k]  # if dim == 2
+        # 二维例子
+        # self[index[i][j]][j] = src[i][j] # if dim == 0
+        # self[i][index[i][j]] = src[i][j] # if dim == 1
+        # tensor([[0.1333, 0.1333, 0.6000, 0.1333, 0.1333],
+        #         [0.1333, 0.6000, 0.1333, 0.1333, 0.1333],
+        #         [0.6000, 0.1333, 0.1333, 0.1333, 0.1333],
+        #         [0.1333, 0.1333, 0.1333, 0.6000, 0.1333],
+        #         [0.1333, 0.1333, 0.1333, 0.6000, 0.1333]])
+        # 将目标的对应列索引填成 confidence
+        true_dist.scatter_(1, target.data.unsqueeze(1), self.confidence)
+        # tensor([[0.0000, 0.1333, 0.6000, 0.1333, 0.1333],
+        #         [0.0000, 0.6000, 0.1333, 0.1333, 0.1333],
+        #         [0.0000, 0.1333, 0.1333, 0.1333, 0.1333],
+        #         [0.0000, 0.1333, 0.1333, 0.6000, 0.1333],
+        #         [0.0000, 0.1333, 0.1333, 0.6000, 0.1333]])
+        # padding_idx 置于 0
+        true_dist[:, self.padding_idx] = 0
+        # noinspection PyTypeChecker
+        # 非零元素定位，返回索引位置
+        # tensor([[2]])
+        mask = torch.nonzero(target.data == self.padding_idx)
+        if mask.dim() > 0:
+            # 通过按 index 中给出的顺序选择索引，用值 value 填充 self 张量的元素。
+            true_dist.index_fill_(0, mask.squeeze(), 0.0)
+        # 如果有 label 是 padding_idx，那么对应的行全都置于 0
+        # 可以看到，最后的结果，除了 padding_idx 以外，其它的概率和仍为 1，表现为标签类对应的概率为 (1 - smoothing)，其它类标签对应的概率为 smoothing / (N - 1)
+        # 因此 (1 - smoothing) + smoothing / (N - 1) * (N - 1) = 1，其实就是一种软分类，从非 1 即 0 变为 soft
+        # 注意，这个时候如果是过于自信的输出，例如非 0 即 1，反而会惩罚，即 loss > 0
+        # tensor([[0.0000, 0.1333, 0.6000, 0.1333, 0.1333],
+        #         [0.0000, 0.6000, 0.1333, 0.1333, 0.1333],
+        #         [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+        #         [0.0000, 0.1333, 0.1333, 0.6000, 0.1333],
+        #         [0.0000, 0.1333, 0.1333, 0.6000, 0.1333]])
+        self.true_dist = true_dist
+        return self.criterion(input=x, target=true_dist.clone().detach())
+
+
+# Here we can see an example of how the mass is distributed to the words based on confidence.
+# Label smoothing actually starts to penalize the model if it gets very confident about a given choice.
+def example_label_smoothing():
+    crit = LabelSmoothing(5, 0, 0.4)
+    predict = torch.FloatTensor(
+        [
+            [0, 0.2, 0.7, 0.1, 0],
+            [0, 0.2, 0.7, 0.1, 0],
+            [0, 0.2, 0.7, 0.1, 0],
+            [0, 0.2, 0.7, 0.1, 0],
+            [0, 0.2, 0.7, 0.1, 0],
+        ]
+    )
+    # tensor([[   -inf, -1.6094, -0.3567, -2.3026,    -inf],
+    #         [   -inf, -1.6094, -0.3567, -2.3026,    -inf],
+    #         [   -inf, -1.6094, -0.3567, -2.3026,    -inf],
+    #         [   -inf, -1.6094, -0.3567, -2.3026,    -inf],
+    #         [   -inf, -1.6094, -0.3567, -2.3026,    -inf]])
+    x = predict.log()
+    crit(x=x, target=torch.LongTensor([2, 1, 0, 3, 3]))
+    ls_data = pd.concat(
+        [
+            pd.DataFrame(
+                {
+                    "target distribution": crit.true_dist[x, y].flatten(),
+                    "columns": y,
+                    "rows": x,
+                }
+            )
+            for y in range(5)
+            for x in range(5)
+        ]
+    )
+
+    print(ls_data.pivot(index='rows', columns='columns')['target distribution'])
+    # 数据的 index 和 columns 分别为 heatmap 的 y 轴方向和 x 轴方向标签
+    sns.heatmap(ls_data.pivot(index='rows', columns='columns')['target distribution'], annot=True, fmt=".2F",
+                cmap='viridis')
+    plt.show()
+
+    return (
+        alt.Chart(ls_data)
+        .mark_rect(color="Blue", opacity=1)
+        .properties(height=200, width=200)
+        .encode(
+            alt.X("columns:O", title=None),
+            alt.Y("rows:O", title=None),
+            alt.Color(
+                "target distribution:Q", scale=alt.Scale(scheme="viridis")
+            ),
+        )
+        .interactive()
+    )
+
+
+# # Label smoothing actually starts to penalize the model if it gets very confident about a given choice.
+def penalization_visualization():
+    def loss(x):
+        d = x + 3 * 1
+        # predict = torch.FloatTensor([[0, x / d, 1 / d, 1 / d, 1 / d]])
+        predict = torch.FloatTensor([[1.0e-10, x / d, 1 / d, 1 / d, 1 / d]])
+        result = crit(x=predict.log(), target=torch.LongTensor([1])).data
+        # 当 x = 27 的时候，有 predict ≈ crit.true_dist，因此 KL 散度为 0
+        # 27 tensor([[1.0000e-10, 9.0000e-01, 3.3333e-02, 3.3333e-02, 3.3333e-02]]) tensor([[0.0000, 0.9000, 0.0333, 0.0333, 0.0333]])
+        if result < 1E-9:
+            print(x, predict, crit.true_dist)
+        return result
+
+    crit = LabelSmoothing(5, 0, 0.1)
+    loss_data = pd.DataFrame(
+        {
+            "Loss": [loss(x) for x in range(1, 100)],
+            "Steps": list(range(99)),
+        }
+    ).astype("float")
+    loss_data.plot(x="Steps", y="Loss")
+    plt.show()
+
+    return (
+        alt.Chart(loss_data)
+        .mark_line()
+        .properties(width=350)
+        .encode(
+            x="Steps",
+            y="Loss",
+        )
+        .interactive()
+    )
+
+
 @func_timer(arg=True)
 def main():
     fix_all_seed(_simple=False)
@@ -550,7 +952,9 @@ def main():
     # print(torch.triu(torch.ones(attn_shape), diagonal=1).type(torch.uint8) == 0)
     # example_mask()
     # example_positional()
-    inference_test()
+    # inference_test()
+    example_label_smoothing()
+    # penalization_visualization()
 
 
 if __name__ == '__main__':
