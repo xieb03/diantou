@@ -1644,7 +1644,7 @@ def check_scan_dataset():
 
 @func_timer(arg=True)
 def main():
-    # check_gpu(True)
+    check_gpu(True)
 
     # check_mul()
     # check_mean_op()
@@ -1661,7 +1661,7 @@ def main():
     # check_bge_zh()
     # check_bge_reranker()
 
-    check_scan_dataset()
+    # check_scan_dataset()
 
 
 if __name__ == '__main__':

@@ -71,7 +71,7 @@ def get_token_count(_str: str, _model="gpt-3.5-turbo", _encoding=None):
 
 # user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
 # 历史消息队列
-def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0.1,
+def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0.2,
                                 messages=None, print_token_count=False, print_cost_time=False, print_response=False,
                                 history_message_list: List = None,
                                 using_history_message_list=True, tools=None, print_messages=False, strip=False):
@@ -96,6 +96,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
 
     # 如果明确要求用历史对话，而且传入了历史对话，那么历史对话也要也要进入 prompt
     # 因为 closeAI 是负载均衡的，每次会随机请求不同的服务器，因此是不具备 openAI 自动保存一段历史对话的能力的，需要自己用历史对话来恢复
+    # 注意如果同时有 messages 和 history_message_list，那么 history_message_list 会在前
     if using_history:
         total_messages = history_message_list
 
@@ -154,6 +155,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     choice = choices[0]
     message = choice.message
     content = message.content
+    assert message.role == "assistant"
     if strip:
         content = content.strip()
     finish_reason = choice.finish_reason
@@ -184,6 +186,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     # if not using_history and history_message_list is not None:
     if history_message_list is not None:
         history_message_list.append({"role": "assistant", "content": content})
+        # history_message_list.append(message.to_dict())
 
     end_time = time.time()
     cost_time = end_time - start_time

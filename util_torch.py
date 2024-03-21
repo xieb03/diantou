@@ -46,38 +46,92 @@ def print_gpu_memory_summary(_digit=2):
     print("tensor gpu memory: ", round(torch.cuda.memory_allocated() / 1024 / 1024 / 1024, _digit), "G")
 
 
+# 获得 dtype 对应的 byte 数
+def get_dtype_byte_count(_dtype):
+    # 半精度
+    if _dtype in (torch.float16, torch.half):
+        return 2
+    # 浮点数
+    elif _dtype in (torch.float32, torch.float):
+        return 4
+    # 双精度
+    elif _dtype in (torch.float64, torch.double):
+        return 8
+    # 带符号/无符号 8 位整数
+    elif _dtype in (torch.int8, torch.uint8):
+        return 1
+    # 带符号 16 位整数
+    elif _dtype in (torch.int16, torch.short):
+        return 2
+    # 带符号 32 位整数
+    elif _dtype in (torch.int32, torch.int):
+        return 4
+    # 带符号 64 位整数
+    elif _dtype in (torch.int64, torch.long):
+        return 8
+    else:
+        raise ValueError(F"暂时不支持 {_dtype} 数据类型.")
+
+
 # 打印 model 的参数情况
 # 与 model.print_trainable_parameters() 相比较
 def print_model_parameter_summary(_model):
-    total_parameter_count = _model.num_parameters()
-    trainable_params_count = sum(p.numel() for p in _model.parameters() if p.requires_grad)
+    # 并不是所有的 model 都有 num_parameters 属性，但一定有 parameters() 方法
+    total_parameter_count, trainable_params_count, memory = list_model_parameter_summary(_model, _print=False)
+    if hasattr(_model, "num_parameters"):
+        # num_parameters 中不包含 buffer，因此可能会少
+        assert total_parameter_count >= _model.num_parameters(), F"{total_parameter_count} < {_model.num_parameters()}"
 
-    dtype = _model.dtype
-    # 半精度
-    if dtype in (torch.float16, torch.half):
-        gpu_memory = total_parameter_count * 2 / 1024 ** 3
-    # 浮点数
-    elif dtype in (torch.float32, torch.float):
-        gpu_memory = total_parameter_count * 4 / 1024 ** 3
-    # 双精度
-    elif dtype in (torch.float64, torch.double):
-        gpu_memory = total_parameter_count * 8 / 1024 ** 3
-    # 带符号/无符号 8 位整数
-    elif dtype in (torch.int8, torch.uint8):
-        gpu_memory = total_parameter_count * 1 / 1024 ** 3
-    # 带符号 16 位整数
-    elif dtype in (torch.int16, torch.short):
-        gpu_memory = total_parameter_count * 2 / 1024 ** 3
-    # 带符号 32 位整数
-    elif dtype in (torch.int32, torch.int):
-        gpu_memory = total_parameter_count * 4 / 1024 ** 3
-    # 带符号 64 位整数
-    elif dtype in (torch.int64, torch.long):
-        gpu_memory = total_parameter_count * 8 / 1024 ** 3
+    if hasattr(_model, "dtype"):
+        print(
+            F"model ({type(_model)}) has {total_parameter_count} parameters, {trainable_params_count} ({trainable_params_count / total_parameter_count:.2%}) are trainable, the dtype is {_model.dtype}，占 {round(memory, 2)}G 显存.")
     else:
-        raise ValueError(F"暂时不支持 {dtype} 数据类型.")
-    print(
-        F"model ({type(_model)}) has {total_parameter_count} parameters, {trainable_params_count} ({trainable_params_count / total_parameter_count:.2%}) are trainable, the dtype is {dtype}，占 {round(gpu_memory, 2)}G 显存.")
+        print(
+            F"model ({type(_model)}) has {total_parameter_count} parameters, {trainable_params_count} ({trainable_params_count / total_parameter_count:.2%}) are trainable, 占 {round(memory, 2)}G 显存.")
+
+
+# 列出 parameter 情况，注意区分 trainable parameter, distrainable parameter, distrainable buffers:
+def list_model_parameter_summary(_model, _print=True):
+    total_parameter_count = 0
+    trainable_params_count = 0
+    memory = 0
+
+    if _print:
+        print("trainable parameter:")
+    for i, (name, parameter) in enumerate(_model.named_parameters()):
+        if parameter.requires_grad:
+            total_parameter_count += parameter.numel()
+            trainable_params_count += parameter.numel()
+            memory += parameter.numel() * get_dtype_byte_count(parameter.dtype) / 1024 ** 3
+            if _print:
+                print(f"\t{i}: {name}, {parameter.dtype}, {parameter.size()}, {parameter.requires_grad}")
+
+    if _print:
+        print("distrainable parameter:")
+    for i, (name, parameter) in enumerate(_model.named_parameters()):
+        if not parameter.requires_grad:
+            total_parameter_count += parameter.numel()
+            memory += parameter.numel() * get_dtype_byte_count(parameter.dtype) / 1024 ** 3
+            if _print:
+                print(f"\t{i}: {name}, {parameter.dtype}, {parameter.size()}, {parameter.requires_grad}")
+
+    if _print:
+        print("distrainable buffers:")
+    for i, (name, buffer) in enumerate(_model.named_buffers()):
+        assert not buffer.requires_grad
+        total_parameter_count += buffer.numel()
+        memory += buffer.numel() * get_dtype_byte_count(buffer.dtype) / 1024 ** 3
+        if _print:
+            print(f"\t{i}: {name}, {buffer.dtype}, {buffer.size()}, {buffer.requires_grad}")
+
+    if _print:
+        if hasattr(_model, "dtype"):
+            print(
+                F"model ({type(_model)}) has {total_parameter_count} parameters, {trainable_params_count} ({trainable_params_count / total_parameter_count:.2%}) are trainable, the dtype is {_model.dtype}，占 {round(memory, 2)}G 显存.")
+        else:
+            print(
+                F"model ({type(_model)}) has {total_parameter_count} parameters, {trainable_params_count} ({trainable_params_count / total_parameter_count:.2%}) are trainable, 占 {round(memory, 2)}G 显存.")
+    return total_parameter_count, trainable_params_count, memory
 
 
 # 获取显卡的整体情况

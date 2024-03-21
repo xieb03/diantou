@@ -24,6 +24,8 @@ from random import shuffle
 from typing import List, Tuple
 
 import numpy as np
+# noinspection PyUnresolvedReferences
+import pandas as pd
 from IPython.display import Image, display, HTML
 # noinspection PyUnresolvedReferences
 from tqdm import tqdm
@@ -529,7 +531,7 @@ def main():
     # ruamel_yaml     : 0.18.6
     # scikit-learn    : 1.4.1.post1
     # numpy           : 1.24.3
-    # pandas          : 2.0.3
+    # pandas          : 2.2.1
     # matplotlib      : 3.8.3
     # scipy           : 1.11.1
     #
