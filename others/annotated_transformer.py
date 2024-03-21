@@ -102,7 +102,7 @@ class LayerNorm(nn.Module):
         super(LayerNorm, self).__init__()
         # 首先可以把这个函数理解为类型转换函数，将一个不可训练的类型 Tensor 转换成可以训练的类型 parameter 并将这个 parameter 绑定到这个 module 里面
         # net.parameter() 中就有这个绑定的 parameter，所以在参数优化的时候可以进行优化的，所以经过类型转换这个 self.v 变成了模型的一部分，成为了模型中根据训练可以改动的参数了。
-        # 使用这个函数的目的也是想让某些变量在学习的过程中不断的修改其值以达到最优化。
+        # 使用这个函数的目的也是想让某些变量在学习的过程中不断地修改其值以达到最优化。
         # torch.Size([512])
         self.a_2 = nn.Parameter(torch.ones(features))
         # torch.Size([512])
@@ -240,8 +240,8 @@ class DecoderLayer(nn.Module):
 
 
 # We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions.
-# This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i
-# can depend only on the known outputs at positions less than i.
+# This masking, combined with fact that the output embeddings are offset by one position,
+# ensures that the predictions for position ith can depend only on the known outputs at positions less than ith.
 # tensor([[[0, 1, 1],
 #          [0, 0, 1],
 #          [0, 0, 0]]], dtype=torch.uint8)
@@ -508,8 +508,23 @@ class PositionalEncoding(nn.Module):
 
 def example_positional():
     pe = PositionalEncoding(20, 0)
+    # 100 个位置，d_model = 20
+    # torch.Size([1, 100, 20])
     y = pe.forward(torch.zeros(1, 100, 20))
 
+    # 当 dim = 2k 时
+    # y(pos, 2k) = sin(pos/10000^(2k/d_model))
+    # T = 2pi * 10000^(2k/d_model)
+    # 当 2k = 4, d_model = 20 时，T = 40
+    # 当 2k = 6, d_model = 20 时，T = 100
+
+    # 当 dim = 2k + 1 时
+    # y(pos, 2k + 1) = cos(pos/10000^(2k/d_model))
+    # T = 2pi * 10000^(2k/d_model)
+    # 当 2k + 1 = 5, d_model = 20 时，T = 40
+    # 当 2k + 1 = 7, d_model = 20 时，T = 100
+
+    # 即 2k 和 2k + 1 的周期是一样的，只不过一个是 sin 从 0 开始，一个是 cos 从 1 开始
     data = pd.concat(
         [
             pd.DataFrame(
@@ -522,6 +537,16 @@ def example_positional():
             for dim in [4, 5, 6, 7]
         ]
     )
+
+    print(data)
+    # UserWarning: The palette list has more values (10) than needed (4), which may not be intended.
+    plt.figure(figsize=(9, 6))
+    sns.lineplot(data=data, x='position', y='embedding', hue='dimension',
+                 palette=sns.color_palette(n_colors=data["dimension"].nunique()))
+    plt.xlim(0, 100)
+    plt.ylim(-1, 1)
+    plt.grid(True)
+    plt.show()
 
     return (
         alt.Chart(data)
@@ -960,9 +985,9 @@ def main():
     # print(torch.ones(attn_shape).masked_fill(torch.triu(torch.ones(attn_shape), diagonal=1) == 0, -1e9))
     # print(torch.triu(torch.ones(attn_shape), diagonal=1).type(torch.uint8) == 0)
     # example_mask()
-    # example_positional()
+    example_positional()
     # inference_test()
-    example_learning_schedule()
+    # example_learning_schedule()
     # example_label_smoothing()
     # penalization_visualization()
 
