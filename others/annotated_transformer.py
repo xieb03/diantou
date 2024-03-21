@@ -278,6 +278,12 @@ def example_mask():
         ]
     )
 
+    pivot_data = ls_data.pivot(index='Masking', columns='Window')['Subsequent Mask']
+    print(pivot_data)
+    # 数据的 index 和 columns 分别为 heatmap 的 y 轴方向和 x 轴方向标签
+    sns.heatmap(pivot_data, annot=True, fmt="d", cmap='viridis')
+    plt.show()
+
     # 不要加 .show()，会报错：altair_viewer._utils.NoMatchingVersions: No matches for version='5.16.3' among ['4.0.2', '4.8.1', '4.17.0'].
     return (
         alt.Chart(ls_data)
@@ -946,6 +952,7 @@ def penalization_visualization():
         predict = torch.FloatTensor([[1.0e-10, x / d, 1 / d, 1 / d, 1 / d]])
         result = crit(x=predict.log(), target=torch.LongTensor([1])).data
         # 当 x = 27 的时候，有 predict ≈ crit.true_dist，因此 KL 散度为 0
+        # 当 x 更大的时候，实际上模型有更大的自信，但在 LabelSmoothing 语境下，KL Loss 反而会上升
         # 27 tensor([[1.0000e-10, 9.0000e-01, 3.3333e-02, 3.3333e-02, 3.3333e-02]]) tensor([[0.0000, 0.9000, 0.0333, 0.0333, 0.0333]])
         if result < 1E-9:
             print(x, predict, crit.true_dist)
@@ -985,11 +992,13 @@ def main():
     # print(torch.ones(attn_shape).masked_fill(torch.triu(torch.ones(attn_shape), diagonal=1) == 0, -1e9))
     # print(torch.triu(torch.ones(attn_shape), diagonal=1).type(torch.uint8) == 0)
     # example_mask()
-    example_positional()
+    # example_positional()
     # inference_test()
     # example_learning_schedule()
     # example_label_smoothing()
     # penalization_visualization()
+
+    pass
 
 
 if __name__ == '__main__':
