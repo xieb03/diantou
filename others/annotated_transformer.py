@@ -709,6 +709,9 @@ def rate(step, model_size, factor, warmup):
     """
     if step == 0:
         step = 1
+    # step 与 warmup 相等的时候取极值，极值大小为 warmup^-0.5 * model_size^-0.5
+    # 即 warmup 越大，lr 的极值越小
+    # 即 model_size 越大，lr 的极值越小
     return factor * (
             model_size ** (-0.5) * min(step ** (-0.5), step * warmup ** (-1.5))
     )
@@ -726,13 +729,13 @@ def example_learning_schedule():
     learning_rates = []
 
     # we have 3 examples in opts list.
-    for idx, example in enumerate(opts):
+    for idx, (model_size, factor, warmup) in enumerate(opts):
         # run 20000 epoch for each example
         optimizer = torch.optim.Adam(
             dummy_model.parameters(), lr=1, betas=(0.9, 0.98), eps=1e-9
         )
         lr_scheduler = LambdaLR(
-            optimizer=optimizer, lr_lambda=lambda step_: rate(step_, *example)
+            optimizer=optimizer, lr_lambda=lambda step_: rate(step_, model_size, factor, warmup)
         )
         tmp = []
         # take 20K dummy training steps, save the learning rate at each step
@@ -761,6 +764,10 @@ def example_learning_schedule():
             for warmup_idx in [0, 1, 2]
         ]
     )
+
+    print(opts_data)
+    sns.lineplot(data=opts_data, x='step', y='Learning Rate', hue='model_size:warmup')
+    plt.show()
 
     return (
         alt.Chart(opts_data)
@@ -885,10 +892,10 @@ def example_label_smoothing():
         ]
     )
 
-    print(ls_data.pivot(index='rows', columns='columns')['target distribution'])
+    pivot_data = ls_data.pivot(index='rows', columns='columns')['target distribution']
+    print(pivot_data)
     # 数据的 index 和 columns 分别为 heatmap 的 y 轴方向和 x 轴方向标签
-    sns.heatmap(ls_data.pivot(index='rows', columns='columns')['target distribution'], annot=True, fmt=".2F",
-                cmap='viridis')
+    sns.heatmap(pivot_data, annot=True, fmt=".2F", cmap='viridis')
     plt.show()
 
     return (
@@ -926,6 +933,8 @@ def penalization_visualization():
             "Steps": list(range(99)),
         }
     ).astype("float")
+
+    print(loss_data)
     loss_data.plot(x="Steps", y="Loss")
     plt.show()
 
@@ -953,7 +962,8 @@ def main():
     # example_mask()
     # example_positional()
     # inference_test()
-    example_label_smoothing()
+    example_learning_schedule()
+    # example_label_smoothing()
     # penalization_visualization()
 
 
