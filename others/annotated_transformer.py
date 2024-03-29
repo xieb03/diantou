@@ -38,7 +38,8 @@ class EncoderDecoder(nn.Module):
 
     def forward(self, src, tgt, src_mask, tgt_mask):
         """Take in and process masked src and target sequences."""
-        return self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)
+        return self.decode(memory=self.encode(src=src, src_mask=src_mask), src_mask=src_mask, tgt=tgt,
+                           tgt_mask=tgt_mask)
 
     def encode(self, src, src_mask):
         return self.encoder(self.src_embed(src), src_mask)
@@ -47,6 +48,7 @@ class EncoderDecoder(nn.Module):
         return self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)
 
 
+# 最后一层，一个全连接，外加 log(softmax(x)) loss
 class Generator(nn.Module):
     """Define standard linear + softmax generation step."""
 
@@ -194,9 +196,7 @@ class EncoderLayer(nn.Module):
     def forward(self, x, src_mask):
         """Follow Figure 1 (left) for connections."""
         # torch.Size([1, 10, 512])
-        print(1111, x.shape)
         x = self.res_layer_1(x, lambda _x: self.self_attn(_x, _x, _x, src_mask))
-        print(22222, x.shape)
         return self.res_layer_2(x, self.feed_forward)
 
 
@@ -249,7 +249,9 @@ class DecoderLayer(nn.Module):
 #          [ True,  True, False],
 #          [ True,  True,  True]]])
 # Q：为什么是 mask 前面而不是后面？
-# A: 实际上是 mask 前面的，因为在 == 0 之后，上三角阵的下三角将全部为 True，这样外面再用 .type_as(src.data) 做数据转换的时候，会将 True 转化为 1，因此实际上出来的是下三角。即 mask 前面的
+# A: 实际上是 mask 前面的，但最终的效果是 mask 后面的。因为在 == 0 之后，上三角阵的下三角将全部为 True，这样外面再用 .type_as(src.data) 做数据转换的时候，会将 True 转化为 1，因此实际上出来的是下三角。
+#    而最终调用 masked_fill(mask == 0, -1e9) 的时候，会把 0 对应的位置 mask 掉，因此会把后面的 mask 掉
+# 注意是个方阵，例如输出是 1 * n，那么实际上 mask 是 n * n，因为对于每一位的输出，都要有一个 n 维的 mask 序列
 def subsequent_mask(size):
     """Mask out subsequent positions."""
     attn_shape = (1, size, size)
@@ -318,8 +320,10 @@ def attention(query, key, value, mask=None, dropout=None):
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
     # 注意是在 score 上面增加 mask，因为后面会有 softmax，因此等于在对应的位置上面将输出设置为 0（因为设置填充值为 -1E9，即非常小的值），同时又几乎不改变其它的概率值（概率和保持为 1）
+    # 最终 scores.dim = mask.dim
     if mask is not None:
         scores = scores.masked_fill(mask == 0, -1e9)
+        assert_equal(scores.dim(), mask.dim())
     p_attn = scores.softmax(dim=-1)
     if dropout is not None:
         p_attn = dropout(p_attn)
@@ -439,7 +443,7 @@ class Embeddings(nn.Module):
         # torch.Size([1, 1])
         # torch.Size([1, 2])
         # torch.Size([1, 3])
-        print(x.shape)
+        # print(x.shape)
         # torch.Size([1, 1, 512])
         # torch.Size([1, 2, 512])
         # torch.Size([1, 3, 512])
@@ -564,7 +568,7 @@ def example_positional():
 
 
 # Here we define a function from hyperparameters to a full model.
-# 注意一共有 3 * n 个多注意力头，分别是 encoder 的、decoder 的，encoder 和 decoder 交叉的
+# 注意一共有 3 * n 个多注意力头，分别是 encoder 的、decoder 的，encoder 和 decoder 交叉的，他们之间并不共享权重
 def make_model(src_vocab, tgt_vocab, n=6, d_model=512, d_ff=2048, h=8, dropout=0.1, max_len=5000):
     """Helper: Construct a model from hyperparameters."""
     c = copy.deepcopy
@@ -595,12 +599,113 @@ def make_model(src_vocab, tgt_vocab, n=6, d_model=512, d_ff=2048, h=8, dropout=0
 # noinspection PyUnresolvedReferences
 def inference_test():
     test_model = make_model(src_vocab=11, tgt_vocab=11, n=2)
+    # trainable parameter:
+    # 	0: encoder.layers.0.self_attn.linears.0.weight, torch.float32, torch.Size([512, 512]), True
+    # 	1: encoder.layers.0.self_attn.linears.0.bias, torch.float32, torch.Size([512]), True
+    # 	2: encoder.layers.0.self_attn.linears.1.weight, torch.float32, torch.Size([512, 512]), True
+    # 	3: encoder.layers.0.self_attn.linears.1.bias, torch.float32, torch.Size([512]), True
+    # 	4: encoder.layers.0.self_attn.linears.2.weight, torch.float32, torch.Size([512, 512]), True
+    # 	5: encoder.layers.0.self_attn.linears.2.bias, torch.float32, torch.Size([512]), True
+    # 	6: encoder.layers.0.self_attn.linears.3.weight, torch.float32, torch.Size([512, 512]), True
+    # 	7: encoder.layers.0.self_attn.linears.3.bias, torch.float32, torch.Size([512]), True
+    # 	8: encoder.layers.0.feed_forward.w_1.weight, torch.float32, torch.Size([2048, 512]), True
+    # 	9: encoder.layers.0.feed_forward.w_1.bias, torch.float32, torch.Size([2048]), True
+    # 	10: encoder.layers.0.feed_forward.w_2.weight, torch.float32, torch.Size([512, 2048]), True
+    # 	11: encoder.layers.0.feed_forward.w_2.bias, torch.float32, torch.Size([512]), True
+    # 	12: encoder.layers.0.res_layer_1.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	13: encoder.layers.0.res_layer_1.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	14: encoder.layers.0.res_layer_2.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	15: encoder.layers.0.res_layer_2.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	16: encoder.layers.1.self_attn.linears.0.weight, torch.float32, torch.Size([512, 512]), True
+    # 	17: encoder.layers.1.self_attn.linears.0.bias, torch.float32, torch.Size([512]), True
+    # 	18: encoder.layers.1.self_attn.linears.1.weight, torch.float32, torch.Size([512, 512]), True
+    # 	19: encoder.layers.1.self_attn.linears.1.bias, torch.float32, torch.Size([512]), True
+    # 	20: encoder.layers.1.self_attn.linears.2.weight, torch.float32, torch.Size([512, 512]), True
+    # 	21: encoder.layers.1.self_attn.linears.2.bias, torch.float32, torch.Size([512]), True
+    # 	22: encoder.layers.1.self_attn.linears.3.weight, torch.float32, torch.Size([512, 512]), True
+    # 	23: encoder.layers.1.self_attn.linears.3.bias, torch.float32, torch.Size([512]), True
+    # 	24: encoder.layers.1.feed_forward.w_1.weight, torch.float32, torch.Size([2048, 512]), True
+    # 	25: encoder.layers.1.feed_forward.w_1.bias, torch.float32, torch.Size([2048]), True
+    # 	26: encoder.layers.1.feed_forward.w_2.weight, torch.float32, torch.Size([512, 2048]), True
+    # 	27: encoder.layers.1.feed_forward.w_2.bias, torch.float32, torch.Size([512]), True
+    # 	28: encoder.layers.1.res_layer_1.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	29: encoder.layers.1.res_layer_1.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	30: encoder.layers.1.res_layer_2.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	31: encoder.layers.1.res_layer_2.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	32: encoder.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	33: encoder.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	34: decoder.layers.0.self_attn.linears.0.weight, torch.float32, torch.Size([512, 512]), True
+    # 	35: decoder.layers.0.self_attn.linears.0.bias, torch.float32, torch.Size([512]), True
+    # 	36: decoder.layers.0.self_attn.linears.1.weight, torch.float32, torch.Size([512, 512]), True
+    # 	37: decoder.layers.0.self_attn.linears.1.bias, torch.float32, torch.Size([512]), True
+    # 	38: decoder.layers.0.self_attn.linears.2.weight, torch.float32, torch.Size([512, 512]), True
+    # 	39: decoder.layers.0.self_attn.linears.2.bias, torch.float32, torch.Size([512]), True
+    # 	40: decoder.layers.0.self_attn.linears.3.weight, torch.float32, torch.Size([512, 512]), True
+    # 	41: decoder.layers.0.self_attn.linears.3.bias, torch.float32, torch.Size([512]), True
+    # 	42: decoder.layers.0.src_attn.linears.0.weight, torch.float32, torch.Size([512, 512]), True
+    # 	43: decoder.layers.0.src_attn.linears.0.bias, torch.float32, torch.Size([512]), True
+    # 	44: decoder.layers.0.src_attn.linears.1.weight, torch.float32, torch.Size([512, 512]), True
+    # 	45: decoder.layers.0.src_attn.linears.1.bias, torch.float32, torch.Size([512]), True
+    # 	46: decoder.layers.0.src_attn.linears.2.weight, torch.float32, torch.Size([512, 512]), True
+    # 	47: decoder.layers.0.src_attn.linears.2.bias, torch.float32, torch.Size([512]), True
+    # 	48: decoder.layers.0.src_attn.linears.3.weight, torch.float32, torch.Size([512, 512]), True
+    # 	49: decoder.layers.0.src_attn.linears.3.bias, torch.float32, torch.Size([512]), True
+    # 	50: decoder.layers.0.feed_forward.w_1.weight, torch.float32, torch.Size([2048, 512]), True
+    # 	51: decoder.layers.0.feed_forward.w_1.bias, torch.float32, torch.Size([2048]), True
+    # 	52: decoder.layers.0.feed_forward.w_2.weight, torch.float32, torch.Size([512, 2048]), True
+    # 	53: decoder.layers.0.feed_forward.w_2.bias, torch.float32, torch.Size([512]), True
+    # 	54: decoder.layers.0.res_layer_1.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	55: decoder.layers.0.res_layer_1.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	56: decoder.layers.0.res_layer_2.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	57: decoder.layers.0.res_layer_2.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	58: decoder.layers.0.res_layer_3.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	59: decoder.layers.0.res_layer_3.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	60: decoder.layers.1.self_attn.linears.0.weight, torch.float32, torch.Size([512, 512]), True
+    # 	61: decoder.layers.1.self_attn.linears.0.bias, torch.float32, torch.Size([512]), True
+    # 	62: decoder.layers.1.self_attn.linears.1.weight, torch.float32, torch.Size([512, 512]), True
+    # 	63: decoder.layers.1.self_attn.linears.1.bias, torch.float32, torch.Size([512]), True
+    # 	64: decoder.layers.1.self_attn.linears.2.weight, torch.float32, torch.Size([512, 512]), True
+    # 	65: decoder.layers.1.self_attn.linears.2.bias, torch.float32, torch.Size([512]), True
+    # 	66: decoder.layers.1.self_attn.linears.3.weight, torch.float32, torch.Size([512, 512]), True
+    # 	67: decoder.layers.1.self_attn.linears.3.bias, torch.float32, torch.Size([512]), True
+    # 	68: decoder.layers.1.src_attn.linears.0.weight, torch.float32, torch.Size([512, 512]), True
+    # 	69: decoder.layers.1.src_attn.linears.0.bias, torch.float32, torch.Size([512]), True
+    # 	70: decoder.layers.1.src_attn.linears.1.weight, torch.float32, torch.Size([512, 512]), True
+    # 	71: decoder.layers.1.src_attn.linears.1.bias, torch.float32, torch.Size([512]), True
+    # 	72: decoder.layers.1.src_attn.linears.2.weight, torch.float32, torch.Size([512, 512]), True
+    # 	73: decoder.layers.1.src_attn.linears.2.bias, torch.float32, torch.Size([512]), True
+    # 	74: decoder.layers.1.src_attn.linears.3.weight, torch.float32, torch.Size([512, 512]), True
+    # 	75: decoder.layers.1.src_attn.linears.3.bias, torch.float32, torch.Size([512]), True
+    # 	76: decoder.layers.1.feed_forward.w_1.weight, torch.float32, torch.Size([2048, 512]), True
+    # 	77: decoder.layers.1.feed_forward.w_1.bias, torch.float32, torch.Size([2048]), True
+    # 	78: decoder.layers.1.feed_forward.w_2.weight, torch.float32, torch.Size([512, 2048]), True
+    # 	79: decoder.layers.1.feed_forward.w_2.bias, torch.float32, torch.Size([512]), True
+    # 	80: decoder.layers.1.res_layer_1.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	81: decoder.layers.1.res_layer_1.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	82: decoder.layers.1.res_layer_2.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	83: decoder.layers.1.res_layer_2.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	84: decoder.layers.1.res_layer_3.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	85: decoder.layers.1.res_layer_3.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	86: decoder.norm.a_2, torch.float32, torch.Size([512]), True
+    # 	87: decoder.norm.b_2, torch.float32, torch.Size([512]), True
+    # 	88: src_embed.0.lut.weight, torch.float32, torch.Size([11, 512]), True
+    # 	89: tgt_embed.0.lut.weight, torch.float32, torch.Size([11, 512]), True
+    # 	90: generator.proj.weight, torch.float32, torch.Size([11, 512]), True
+    # 	91: generator.proj.bias, torch.float32, torch.Size([11]), True
+    # distrainable parameter:
+    # distrainable buffers:
+    # 	0: src_embed.1.pe, torch.float32, torch.Size([1, 5000, 512]), False
+    # 	1: tgt_embed.1.pe, torch.float32, torch.Size([1, 5000, 512]), False
+    # model (<class '__main__.EncoderDecoder'>) has 19851787 parameters, 14731787 (74.21%) are trainable, 占 0.07G 显存.
     list_model_parameter_summary(test_model)
     test_model.eval()
 
     # torch.int64
+    # torch.Size([1, 10])
     src = torch.LongTensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]])
     # tensor([[[1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]]])
+    # 相当于全不 mask，即都可以看到，因为这里相当于算出整个的 memory
+    # torch.Size([1, 1, 10])
     src_mask = torch.ones(1, 1, 10)
 
     # torch.Size([1, 10, 512])
@@ -620,18 +725,19 @@ def inference_test():
         #                  [1, 1, 1]]])
         tgt_mask = subsequent_mask(ys.size(1)).type_as(src.data)
 
-        out = test_model.decode(memory, src_mask, ys, tgt_mask)
+        out = test_model.decode(memory, src_mask, tgt=ys, tgt_mask=tgt_mask)
         # 第 0 次：torch.Size([1, 1, 512])
         # 第 1 次：torch.Size([1, 2, 512])
         # 第 2 次：torch.Size([1, 3, 512])
         # 注意这里有重复计算，以 torch.Size([1, 3, 512]) 为例，其中 torch.Size([1, 1:2, 512]) 就是上一步算过的
-        print(out.shape)
+        # print(out.shape)
         # 第 0 次：torch.Size([1, 512])
         # 第 1 次：torch.Size([1, 512])
         # 第 2 次：torch.Size([1, 512])
-        print(out[:, -1].shape)
+        # print(out[:, -1].shape)
 
         # 只考虑最后一次输出的概率（注意这里不是概率，而是 log(softmax(x))
+        # 贪婪策略，只选择概率最高的那一个
         prob = test_model.generator(out[:, -1])
         _, next_word = torch.max(prob, dim=1)
         next_word = next_word.data[0]
@@ -648,11 +754,29 @@ class Batch:
     """Object for holding a batch of data with mask during training."""
 
     def __init__(self, src, tgt=None, pad=2):  # 2 = <blank>
+        # tensor([[1, 5, 8, 3, 4, 3, 7, 9, 4, 7],
+        #         [1, 4, 5, 1, 1, 4, 8, 3, 6, 7]])
+        #
+        # torch.Size([2, 10])
         self.src = src
+        # tensor([[[True, True, True, True, True, True, True, True, True, True]],
+        #         [[True, True, True, True, True, True, True, True, True, True]]])
+        # torch.Size([2, 10]) -> torch.Size([2, 1, 10])
         self.src_mask = (src != pad).unsqueeze(-2)
         if tgt is not None:
+            # tgt 去掉最后一个数
+            # 注意 transformer 模型是要给 y 的初值的，因此这里就是把 tgt[:-1] 作为初值，那么 tgt[1:] 就是 label
+            # 在训练的时候，并不会用每个位置预测的 label 作为下一个位置的初始值，而是一直用真值作为初始值，但是在最终预测的时候，会用每个位置的预测 label 作为 下一个位置的初始值
+            # tensor([[1, 5, 8, 3, 4, 3, 7, 9, 4],
+            #         [1, 4, 5, 1, 1, 4, 8, 3, 6]])
+            # # torch.Size([2, 9])
             self.tgt = tgt[:, :-1]
+            # tgt 去掉第一个数
+            # tensor([[5, 8, 3, 4, 3, 7, 9, 4, 7],
+            #         [4, 5, 1, 1, 4, 8, 3, 6, 7]])
+            # # torch.Size([2, 9])
             self.tgt_y = tgt[:, 1:]
+            # torch.Size([2, 9, 9])
             self.tgt_mask = self.make_std_mask(self.tgt, pad)
             self.ntokens = (self.tgt_y != pad).data.sum()
 
@@ -660,6 +784,7 @@ class Batch:
     @staticmethod
     def make_std_mask(tgt, pad):
         """Create a mask to hide padding and future words."""
+        # 同时 mask 掉 pad 和 未来的单词
         tgt_mask = (tgt != pad).unsqueeze(-2)
         tgt_mask = tgt_mask & subsequent_mask(tgt.size(-1)).type_as(
             tgt_mask.data
@@ -674,6 +799,12 @@ class TrainState:
     accum_step: int = 0  # Number of gradient accumulation steps
     samples: int = 0  # total # of examples used
     tokens: int = 0  # total # of tokens processed
+
+    def __str__(self):
+        return f"{{step: {self.step}, accum_step: {self.accum_step}, samples: {self.samples}, tokens: {self.tokens}}}"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def run_epoch(
@@ -693,9 +824,24 @@ def run_epoch(
     tokens = 0
     n_accum = 0
     for i, batch in enumerate(data_iter):
+        # torch.Size([80, 10])
+        # print(batch.src.shape)
+        # torch.Size([80, 9])
+        # print(batch.tgt.shape)
+        # torch.Size([80, 1, 10])
+        # print(batch.src_mask.shape)
+        # torch.Size([80, 9, 9])
+        # print(batch.tgt_mask.shape)
         out = model.forward(
-            batch.src, batch.tgt, batch.src_mask, batch.tgt_mask
+            src=batch.src, tgt=batch.tgt, src_mask=batch.src_mask, tgt_mask=batch.tgt_mask
         )
+        # print(str(i) + "-" * 80)
+        # torch.Size([80, 9, 512])
+        # print(out.shape)
+        # torch.Size([80, 9])
+        # print(batch.tgt_y.shape)
+        # tensor
+        # print(batch.ntokens)
         loss, loss_node = loss_compute(out, batch.tgt_y, batch.ntokens)
         # loss_node = loss_node / accum_iter
         if mode == "train" or mode == "train+log":
@@ -817,6 +963,7 @@ def example_learning_schedule():
 # 标签平滑技术通过在训练时对真实标签进行平滑处理，从而减少模型对训练数据中的噪声标签的过度依赖，提高模型的泛化性能。
 # 具体而言，标签平滑通过引入一定的噪声或模糊性来减小真实标签的置信度，从而迫使模型在训练时更加关注输入数据的特征，而不是过于依赖标签信息。这种平滑处理可以通过在交叉熵损失函数中引入额外的惩罚项或者对真实标签进行平滑化处理来实现。可以认为是一种正则化。
 # 注意，这个时候如果是过于自信的输出，例如非 0 即 1，反而会惩罚，即 loss > 0
+# 当 smoothing = 0 的事后，就是原本的 label
 class LabelSmoothing(nn.Module):
     """Implement label smoothing."""
 
@@ -982,6 +1129,127 @@ def penalization_visualization():
     )
 
 
+# We can begin by trying out a simple copy-task. Given a random set of input symbols from a small vocabulary, the goal is to generate back those same symbols.
+def data_gen(min_value, max_value, batch_size, nbatches):
+    """Generate random data for a src-tgt copy task."""
+    for i in range(nbatches):
+        data = torch.randint(min_value, max_value, size=(batch_size, 10))
+        # tensor([[1, 5, 8, 3, 4, 3, 7, 9, 4, 7],
+        #         [1, 4, 5, 1, 1, 4, 8, 3, 6, 7]])
+        # torch.Size([2, 10])
+        data[:, 0] = 1
+        src = data.requires_grad_(False).clone().detach()
+        tgt = data.requires_grad_(False).clone().detach()
+        yield Batch(src, tgt, 0)
+
+
+# Loss Computation
+class SimpleLossCompute:
+    """A simple loss compute and train function."""
+
+    def __init__(self, generator, criterion):
+        self.generator = generator
+        self.criterion = criterion
+
+    def __call__(self, x, y, norm):
+        x = self.generator(x)
+        loss = (
+                self.criterion(
+                    x.contiguous().view(-1, x.size(-1)), y.contiguous().view(-1)
+                )
+                / norm
+        )
+        return loss.data * norm, loss
+
+
+# Greedy Decoding
+# This code predicts a translation using greedy decoding for simplicity.
+# 等价于上面的 inference_test()
+def greedy_decode(model, src, src_mask, max_len, start_symbol):
+    memory = model.encode(src, src_mask)
+    # 要给定开头第一个字符
+    ys = torch.zeros(1, 1).fill_(start_symbol).type_as(src.data)
+    for i in range(max_len - 1):
+        # noinspection PyUnresolvedReferences
+        out = model.decode(
+            memory, src_mask, tgt=ys, tgt_mask=subsequent_mask(ys.size(1)).type_as(src.data)
+        )
+        # 只考虑最后一次输出的概率（注意这里不是概率，而是 log(softmax(x))
+        prob = model.generator(out[:, -1])
+        _, next_word = torch.max(prob, dim=1)
+        next_word = next_word.data[0]
+        ys = torch.cat(
+            [ys, torch.zeros(1, 1).type_as(src.data).fill_(next_word)], dim=1
+        )
+    return ys
+
+
+# noinspection PyMissingConstructor,PyMethodOverriding
+class DummyOptimizer(torch.optim.Optimizer):
+    def __init__(self):
+        self.param_groups = [{"lr": 0}]
+        pass
+
+    def step(self):
+        pass
+
+    def zero_grad(self, set_to_none=False):
+        pass
+
+
+# noinspection PyMissingConstructor,PyMethodOverriding
+class DummyScheduler:
+    def step(self):
+        pass
+
+
+# Train the simple copy task.
+# 'main' spent 55.6565s.
+def example_simple_model():
+    vocab_size = 11
+    criterion = LabelSmoothing(size=vocab_size, padding_idx=0, smoothing=0.0)
+    model = make_model(src_vocab=vocab_size, tgt_vocab=vocab_size, n=2)
+
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=0.5, betas=(0.9, 0.98), eps=1e-9
+    )
+    lr_scheduler = LambdaLR(
+        optimizer=optimizer,
+        lr_lambda=lambda step: rate(
+            step, model_size=model.src_embed[0].d_model, factor=1.0, warmup=400
+        ),
+    )
+
+    batch_size = 80
+    for epoch in range(20):
+        model.train()
+        print(run_epoch(
+            data_iter=data_gen(1, vocab_size, batch_size, 20),
+            model=model,
+            loss_compute=SimpleLossCompute(model.generator, criterion),
+            optimizer=optimizer,
+            scheduler=lr_scheduler,
+            mode="train",
+        ))
+        model.eval()
+        # print(run_epoch(
+        #     data_iter=data_gen(1, vocab_size, batch_size, 5),
+        #     model=model,
+        #     loss_compute=SimpleLossCompute(model.generator, criterion),
+        #     optimizer=DummyOptimizer(),
+        #     scheduler=DummyScheduler(),
+        #     mode="eval",
+        # ))
+
+    model.eval()
+    src = torch.LongTensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]])
+    max_len = src.shape[1]
+    src_mask = torch.ones(1, 1, max_len)
+    # (tensor(0.1317), {step: 400, accum_step: 400, samples: 32000, tokens: 288000})
+    # tensor([[0, 9, 2, 3, 4, 5, 6, 7, 8, 9]])
+    print(greedy_decode(model, src, src_mask, max_len=max_len, start_symbol=0))
+
+
 @func_timer(arg=True)
 def main():
     fix_all_seed(_simple=False)
@@ -997,6 +1265,8 @@ def main():
     # example_learning_schedule()
     # example_label_smoothing()
     # penalization_visualization()
+
+    example_simple_model()
 
     pass
 

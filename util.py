@@ -345,6 +345,7 @@ def assert_close(a, b, rel_tol=1e-05, abs_tol=1e-08):
 
 
 # 固定随机种子
+# 注意要想保证可以复现，必须整个过程也是一致的，因为本质上是每次需要随机的时候，新种子的序列都是一致的。如果过程发生变化，例如中间插入了某个随机过程，那么后面的新种子相当于有延迟，就不能保证可以复现了
 # https://zhuanlan.zhihu.com/p/629526120
 # noinspection PyBroadException,PyUnresolvedReferences
 def fix_all_seed(_seed=13, _print=True, _simple=True, _warn_only=False):
