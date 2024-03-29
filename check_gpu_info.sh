@@ -1,1 +1,1 @@
-nvidia-smi -l 3 --format=csv --query-gpu=timestamp,utilization.gpu,memory.total,memory.used,power.draw
+nvidia-smi -l 3 --format=csv --query-gpu=timestamp,name,driver_version,temperature.gpu,utilization.gpu,memory.total,memory.used,power.draw

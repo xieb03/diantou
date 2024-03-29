@@ -5,7 +5,7 @@ from project_utils import *
 
 import torch
 import torch.nn as nn
-from torch.nn.functional import log_softmax
+from torch.nn.functional import log_softmax, pad
 import math
 import copy
 import pandas as pd
@@ -14,14 +14,34 @@ import altair as alt
 # spacy是一款工业级自然语言处理工具。spaCy 是一个在 Python 和 Cython 中用于高级自然语言处理的库。它基于最新的研究成果，并从一开始就设计成可用于实际产品。
 # spaCy 提供了预训练的流程，并目前支持70多种语言的分词和训练。它具有最先进的速度和神经网络模型，用于标记、解析、命名实体识别、文本分类等任务，
 # 还支持使用预训练的转换器（如BERT）进行多任务学习，以及生产就绪的训练系统、简单的模型打包、部署和工作流管理。spaCy 是商业开源软件，采用 MIT 许可证发布。
-# noinspection PyUnresolvedReferences
-# import GPUtil
-import warnings
-
+import spacy
+# Build a Vocab from an iterator.
+from torchtext.vocab import build_vocab_from_iterator
+# Convert iterable-style dataset to map-style dataset.
+from torchtext.data.functional import to_map_style_dataset
+# Sampler that restricts data loading to a subset of the dataset
+from torch.utils.data.distributed import DistributedSampler
+# Data loader combines a dataset and a sampler, and provides an iterable over the given dataset.
+from torch.utils.data import DataLoader
+from torchtext.datasets import Multi30k
+import torch.distributed as dist
+# Implement distributed data parallelism based on ``torch.distributed`` at module level.
+from torch.nn.parallel import DistributedDataParallel as Ddp
+import GPUtil
+import torch.multiprocessing as mp
 
 # http://nlp.seas.harvard.edu/annotated-transformer/
 # https://github.com/harvardnlp/annotated-transformer/blob/master/AnnotatedTransformer.ipynb
 # https://zhuanlan.zhihu.com/p/559495068
+
+"""
+Part 1: Model Architecture
+Most competitive neural sequence transduction models have an encoder-decoder structure (cite). 
+Here, the encoder maps an input sequence of symbol representations (x1, ..., xn) to a sequence of continuous representations z = (z1, ..., zn). 
+Given z, the decoder then generates an output sequence (y1, ..., yn) of symbols one element at a time. 
+At each step the model is auto-regressive (cite), consuming the previously generated symbols as additional input when generating the next.
+"""
+
 
 class EncoderDecoder(nn.Module):
     """
@@ -749,11 +769,19 @@ def inference_test():
     print("Example Untrained Model Prediction:", ys)
 
 
+"""
+Part 2: Model Training
+Training
+This section describes the training regime for our models.
+"""
+
+
+# We stop for a quick interlude to introduce some of the tools needed to train a standard encoder decoder model.
 # First we define a batch object that holds the src and target sentences for training, as well as constructing the masks.
 class Batch:
     """Object for holding a batch of data with mask during training."""
 
-    def __init__(self, src, tgt=None, pad=2):  # 2 = <blank>
+    def __init__(self, src, tgt=None, _pad=2):  # 2 = <blank>
         # tensor([[1, 5, 8, 3, 4, 3, 7, 9, 4, 7],
         #         [1, 4, 5, 1, 1, 4, 8, 3, 6, 7]])
         #
@@ -762,7 +790,7 @@ class Batch:
         # tensor([[[True, True, True, True, True, True, True, True, True, True]],
         #         [[True, True, True, True, True, True, True, True, True, True]]])
         # torch.Size([2, 10]) -> torch.Size([2, 1, 10])
-        self.src_mask = (src != pad).unsqueeze(-2)
+        self.src_mask = (src != _pad).unsqueeze(-2)
         if tgt is not None:
             # tgt 去掉最后一个数
             # 注意 transformer 模型是要给 y 的初值的，因此这里就是把 tgt[:-1] 作为初值，那么 tgt[1:] 就是 label
@@ -777,21 +805,23 @@ class Batch:
             # # torch.Size([2, 9])
             self.tgt_y = tgt[:, 1:]
             # torch.Size([2, 9, 9])
-            self.tgt_mask = self.make_std_mask(self.tgt, pad)
-            self.ntokens = (self.tgt_y != pad).data.sum()
+            self.tgt_mask = self.make_std_mask(self.tgt, _pad)
+            self.ntokens = (self.tgt_y != _pad).data.sum()
 
     # noinspection PyUnresolvedReferences
+    # 同时考虑 pad_mask 和 subsequent_mask
     @staticmethod
-    def make_std_mask(tgt, pad):
+    def make_std_mask(tgt, _pad):
         """Create a mask to hide padding and future words."""
         # 同时 mask 掉 pad 和 未来的单词
-        tgt_mask = (tgt != pad).unsqueeze(-2)
+        tgt_mask = (tgt != _pad).unsqueeze(-2)
         tgt_mask = tgt_mask & subsequent_mask(tgt.size(-1)).type_as(
             tgt_mask.data
         )
         return tgt_mask
 
 
+# Next we create a generic training and scoring function to keep track of loss. We pass in a generic loss compute function that also handles parameter updates.
 class TrainState:
     """Track number of steps, examples, and tokens processed"""
 
@@ -1250,6 +1280,467 @@ def example_simple_model():
     print(greedy_decode(model, src, src_mask, max_len=max_len, start_symbol=0))
 
 
+"""
+Part 3: A Real World Example
+Now we consider a real-world example using the Multi30k German-English Translation task. 
+This task is much smaller than the WMT task considered in the paper, 
+but it illustrates the whole system. We also show how to use multi-gpu processing to make it really fast.
+"""
+
+
+# Data Loading
+# We will load the dataset using torchtext and spacy for tokenization.
+# # Load spacy tokenizer models, download them if they haven't been downloaded already.
+# spacy 具有每种语言的模型（德语的 de_core_news_sm 和英语的 en_core_web_sm
+# 首次运行，会执行 python -m spacy download de_core_news_sm，即安装 package，然后就可以用 import de_core_news_sm 来查看
+# Collecting de-core-news-sm==3.7.0
+#   Downloading https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.7.0/de_core_news_sm-3.7.0-py3-none-any.whl (14.6 MB)
+# Installing collected packages: de-core-news-sm
+# Successfully installed de-core-news-sm-3.7.0
+# ✔ Download and installation successful
+# You can now load the package via spacy.load('de_core_news_sm')
+def load_tokenizers():
+    try:
+        spacy_de = spacy.load("de_core_news_sm")
+    except IOError:
+        os.system("python -m spacy download de_core_news_sm")
+        spacy_de = spacy.load("de_core_news_sm")
+
+    try:
+        spacy_en = spacy.load("en_core_web_sm")
+    except IOError:
+        os.system("python -m spacy download en_core_web_sm")
+        spacy_en = spacy.load("en_core_web_sm")
+
+    return spacy_de, spacy_en
+
+
+def tokenize(text, tokenizer):
+    return [tok.text for tok in tokenizer.tokenizer(text)]
+
+
+def yield_tokens(data_iter, tokenizer, index):
+    for from_to_tuple in data_iter:
+        yield tokenizer(from_to_tuple[index])
+
+
+# noinspection PyTupleAssignmentBalance
+# The build_vocab_from_iterator function from torchtext.vocab is used to build the vocabulary with all these components.
+# It uses yield_tokens to generate the tokens for each sequence. yield_tokens takes train + val + test,
+# which creates a single data iterator with all the sources, the tokenization function for the respective language (tokenize_de or tokenize_en),
+# and the appropriate index for the language in the iterator (0 for German and 1 for English). It also requires the minimum frequency and the special tokens.
+# The special tokens are
+# “<bos>” for the start of sequences, 0
+# “<eos>” for the end of sequences, 1
+# “<pad>” for the padding, 2
+# “<unk>” for tokens that are not present in the vocabulary, 3
+def build_vocabulary(spacy_de, spacy_en, min_freq=2):
+    def tokenize_de(text):
+        return tokenize(text, spacy_de)
+
+    def tokenize_en(text):
+        return tokenize(text, spacy_en)
+
+    # UTF-8 error: https://github.com/pytorch/text/issues/2221
+    # 下载文件自己解压即可
+    print("Building German Vocabulary ...")
+    (train, val, test) = Multi30k(root=TORCH_TEXT_DATA_PATH, language_pair=("de", "en"))
+    # 29001 1015 1000
+    # ZipperIterDataPipe 是一个用于合并多个数据源的迭代器。这个错误表明你正在尝试对一个ZipperIterDataPipe实例进行一个需要知道其长度的操作，但是这个实例在内部没有一个有效的长度值。
+    # 尝试先将其转换成一个列表，然后再获取长度。例如：len(list(zipper_pipe))
+    # print(len(list(train)), len(list(val)), len(list(test)))
+    # tokens for each German sentence (index 0)
+    vocab_src = build_vocab_from_iterator(
+        yield_tokens(train + val + test, tokenize_de, index=0),
+        min_freq=min_freq,
+        specials=["<bos>", "<eos>", "<pad>", "<unk>"],
+    )
+
+    print("Building English Vocabulary ...")
+    train, val, test = Multi30k(root=TORCH_TEXT_DATA_PATH, language_pair=("de", "en"))
+    # tokens for each English sentence (index 1)
+    vocab_tgt = build_vocab_from_iterator(
+        yield_tokens(train + val + test, tokenize_en, index=1),
+        min_freq=min_freq,
+        specials=["<bos>", "<eos>", "<pad>", "<unk>"],
+    )
+
+    # # set default token for out-of-vocabulary words (OOV)
+    vocab_src.set_default_index(vocab_src["<unk>"])
+    vocab_tgt.set_default_index(vocab_tgt["<unk>"])
+
+    return vocab_src, vocab_tgt
+
+
+def load_vocab(spacy_de, spacy_en, min_freq=2, force=False):
+    assert min_freq in {1, 2}
+    file_path = os.path.join(SPACY_DATA_PATH, "vocab.pt")
+    if force or not is_file_exist(file_path):
+        vocab_src, vocab_tgt = build_vocabulary(spacy_de, spacy_en, min_freq=min_freq)
+        torch.save((vocab_src, vocab_tgt), file_path)
+    else:
+        vocab_src, vocab_tgt = torch.load(file_path)
+    if min_freq == 2:
+        assert_equal(len(vocab_src), 8316)
+        assert_equal(len(vocab_tgt), 6384)
+    else:
+        assert_equal(len(vocab_src), 19953)
+        assert_equal(len(vocab_tgt), 11158)
+    return vocab_src, vocab_tgt
+
+
+# Batching matters a ton for speed. We want to have very evenly divided batches, with absolutely minimal padding.
+# To do this we have to hack a bit around the default torchtext batching.
+# This code patches their default batching to make sure we search over enough sentences to find tight batches.
+def collate_batch(
+        batch,
+        src_pipeline,
+        tgt_pipeline,
+        src_vocab,
+        tgt_vocab,
+        device,
+        max_padding=128,
+        pad_id=2,
+):
+    bs_id = torch.tensor([0], device=device)  # <s> token id
+    eos_id = torch.tensor([1], device=device)  # </s> token id
+    src_list, tgt_list = [], []
+    for (_src, _tgt) in batch:
+        processed_src = torch.cat(
+            [
+                bs_id,
+                torch.tensor(
+                    src_vocab(src_pipeline(_src)),
+                    dtype=torch.int64,
+                    device=device,
+                ),
+                eos_id,
+            ],
+            0,
+        )
+        processed_tgt = torch.cat(
+            [
+                bs_id,
+                torch.tensor(
+                    tgt_vocab(tgt_pipeline(_tgt)),
+                    dtype=torch.int64,
+                    device=device,
+                ),
+                eos_id,
+            ],
+            0,
+        )
+        src_list.append(
+            # warning - overwrites values for negative values of padding - len
+            pad(
+                processed_src,
+                (
+                    0,
+                    max_padding - len(processed_src),
+                ),
+                value=pad_id,
+            )
+        )
+        tgt_list.append(
+            pad(
+                processed_tgt,
+                (0, max_padding - len(processed_tgt)),
+                value=pad_id,
+            )
+        )
+
+    src = torch.stack(src_list)
+    tgt = torch.stack(tgt_list)
+    return src, tgt
+
+
+def create_dataloaders(
+        device,
+        vocab_src,
+        vocab_tgt,
+        spacy_de,
+        spacy_en,
+        batch_size=12000,
+        max_padding=128,
+        is_distributed=True,
+):
+    # def create_dataloaders(batch_size=12000):
+    def tokenize_de(text):
+        return tokenize(text, spacy_de)
+
+    def tokenize_en(text):
+        return tokenize(text, spacy_en)
+
+    def collate_fn(batch):
+        return collate_batch(
+            batch,
+            tokenize_de,
+            tokenize_en,
+            vocab_src,
+            vocab_tgt,
+            device,
+            max_padding=max_padding,
+            pad_id=vocab_src.get_stoi()["<pad>"],
+        )
+
+    # noinspection PyTupleAssignmentBalance
+    train_iter, valid_iter, test_iter = Multi30k(root=TORCH_TEXT_DATA_PATH, language_pair=("de", "en"))
+
+    train_iter_map = to_map_style_dataset(
+        train_iter
+    )
+    # DistributedSampler needs a dataset len()
+    train_sampler = (
+        DistributedSampler(train_iter_map) if is_distributed else None
+    )
+    valid_iter_map = to_map_style_dataset(valid_iter)
+    valid_sampler = (
+        DistributedSampler(valid_iter_map) if is_distributed else None
+    )
+
+    train_dataloader = DataLoader(
+        train_iter_map,
+        batch_size=batch_size,
+        shuffle=(train_sampler is None),
+        sampler=train_sampler,
+        collate_fn=collate_fn,
+    )
+    valid_dataloader = DataLoader(
+        valid_iter_map,
+        batch_size=batch_size,
+        shuffle=(valid_sampler is None),
+        sampler=valid_sampler,
+        collate_fn=collate_fn,
+    )
+    return train_dataloader, valid_dataloader
+
+
+def train_worker(
+        gpu,
+        ngpus_per_node,
+        vocab_src,
+        vocab_tgt,
+        spacy_de,
+        spacy_en,
+        config,
+        is_distributed=False,
+):
+    print(f"Train worker process using GPU: {gpu} for training", flush=True)
+    torch.cuda.set_device(gpu)
+
+    pad_idx = vocab_tgt["<blank>"]
+    d_model = 512
+    model = make_model(len(vocab_src), len(vocab_tgt), n=6)
+    model.cuda(gpu)
+    module = model
+    is_main_process = True
+    if is_distributed:
+        # Initialize the default distributed process group.
+        dist.init_process_group("nccl", init_method="env://", rank=gpu, world_size=ngpus_per_node)
+        model = Ddp(model, device_ids=[gpu])
+        module = model.module
+        is_main_process = gpu == 0
+
+    criterion = LabelSmoothing(size=len(vocab_tgt), padding_idx=pad_idx, smoothing=0.1)
+    criterion.cuda(gpu)
+
+    train_dataloader, valid_dataloader = create_dataloaders(
+        gpu,
+        vocab_src,
+        vocab_tgt,
+        spacy_de,
+        spacy_en,
+        batch_size=config["batch_size"] // ngpus_per_node,
+        max_padding=config["max_padding"],
+        is_distributed=is_distributed,
+    )
+
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=config["base_lr"], betas=(0.9, 0.98), eps=1e-9
+    )
+    lr_scheduler = LambdaLR(
+        optimizer=optimizer,
+        lr_lambda=lambda step: rate(step, d_model, factor=1, warmup=config["warmup"]),
+    )
+    train_state = TrainState()
+
+    for epoch in range(config["num_epochs"]):
+        if is_distributed:
+            # noinspection PyUnresolvedReferences
+            train_dataloader.sampler.set_epoch(epoch)
+            # noinspection PyUnresolvedReferences
+            valid_dataloader.sampler.set_epoch(epoch)
+
+        model.train()
+        print(f"[GPU{gpu}] Epoch {epoch} Training ====", flush=True)
+        _, train_state = run_epoch(
+            (Batch(b[0], b[1], pad_idx) for b in train_dataloader),
+            model,
+            SimpleLossCompute(module.generator, criterion),
+            optimizer,
+            lr_scheduler,
+            mode="train+log",
+            accum_iter=config["accum_iter"],
+            train_state=train_state,
+        )
+
+        GPUtil.showUtilization()
+        if is_main_process:
+            file_path = os.path.join("bigdata", "%s%.2d.pt" % (config["file_prefix"], epoch))
+            torch.save(module.state_dict(), file_path)
+        # Release all unoccupied cached memory currently held by the caching allocator so that those can be used in other GPU application and visible in `nvidia-smi`.
+        torch.cuda.empty_cache()
+
+        print(f"[GPU{gpu}] Epoch {epoch} Validation ====", flush=True)
+        model.eval()
+        loss = run_epoch(
+            (Batch(b[0], b[1], pad_idx) for b in valid_dataloader),
+            model,
+            SimpleLossCompute(module.generator, criterion),
+            DummyOptimizer(),
+            DummyScheduler(),
+            mode="eval",
+        )
+        print(loss)
+        torch.cuda.empty_cache()
+
+    if is_main_process:
+        file_path = os.path.join("bigdata", "%sfinal.pt" % config["file_prefix"])
+        torch.save(module.state_dict(), file_path)
+
+
+def train_distributed_model(vocab_src, vocab_tgt, spacy_de, spacy_en, config):
+    ngpus = torch.cuda.device_count()
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12356"
+    print(f"Number of GPUs detected: {ngpus}")
+    print("Spawning training processes ...")
+    mp.spawn(
+        train_worker,
+        nprocs=ngpus,
+        args=(ngpus, vocab_src, vocab_tgt, spacy_de, spacy_en, config, True),
+    )
+
+
+def train_model(vocab_src, vocab_tgt, spacy_de, spacy_en, config):
+    if config["distributed"]:
+        train_distributed_model(
+            vocab_src, vocab_tgt, spacy_de, spacy_en, config
+        )
+    else:
+        train_worker(
+            0, 1, vocab_src, vocab_tgt, spacy_de, spacy_en, config, False
+        )
+
+
+# 'main' spent 354.0479s.
+def load_trained_model():
+    config = {
+        "batch_size": 32,
+        "distributed": False,
+        "num_epochs": 8,
+        "accum_iter": 10,
+        "base_lr": 1.0,
+        "max_padding": 72,
+        "warmup": 3000,
+        "file_prefix": "multi30k_model_",
+    }
+    spacy_de, spacy_en = load_tokenizers()
+    vocab_src, vocab_tgt = load_vocab(spacy_de, spacy_en, min_freq=2)
+
+    model_path = os.path.join("bigdata", "multi30k_model_final.pt")
+    if not is_file_exist(model_path):
+        train_model(vocab_src, vocab_tgt, spacy_de, spacy_en, config)
+
+    model = make_model(len(vocab_src), len(vocab_tgt), n=6)
+    # Copy parameters and buffers from :attr:`state_dict` into this module and its descendants
+    model.load_state_dict(torch.load(model_path))
+    return model
+
+
+# Model Averaging: The paper averages the last k checkpoints to create an ensemble effect. We can do this after the fact if we have a bunch of models:
+def average(model, models):
+    """Average models into model"""
+    for ps in zip(*[m.params() for m in [model] + models]):
+        ps[0].copy_(torch.sum(*ps[1:]) / len(ps[1:]))
+
+
+# Load data and model for output checks
+def check_outputs(
+        valid_dataloader,
+        model,
+        vocab_src,
+        vocab_tgt,
+        n_examples=15,
+        pad_idx=2,
+        eos_string="<eos>",
+):
+    results = [()] * n_examples
+    for idx in range(n_examples):
+        print("\nExample %d ========\n" % idx)
+        b = next(iter(valid_dataloader))
+        rb = Batch(b[0], b[1], pad_idx)
+
+        src_tokens = [
+            vocab_src.get_itos()[x] for x in rb.src[0] if x != pad_idx
+        ]
+        tgt_tokens = [
+            vocab_tgt.get_itos()[x] for x in rb.tgt[0] if x != pad_idx
+        ]
+
+        print(
+            "Source Text (Input)        : "
+            + " ".join(src_tokens).replace("\n", "")
+        )
+        print(
+            "Target Text (Ground Truth) : "
+            + " ".join(tgt_tokens).replace("\n", "")
+        )
+        model_out = greedy_decode(model, rb.src, rb.src_mask, 72, 0)[0]
+        model_txt = (
+                " ".join(
+                    [vocab_tgt.get_itos()[x] for x in model_out if x != pad_idx]
+                ).split(eos_string, 1)[0]
+                + eos_string
+        )
+        print("Model Output               : " + model_txt.replace("\n", ""))
+        # noinspection PyTypeChecker
+        results[idx] = (rb, src_tokens, tgt_tokens, model_out, model_txt)
+    return results
+
+
+# 'main' spent 5.1898s.
+def run_model_example(n_examples=5):
+    spacy_de, spacy_en = load_tokenizers()
+    vocab_src, vocab_tgt = load_vocab(spacy_de, spacy_en, min_freq=2)
+
+    print("Preparing Data ...")
+    _, valid_dataloader = create_dataloaders(
+        0,
+        vocab_src,
+        vocab_tgt,
+        spacy_de,
+        spacy_en,
+        batch_size=1,
+        is_distributed=False,
+    )
+
+    print("Loading Trained Model ...")
+
+    model = make_model(len(vocab_src), len(vocab_tgt), n=6)
+    assert not is_model_on_gpu(model)
+    model.load_state_dict(torch.load("bigdata/multi30k_model_final.pt"))
+    assert not is_model_on_gpu(model)
+    model.cuda(0)
+    assert is_model_on_gpu(model)
+
+    print("Checking Model Outputs:")
+    example_data = check_outputs(
+        valid_dataloader, model, vocab_src, vocab_tgt, n_examples=n_examples
+    )
+    return model, example_data
+
+
 @func_timer(arg=True)
 def main():
     fix_all_seed(_simple=False)
@@ -1265,8 +1756,14 @@ def main():
     # example_learning_schedule()
     # example_label_smoothing()
     # penalization_visualization()
+    # example_simple_model()
 
-    example_simple_model()
+    # spacy_de, spacy_en = load_tokenizers()
+    # vocab_src, vocab_tgt = load_vocab(spacy_de, spacy_en, min_freq=2, force=True)
+
+    # load_trained_model()
+
+    run_model_example()
 
     pass
 

@@ -21,6 +21,18 @@ from util import *
 #     worker_init_fn=seed_worker,
 # )
 # noinspection PyUnusedLocal
+
+
+# 查看模型的 device
+def check_model_device(_model):
+    print(next(_model.parameters()).device)
+
+
+# 一个 model 是否在 gpu 上
+def is_model_on_gpu(_model):
+    return "cuda" in str(next(_model.parameters()).device)
+
+
 def seed_worker(worker_id):
     worker_seed = torch.initial_seed() % 2 ** 32
     np.random.seed(worker_seed)
