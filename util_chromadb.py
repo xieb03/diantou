@@ -88,6 +88,7 @@ class ChromadbPersistentCollection:
         self.metadata = metadata
         if self.metadata is None:
             # l2, ip, cosine
+            # 因为之前已经做过 normalize，这里直接用内积即可
             self.metadata = {"hnsw:space": "ip"}
         self.name = collection_name
         self.embedding_function = embedding_function

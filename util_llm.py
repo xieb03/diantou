@@ -1,5 +1,8 @@
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from transformers import AutoModel, AutoTokenizer, PreTrainedModel, PreTrainedTokenizerFast
 
+from util_plot import *
 from util_torch import *
 
 
@@ -166,9 +169,7 @@ def check_sentence_embeddings():
 
 def check_sentence_compare():
     in_1 = "He could not desert his post at the power plant."
-
     in_2 = "The power plant needed him at the time."
-
     in_3 = "Desert plants can survive droughts."
 
     input_text_lst_sim = [in_1, in_2, in_3]
@@ -178,6 +179,32 @@ def check_sentence_compare():
     for input_text in input_text_lst_sim:
         emb = get_sentence_embedding(tokenizer, model, input_text)
         embeddings.append(emb[0])
+
+    n_sample = len(input_text_lst_sim)
+
+    # (3, 1024)\
+    # numpy() 必须在 cpu() 之后才能调用，不能从 cuda 直接到 numpy()
+    embeddings_array = np.array([embedding.cpu().numpy() for embedding in embeddings])
+    assert_equal(embeddings_array.shape[0], n_sample)
+
+    # Perform PCA for 2D visualization
+    pca_model = PCA(n_components=2)
+    pca_array = pca_model.fit_transform(embeddings_array)
+    print(pca_array)
+
+    # perplexity must be less than n_samples
+    tsne_model = TSNE(n_components=2, init="pca", perplexity=1)
+    tsne_array = tsne_model.fit_transform(embeddings_array)
+    print(tsne_array)
+
+    plt.figure(figsize=(6, 6))
+    sns.scatterplot(x=pca_array[:, 0], y=pca_array[:, 1], s=200, label="pca")
+    sns.scatterplot(x=tsne_array[:, 0], y=tsne_array[:, 1], s=200, label="tsne")
+
+    for i in range(n_sample):
+        plt.text(pca_array[i, 0], pca_array[i, 1], str(i), fontsize=20)
+        plt.text(tsne_array[i, 0], tsne_array[i, 1], str(i), fontsize=20)
+    plt.show()
 
     def compare(idx1, idx2):
         return F.cosine_similarity(embeddings[idx1], embeddings[idx2], dim=0)
@@ -199,8 +226,10 @@ def check_sentence_compare():
 
 @func_timer(arg=True)
 def main():
-    check_word_embeddings()
-    check_sentence_embeddings()
+    fix_all_seed(_simple=False)
+
+    # check_word_embeddings()
+    # check_sentence_embeddings()
     check_sentence_compare()
 
 
