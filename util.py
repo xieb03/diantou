@@ -52,6 +52,11 @@ BGE_LARGE_CN_model_revision = "master"
 BGE_LARGE_CN_model_dir = BIGDATA_MODELS_PATH + "AI-ModelScope" + PATH_SEPARATOR + "bge-large-zh-v1___5"
 
 # "torch_dtype": "float32"
+BGE_LARGE_EN_model_id = "AI-ModelScope/bge-large-en-v1.5"
+BGE_LARGE_EN_model_revision = "master"
+BGE_LARGE_EN_model_dir = BIGDATA_MODELS_PATH + "AI-ModelScope" + PATH_SEPARATOR + "bge-large-en-v1___5"
+
+# "torch_dtype": "float32"
 BGE_RERANKER_LARGE_model_id = "quietnight/bge-reranker-large"
 BGE_RERANKER_LARGE_revision = "master"
 BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + "quietnight" + PATH_SEPARATOR + "bge-reranker-large"

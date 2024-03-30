@@ -1,6 +1,8 @@
 # noinspection PyUnresolvedReferences
 import tiktoken
 import torch
+# noinspection PyUnresolvedReferences,PyPep8Naming
+import torch.nn.functional as F
 # noinspection PyUnresolvedReferences
 from torch import nn
 

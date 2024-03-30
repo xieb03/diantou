@@ -63,6 +63,7 @@ def get_sentence_embedding(_tokenizer: PreTrainedTokenizerFast, _model: PreTrain
     # 即使传入的 max_length 非常大，大于所有句子的实际 token_count，也会默认用实际情况的最大值来处理，即相当于 max_length 是保护，如果没超就不会额外处理，这样效率最高
     encoded_input_dict = _tokenizer(_sentences, padding=True, truncation=truncation, max_length=_max_length,
                                     return_tensors='pt')
+    # print(encoded_input_dict)
     if _gpu:
         _model = _model.cuda()
         change_dict_value_to_gpu(encoded_input_dict)
@@ -163,10 +164,44 @@ def check_sentence_embeddings():
     print(get_sentence_embedding(tokenizer, model, sentences, _max_length=200))
 
 
+def check_sentence_compare():
+    in_1 = "He could not desert his post at the power plant."
+
+    in_2 = "The power plant needed him at the time."
+
+    in_3 = "Desert plants can survive droughts."
+
+    input_text_lst_sim = [in_1, in_2, in_3]
+    tokenizer, model = get_tokenizer_and_model(BGE_LARGE_EN_model_dir)
+
+    embeddings = []
+    for input_text in input_text_lst_sim:
+        emb = get_sentence_embedding(tokenizer, model, input_text)
+        embeddings.append(emb[0])
+
+    def compare(idx1, idx2):
+        return F.cosine_similarity(embeddings[idx1], embeddings[idx2], dim=0)
+
+    # He could not desert his post at the power plant.
+    # The power plant needed him at the time.
+    # tensor(0.8405, device='cuda:0')
+    print(in_1)
+    print(in_2)
+    print(compare(0, 1))
+
+    # He could not desert his post at the power plant.
+    # Desert plants can survive droughts.
+    # tensor(0.4408, device='cuda:0')
+    print(in_1)
+    print(in_3)
+    print(compare(0, 2))
+
+
 @func_timer(arg=True)
 def main():
     check_word_embeddings()
     check_sentence_embeddings()
+    check_sentence_compare()
 
 
 if __name__ == '__main__':

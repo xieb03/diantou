@@ -13,6 +13,8 @@ def modelscope_download(model_id=CHATGLM3_6B_model_id, revision=CHATGLM3_6B_mode
     print(model_dir)
     # assert_equal(model_dir, get_model_dir(model_id=model_id))
 
+    return model_dir
+
 
 # 并不对所有的都适用
 # "AI-ModelScope/bge-large-zh-v1.5" -> "AI-ModelScope/bge-large-zh-v1___5"
@@ -23,9 +25,14 @@ def get_model_dir(model_id=CHATGLM3_6B_model_id):
 
 @func_timer(arg=True)
 def main():
-    modelscope_download(model_id=CHATGLM3_6B_model_id, revision=CHATGLM3_6B_model_revision)
-    modelscope_download(model_id=BGE_LARGE_CN_model_id, revision=BGE_LARGE_CN_model_revision)
-    modelscope_download(model_id=BGE_RERANKER_LARGE_model_id, revision=BGE_RERANKER_LARGE_revision)
+    assert_equal(modelscope_download(model_id=CHATGLM3_6B_model_id, revision=CHATGLM3_6B_model_revision),
+                 CHATGLM3_6B_model_dir)
+    assert_equal(modelscope_download(model_id=BGE_LARGE_CN_model_id, revision=BGE_LARGE_CN_model_revision),
+                 BGE_LARGE_CN_model_dir)
+    assert_equal(modelscope_download(model_id=BGE_RERANKER_LARGE_model_id, revision=BGE_RERANKER_LARGE_revision),
+                 BGE_RERANKER_LARGE_model_dir)
+    assert_equal(modelscope_download(model_id=BGE_LARGE_EN_model_id, revision=BGE_LARGE_EN_model_revision),
+                 BGE_LARGE_EN_model_dir)
 
 
 if __name__ == '__main__':
