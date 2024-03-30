@@ -1,3 +1,4 @@
+import umap
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from transformers import AutoModel, AutoTokenizer, PreTrainedModel, PreTrainedTokenizerFast
@@ -171,8 +172,9 @@ def check_sentence_compare():
     in_1 = "He could not desert his post at the power plant."
     in_2 = "The power plant needed him at the time."
     in_3 = "Desert plants can survive droughts."
+    in_4 = "This is a meaningful sentence."
 
-    input_text_lst_sim = [in_1, in_2, in_3]
+    input_text_lst_sim = [in_1, in_2, in_3, in_4]
     tokenizer, model = get_tokenizer_and_model(BGE_LARGE_EN_model_dir)
 
     embeddings = []
@@ -190,20 +192,39 @@ def check_sentence_compare():
     # Perform PCA for 2D visualization
     pca_model = PCA(n_components=2)
     pca_array = pca_model.fit_transform(embeddings_array)
+    # [[-8.0531845 -1.8658072]
+    #  [-6.2139134 -0.4001754]
+    #  [ 9.216008  -6.952848 ]
+    #  [ 5.0510926  9.21883  ]]
     print(pca_array)
 
     # perplexity must be less than n_samples
     tsne_model = TSNE(n_components=2, init="pca", perplexity=1)
     tsne_array = tsne_model.fit_transform(embeddings_array)
+    # [[-17.89582   388.9884   ]
+    #  [-10.780518  288.0105   ]
+    #  [ 11.957385  -23.07555  ]
+    #  [  0.5574764 132.70337  ]]
     print(tsne_array)
+
+    # n_neighbors must be greater than 1
+    umap_model = umap.UMAP(n_neighbors=2, n_components=2, n_jobs=1, random_state=0, transform_seed=42)
+    umap_array = umap_model.fit_transform(embeddings_array)
+    # [[ 5.2945724 11.356611 ]
+    #  [ 6.2063622 11.4417   ]
+    #  [ 6.613435  10.035056 ]
+    #  [ 6.8994374 10.681623 ]]
+    print(umap_array)
 
     plt.figure(figsize=(6, 6))
     sns.scatterplot(x=pca_array[:, 0], y=pca_array[:, 1], s=200, label="pca")
     sns.scatterplot(x=tsne_array[:, 0], y=tsne_array[:, 1], s=200, label="tsne")
+    sns.scatterplot(x=umap_array[:, 0], y=umap_array[:, 1], s=200, label="umap")
 
     for i in range(n_sample):
         plt.text(pca_array[i, 0], pca_array[i, 1], str(i), fontsize=20)
         plt.text(tsne_array[i, 0], tsne_array[i, 1], str(i), fontsize=20)
+        plt.text(umap_array[i, 0], umap_array[i, 1], str(i), fontsize=20)
     plt.show()
 
     def compare(idx1, idx2):
