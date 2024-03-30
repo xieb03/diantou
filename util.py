@@ -44,17 +44,17 @@ TORCH_TEXT_DATA_PATH = BIGDATA_DATA_PATH + "torch_text" + PATH_SEPARATOR
 # "torch_dtype": "float16"
 CHATGLM3_6B_model_id = "ZhipuAI/chatglm3-6b"
 CHATGLM3_6B_model_revision = "v1.0.0"
-CHATGLM3_6B_model_dir = BIGDATA_MODELS_PATH + r"ZhipuAI\chatglm3-6b"
+CHATGLM3_6B_model_dir = BIGDATA_MODELS_PATH + "ZhipuAI" + PATH_SEPARATOR + "chatglm3-6b"
 
 # "torch_dtype": "float32"
 BGE_LARGE_CN_model_id = "AI-ModelScope/bge-large-zh-v1.5"
 BGE_LARGE_CN_model_revision = "master"
-BGE_LARGE_CN_model_dir = BIGDATA_MODELS_PATH + r"AI-ModelScope\bge-large-zh-v1___5"
+BGE_LARGE_CN_model_dir = BIGDATA_MODELS_PATH + "AI-ModelScope" + PATH_SEPARATOR + "bge-large-zh-v1___5"
 
 # "torch_dtype": "float32"
 BGE_RERANKER_LARGE_model_id = "quietnight/bge-reranker-large"
 BGE_RERANKER_LARGE_revision = "master"
-BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + r"quietnight\bge-reranker-large"
+BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + "quietnight" + PATH_SEPARATOR + "bge-reranker-large"
 
 CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
 
@@ -447,6 +447,11 @@ def delete_repeat_value_and_keep_order(_list):
             result_list.append(value)
             result_set.add(value)
     return result_list
+
+
+# list 是不是没有重复元素
+def is_list_unique(_list):
+    return len(set(_list)) == len(_list)
 
 
 # 获取一个 format 原型字符串中的变量名称
