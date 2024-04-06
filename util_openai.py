@@ -16,27 +16,31 @@ class Client(object):
 
     # 获得 openai 的 client，经过实验，并不是单例的
     @classmethod
-    def _get_openai_client(cls) -> OpenAI:
-        openai_base_url, openai_api_key = get_closeai_parameter()
+    def _get_openai_client(cls, real=False) -> OpenAI:
+        if real:
+            openai_base_url, openai_api_key = get_openai_parameter()
+        else:
+            openai_base_url, openai_api_key = get_closeai_parameter()
         return OpenAI(
             base_url=openai_base_url,
             api_key=openai_api_key,
         )
 
     @classmethod
-    def instance(cls) -> OpenAI:
-        # 为了在多线程环境下保证数据安全，在需要并发枷锁的地方加上RLock锁
+    # real = False 表示从 closeai 获取，否则从 openai 获取
+    def instance(cls, real=False) -> OpenAI:
+        # 为了在多线程环境下保证数据安全，在需要并发枷锁的地方加上 RLock 锁
         with Client._single_lock:
-            if not hasattr(Client, "_instance"):
-                # print("第一次调用，申请一个 client")
-                Client._instance = Client._get_openai_client()
+            if not hasattr(Client, "_instance") or Client._instance.is_closed():
+                if not hasattr(Client, "_instance"):
+                    # print("第一次调用，申请一个 client")
+                    pass
+                elif Client._instance.is_closed():
+                    # print("原来的 client 断开连接，重新申请了一个.")
+                    pass
+                Client._instance = Client._get_openai_client(real=real)
                 # 在程序结束使用的时候释放资源
                 atexit.register(Client.exit)
-            # 如果单例断开连接了，需要重新申请一个单例
-            else:
-                if Client._instance.is_closed():
-                    # print("原来的 client 断开连接，重新申请了一个.")
-                    Client._instance = Client._get_openai_client()
         return Client._instance
 
     @classmethod
@@ -57,8 +61,16 @@ def print_closeai():
 
 
 def get_closeai_parameter():
+    # https://api.closeai-proxy.xyz/v1
     openai_base_url = os.getenv("OPENAI_BASE_URL")
     openai_api_key = os.getenv("OPENAI_API_KEY")
+    return openai_base_url, openai_api_key
+
+
+# https://platform.openai.com/api-keys
+def get_openai_parameter():
+    openai_base_url = "https://api.openai.com/v1"
+    openai_api_key = os.getenv("REAL_OPENAI_API_KEY")
     return openai_base_url, openai_api_key
 
 
@@ -74,7 +86,8 @@ def get_token_count(_str: str, _model="gpt-3.5-turbo", _encoding=None):
 def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0.2,
                                 messages=None, print_token_count=False, print_cost_time=False, print_response=False,
                                 history_message_list: List = None,
-                                using_history_message_list=True, tools=None, print_messages=False, strip=False):
+                                using_history_message_list=True, tools=None, print_messages=False, strip=False,
+                                max_tokens=None):
     start_time = time.time()
     # token_count = 0
     # encoding = tiktoken.encoding_for_model(model)
@@ -142,7 +155,8 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     response = client.chat.completions.create(
         model=model,
         messages=total_messages,
-        temperature=temperature,  # 模型输出的温度系数，控制输出的随机程度
+        temperature=temperature,  # 模型输出的温度系数，控制输出的随机程度, between 0 and 2
+        max_tokens=max_tokens,
         tools=tools
     )
 
@@ -169,6 +183,8 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     prompt_token_count = response.usage.prompt_tokens
     completion_token_count = response.usage.completion_tokens
     total_token_count = prompt_token_count + completion_token_count
+    assert_equal(total_token_count, response.usage.total_tokens)
+
     true_model = response.model
 
     # 上面的 turbo 对应的真实版本
@@ -280,6 +296,8 @@ def get_completion_content(user_prompt=None, model="gpt-3.5-turbo-instruct", tem
     prompt_token_count = response.usage.prompt_tokens
     completion_token_count = response.usage.completion_tokens
     total_token_count = prompt_token_count + completion_token_count
+    assert_equal(total_token_count, response.usage.total_tokens)
+
     true_model = response.model
 
     if true_model not in ["gpt-3.5-turbo-instruct"]:
@@ -466,9 +484,9 @@ def check_summarize_gradio():
 
     with gr.Blocks() as demo:
         gr.Markdown(F"# Summarization\nFill in any article you like and let the chatbot summarize it for you")
-        chatbot = gr.Chatbot()
-        prompt_box = gr.Textbox(label="Prompt", value="请帮我总结一下下面的文章，在 100 字以内.")
-        article_box = gr.Textbox(label="Article", interactive=True, value="")
+        chatbot = gr.Chatbot(show_copy_button=True)
+        prompt_box = gr.Textbox(label="Prompt", value="请帮我总结一下下面的文章，在 100 字以内.", show_copy_button=True)
+        article_box = gr.Textbox(label="Article", interactive=True, value="", show_copy_button=True)
 
         with gr.Column():
             gr.Markdown(F"# Temperature\n Temperature is used to control the output of the chatbot.")
@@ -1062,6 +1080,67 @@ def check_chatgpt_prompt_engineering():
     print(get_chat_completion_content(user_prompt=prompt))
 
 
+# user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
+# 历史消息队列
+def get_chat_moderation_content(prompt, model="text-moderation-latest", print_cost_time=False,
+                                print_response=False, print_messages=False):
+    start_time = time.time()
+    # token_count = 0
+    # encoding = tiktoken.encoding_for_model(model)
+
+    if model not in ["text-moderation-latest", "text-moderation-stable"]:
+        print(F"IMPORTANT: {model}")
+
+    # 注意 closeai 没有提供这个接口，需要用 openai
+    client = Client.instance(real=True)
+
+    if print_messages:
+        print("messages:")
+        print()
+
+    # ModerationCreateResponse(id='modr-9B2CnCp0zFjMIlABME6XTe4Gp36vP', model='text-moderation-007',
+    # results=[Moderation(categories=Categories(harassment=True, harassment_threatening=True, hate=False,
+    # hate_threatening=False, self_harm=False, self_harm_instructions=False, self_harm_intent=False, sexual=False,
+    # sexual_minors=False, violence=True, violence_graphic=False, self-harm=False, sexual/minors=False,
+    # hate/threatening=False, violence/graphic=False, self-harm/intent=False, self-harm/instructions=False,
+    # harassment/threatening=True), category_scores=CategoryScores(harassment=0.93690425157547,
+    # harassment_threatening=0.9632091522216797, hate=0.003464415669441223, hate_threatening=0.0012363967252895236,
+    # self_harm=0.0002569745702203363, self_harm_instructions=3.3003930184349883e-06,
+    # self_harm_intent=0.000498451292514801, sexual=6.60820078337565e-05, sexual_minors=2.0803344114028732e-07,
+    # violence=0.9950873255729675, violence_graphic=1.2118219274270814e-05, self-harm=0.0002569745702203363,
+    # sexual/minors=2.0803344114028732e-07, hate/threatening=0.0012363967252895236, violence/graphic=1.2118219274270814e-05,
+    # self-harm/intent=0.000498451292514801, self-harm/instructions=3.3003930184349883e-06, harassment/threatening=0.9632091522216797),
+    # flagged=True)])
+    response = client.moderations.create(
+        input=prompt,
+        model=model
+    )
+
+    if print_response:
+        print(response)
+
+    results = response.results
+    result_count = len(results)
+    # 目前只取第一条
+    result = results[0]
+
+    end_time = time.time()
+    cost_time = end_time - start_time
+
+    if print_cost_time:
+        print(F"result_count = {result_count}, cost time = {cost_time:.1F}s.")
+        print()
+
+    return result
+
+
+# 检查 openai 的内容合规接口，目前这个接口是免费的，但要注意 closeai 没有提供这个接口，需要用 openai 的 API
+def check_openai_moderation():
+    result = get_chat_moderation_content("我要杀了你！")
+    print(result)
+    print(result.model_dump_json())
+
+
 @func_timer(arg=True)
 def main():
     # check_openai_interfaces()
@@ -1070,8 +1149,10 @@ def main():
     # check_f_string()
     # check_chatgpt_prompt_engineering()
     # check_summarize_gradio()
-    check_openai_completion()
+    # check_openai_completion()
     # check_chat_now()
+
+    check_openai_moderation()
 
     pass
 
