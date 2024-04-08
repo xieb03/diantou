@@ -254,7 +254,7 @@ class DecoderLayer(nn.Module):
     def forward(self, x, memory, src_mask, tgt_mask):
         """Follow Figure 1 (right) for connections."""
         x = self.res_layer_1(x, lambda _x: self.self_attn(_x, _x, _x, tgt_mask))
-        # 注意这里有一个 decoder 和 encoder 的交叉多头注意力
+        # 注意这里有一个 decoder 和 encoder 的交叉多头注意力，这里的顺序仿照 q = x, k = v = memory，与上面 q = k = v = x 有所区别
         x = self.res_layer_2(x, lambda _x: self.src_attn(_x, memory, memory, src_mask))
         return self.res_layer_3(x, self.feed_forward)
 
@@ -778,6 +778,8 @@ This section describes the training regime for our models.
 
 # We stop for a quick interlude to introduce some of the tools needed to train a standard encoder decoder model.
 # First we define a batch object that holds the src and target sentences for training, as well as constructing the masks.
+# src_mask，torch.Size([2, 1, 10])，只 mask 掉 pad
+# tgt_mask，torch.Size([2, 9, 9])，同时 mask 掉 pad 和 未来的单词
 class Batch:
     """Object for holding a batch of data with mask during training."""
 
@@ -1160,6 +1162,7 @@ def penalization_visualization():
 
 
 # We can begin by trying out a simple copy-task. Given a random set of input symbols from a small vocabulary, the goal is to generate back those same symbols.
+# 这里 1 是初值，或者说句子的开始
 def data_gen(min_value, max_value, batch_size, nbatches):
     """Generate random data for a src-tgt copy task."""
     for i in range(nbatches):
@@ -1168,6 +1171,7 @@ def data_gen(min_value, max_value, batch_size, nbatches):
         #         [1, 4, 5, 1, 1, 4, 8, 3, 6, 7]])
         # torch.Size([2, 10])
         data[:, 0] = 1
+        # .clone().detach() 等价于完全复制一个 tensor，即解耦了 value，也解耦了梯度
         src = data.requires_grad_(False).clone().detach()
         tgt = data.requires_grad_(False).clone().detach()
         yield Batch(src, tgt, 0)
