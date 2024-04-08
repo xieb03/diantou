@@ -195,9 +195,9 @@ def multiply_split(_sep_list, _str):
 # 打印系统信息
 def print_requirements():
     # deepspeed 几乎不能在 windows 下面安装
-    packages = ("torch,torchdata,torchtext,torchvision,torchaudio,openai,langchain,langchain-openai,tiktoken,"
+    packages = ("torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain-openai,tiktoken,"
                 "transformers,deepspeed,peft,rouge_chinese,"
-                "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,scipy")
+                "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -519,17 +519,17 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
-    # Last updated: 2024-03-17 19:41:48中国标准时间
+    # Last updated: 2024-04-08 15:54:53中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
     # IPython version      : 8.15.0
     #
-    # torch           : 2.2.1+cu121
+    # torch           : 2.2.2+cu121
+    # torchvision     : 0.17.2+cu121
+    # torchaudio      : 2.2.2+cu121
     # torchdata       : 0.7.1
-    # torchtext       : 0.17.1
-    # torchvision     : 0.17.1+cu121
-    # torchaudio      : 2.2.1+cu121
+    # torchtext       : 0.17.2
     # openai          : 1.12.0
     # langchain       : 0.1.9
     # langchain-openai: not installed
@@ -563,7 +563,7 @@ def main():
     #
     # GPU Info:
     #   GPU 0: NVIDIA GeForce RTX 4090
-    # print_requirements()
+    print_requirements()
 
     # noinspection PyUnresolvedReferences
     assert (np.array([1, 2, 3]) == (1, 2, 3)).all()

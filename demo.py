@@ -431,7 +431,7 @@ def check_weight_norm():
 
 
 def check_gpu(_with_speed=False):
-    # 2.2.1+cu121
+    # 2.2.2+cu121
     print(torch.__version__)
 
     assert torch.cuda.is_available()
