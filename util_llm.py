@@ -100,7 +100,8 @@ def get_sentence_embedding(_tokenizer: PreTrainedTokenizerFast, _model: PreTrain
     return sentence_embeddings
 
 
-def get_word_embeddings(_tokenizer: PreTrainedTokenizerFast, _model: PreTrainedModel, _words):
+def get_word_embeddings(_vocab_or_tokenizer: Union[Dict[str, int], PreTrainedTokenizerFast], _model: PreTrainedModel,
+                        _words):
     # 注意不能用 encode，因为形如 "##月" 实际上是在 vocab 中，但会被当做 3 个字来处理
     # assert_equal(len(_words), 1)
     # BGE_LARGE_CN_model_dir: {100: '[UNK]', 102: '[SEP]', 0: '[PAD]', 101: '[CLS]', 103: '[MASK]'}
@@ -114,8 +115,11 @@ def get_word_embeddings(_tokenizer: PreTrainedTokenizerFast, _model: PreTrainedM
     # if len(input_ids) > 3:
     #     return None
     # token_id = input_ids[1]
-
-    input_id = _tokenizer.vocab.get(_words, None)
+    if isinstance(_vocab_or_tokenizer, dict):
+        vocab = _vocab_or_tokenizer
+    else:
+        vocab = _vocab_or_tokenizer.get_vocab()
+    input_id = vocab.get(_words, None)
     if input_id is None:
         return None
     else:

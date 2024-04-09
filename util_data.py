@@ -1,7 +1,6 @@
 import datasets
 # noinspection PyUnresolvedReferences
 import huggingface_hub
-from datasets import load_dataset
 
 from util_path import *
 
@@ -20,8 +19,8 @@ def dataset_download(path, name=None, split=None, keep_in_memory=None, _return=T
         # 设置日志级别是 INFO，默认是 WARNING
         datasets.logging.set_verbosity_info()
 
-    dataset = load_dataset(path=path, name=name, split=split, keep_in_memory=keep_in_memory,
-                           cache_dir=BIGDATA_DATA_PATH)
+    dataset = datasets.load_dataset(path=path, name=name, split=split, keep_in_memory=keep_in_memory,
+                                    cache_dir=BIGDATA_DATA_PATH)
     if _print:
         print(dataset)
 

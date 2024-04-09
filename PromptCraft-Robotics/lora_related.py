@@ -3,11 +3,10 @@ import functools
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, Union
 
 import jieba
 import ruamel.yaml as yaml
-from datasets import Dataset, DatasetDict, NamedSplit, Split, load_dataset
+from datasets import Dataset, DatasetDict, NamedSplit, Split
 from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from peft import (
     PeftConfig,
@@ -252,7 +251,7 @@ def _load_datasets(
         num_proc: Optional[int],
 ) -> DatasetDict:
     if data_format in ('.csv', '.json', '.jsonl'):
-        dataset_dct = load_dataset(
+        dataset_dct = datasets.load_dataset(
             data_format[1:],
             data_dir=data_dir,
             data_files=data_files,
