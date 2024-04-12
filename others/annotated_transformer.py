@@ -58,6 +58,7 @@ class EncoderDecoder(nn.Module):
 
     def forward(self, src, tgt, src_mask, tgt_mask):
         """Take in and process masked src and target sequences."""
+        # 注意两个 src_mask 是一样的，只 mask 了 pad，而 tgt_mask 同时 mask 了 pad 和未来的词
         return self.decode(memory=self.encode(src=src, src_mask=src_mask), src_mask=src_mask, tgt=tgt,
                            tgt_mask=tgt_mask)
 

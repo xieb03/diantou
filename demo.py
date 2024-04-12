@@ -1,3 +1,5 @@
+import glob
+
 import torch.cuda
 from torchinfo import summary
 
@@ -1642,9 +1644,94 @@ def check_scan_dataset():
         "I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_RIGHT I_LOOK I_TURN_LEFT I_TURN_LEFT I_TURN_LEFT")
 
 
+# 使用 glob + 通配符 遍历文件
+def check_glob():
+    # glob.iglob 返回生成器，glob.glob() = list(glob.iglob())
+    # 包含所有文件和文件夹，13
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\*")))
+    # 指定后缀，8
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\*.py")))
+    # 指定文件，1
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\recorder.py")))
+    # 指定文件通配符，2
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\chatgpt_*.py")))
+    # 不包含子文件夹
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\*.json", recursive=False)))
+    # 包含子文件夹
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\*.json", recursive=True)))
+    # * 表示仅仅一级文件夹，这个时候 recursive 没有用，7
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\*\*.json", recursive=False)))
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\*\*.json", recursive=True)))
+    # ** 表示任意级文件夹（包括 0 级），注意只有在开启 recursive=True 的时候采有用，否则 ** = *，7
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\**\*.json", recursive=False)))
+    # ** 表示任意级文件夹（包括 0 级），注意只有在开启 recursive=True 的时候采有用，否则 ** = *，55
+    print(len(glob.glob(r"D:\PycharmProjects\xiebo\diantou\PromptCraft-Robotics\**\*.json", recursive=True)))
+
+
+# noinspection PyUnresolvedReferences
+# 测试 concurrent 并行
+def check_concurrent():
+    # ThreadPoolExecutor 和 ProcessPoolExecutor:
+    # ThreadPoolExecutor: 使用线程池来执行任务。适用于 I/O 密集型任务。
+    # ProcessPoolExecutor: 使用进程池来执行任务。适用于 CPU 密集型任务
+    from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+    # 32
+    print(F"cpu_count = {os.cpu_count()}")
+
+    def task(n):
+        print(F'n = {n}, pid = {os.getpid()}')
+        time.sleep(1)
+        return n ** 2
+
+    if __name__ == '__main__':
+        # 注意，with 会调用上下文环境，即 close() = self.shutdown(wait=True)
+        # shutdown(wait=True) 相当于进程池的 pool.close() + pool.join()操作, wait = True，等待池内所有任务执行完毕回收完资源后才继续 ,
+        # wait = False，立即返回，并不会等待池内的任务执行完毕 , 但不管wait参数为何值，整个程序都会等到所有任务执行完毕 , submit和map必须在shutdown之前.
+        # We use cpu_count + 4 for both types of tasks.
+        # But we limit it to 32 to avoid consuming surprisingly large resource
+        # on many core machine.
+        # max_workers = min(32, (os.cpu_count() or 1) + 4)
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            # map 可以直接返回结果（即等待结果算完），注意结果的顺序和 map 的顺序一致，尽管执行的顺序可能不一致
+            result_list = list(executor.map(task, range(6)))  # map 取代了 for + submit
+            print(result_list)
+        # n = 0, pid = 27492
+        # n = 1, pid = 27492
+        # n = 2, pid = 27492
+        # n = 3, pid = 31424
+        # n = 4, pid = 27492
+        # n = 5, pid = 27492
+        # [0, 1, 4, 9, 16, 25]
+        # 11111
+        print(11111)
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            result_list = list()
+            for i in range(6):
+                # submit 不会等待结果算完
+                result_list.append(executor.submit(task, i))
+            # 会先执行，并不会等上面的结果全部执行完
+            print(result_list)
+
+            # 但是获取结果的话，需要等待全部算完
+            result_list = [future.result(timeout=None) for future in result_list]
+            print(result_list)
+        # n = 0, pid = 27492
+        # n = 1, pid = 27492
+        # n = 2, pid = 27492
+        # [<Future at 0x1a884e1e590 state=running>, <Future at 0x1a887a88950 state=running>, <Future at 0x1a887a88fd0 state=running>, <Future at 0x1a887a88d10 state=pending>, <Future at 0x1a887a882d0 state=pending>, <Future at 0x1a887a88050 state=pending>]
+        # n = 3, pid = 27492
+        # n = 4, pid = 27492
+        # n = 5, pid = 27492
+        # [0, 1, 4, 9, 16, 25]
+        # 22222
+        print(22222)
+
+
 @func_timer(arg=True)
 def main():
-    check_gpu(True)
+    # check_gpu(True)
 
     # check_mul()
     # check_mean_op()
@@ -1662,6 +1749,9 @@ def main():
     # check_bge_reranker()
 
     # check_scan_dataset()
+
+    # check_glob()
+    check_concurrent()
 
 
 if __name__ == '__main__':
