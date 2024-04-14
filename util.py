@@ -195,7 +195,7 @@ def multiply_split(_sep_list, _str):
 # 打印系统信息
 def print_requirements():
     # deepspeed 几乎不能在 windows 下面安装
-    packages = ("torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain-openai,tiktoken,"
+    packages = ("torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,tiktoken,"
                 "transformers,deepspeed,peft,rouge_chinese,"
                 "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy")
     print(
@@ -519,7 +519,7 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
-    # Last updated: 2024-04-08 15:54:53中国标准时间
+    # Last updated: 2024-04-14 22:00:42中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
@@ -530,11 +530,11 @@ def main():
     # torchaudio      : 2.2.2+cu121
     # torchdata       : 0.7.1
     # torchtext       : 0.17.2
-    # openai          : 1.12.0
-    # langchain       : 0.1.9
-    # langchain-openai: not installed
+    # openai          : 1.17.1
+    # langchain       : 0.1.16
+    # langchain_openai: 0.1.3
     # tiktoken        : 0.6.0
-    # transformers    : 4.38.2
+    # transformers    : 4.39.3
     # deepspeed       : not installed
     # peft            : 0.7.1
     # rouge_chinese   : 1.0.3

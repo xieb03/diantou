@@ -94,7 +94,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
 
     # https://platform.openai.com/docs/models
     # turbo 一般指向最新的模型副本
-    if model not in ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-turbo-preview"]:
+    if model not in ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-turbo"]:
         print(F"IMPORTANT: {model}")
 
     client = Client.instance()
@@ -193,8 +193,8 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     # from 20240225，gpt-3.5-turbo-0125
     # assert_equal(true_model, "gpt-3.5-turbo-0125")
     # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
-    if true_model not in ["gpt-3.5-turbo-0125", "gpt-3.5-turbo-16k-0613", "gpt-4-0613", "gpt-4-0125-preview"]:
-        print(F"IMPORTANT: {true_model}")
+    if true_model not in ["gpt-3.5-turbo-0125", "gpt-3.5-turbo-16k-0613", "gpt-4-0613", "gpt-4-turbo-2024-04-09"]:
+        print(F"IMPORTANT: {model}: {true_model}")
 
     # assert_equal(true_model, "gpt-35-turbo")
 
