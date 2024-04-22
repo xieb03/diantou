@@ -81,13 +81,34 @@ def get_token_count(_str: str, _model="gpt-3.5-turbo", _encoding=None):
     return len(_encoding.encode(_str))
 
 
+# 20240423
+# gpt-3.5-turbo	            $ 0.0015 /1k	$ 0.002 /1k
+# gpt-3.5-turbo-16k	        $ 0.003 /1k	    $ 0.004 /1k
+# gpt-4	                    $ 0.03 /1k	    $ 0.06 /1k
+# gpt-4-turbo	            $ 0.01 /1k	    $ 0.03 /1k
+# gpt-4-turbo-2024-04-09	$ 0.01 /1k	    $ 0.03 /1k
+OPENAI_TRUE_MODEL_DICT = {"gpt-3.5-turbo": "gpt-3.5-turbo-0125",
+                          "gpt-3.5-turbo-16k": "gpt-3.5-turbo-16k-0613",
+                          "gpt-4": "gpt-4-0613",
+                          "gpt-4-turbo": "gpt-4-turbo-2024-04-09",
+                          "gpt-4-turbo-2024-04-09": "gpt-4-turbo-2024-04-09",
+                          }
+
+
 # user_prompt 和 system_prompt 都可以支持 list，但 system_prompt 一定都在 user_prompt 之前调用
+# 为什么苏东坡不能参加苏轼的葬礼
+# gpt-3.5-turbo: 苏东坡不能参加苏轼的葬礼的原因是因为他被贬谪到远离京城的地方，且在苏轼去世时还在途中，无法及时赶回参加葬礼。此外，苏轼在世时与苏东坡关系并不好，他们之间存在矛盾和误会，因此也可能是苏东坡没有被邀请参加葬礼的原因之一。
+# gpt-4: 苏东坡和苏轼其实是同一个人，只是受到尊敬的称呼不同。"苏东坡"是宋朝文人苏轼的字，他不可能参加自己的葬礼。
+# gpt-4-turbo: 苏东坡和苏轼是同一个人，苏轼（1037年—1101年）是北宋时期的文学家、政治家、画家、书法家，别称东坡居士，所以他自身当然无法参加自己的葬礼。在历史上，苏轼因其多才多艺和深刻的文学影响而被后人尊称为“苏东坡”。
+# gpt-4-turbo-2024-04-09: 苏东坡和苏轼是同一个人，他的本名是苏轼，字子瞻，号东坡居士，是北宋时期的文学家、书画家、政治家和思想家。因此，苏东坡不能参加苏轼的葬礼，是因为他们是同一人，一个人自然不能参加自己的葬礼。这个问题实质上是一个语言游戏或者说是一个文字陷阱，通过使用苏轼的不同称呼来制造误解。
 # 历史消息队列
 def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0.2,
                                 messages=None, print_token_count=False, print_cost_time=False, print_response=False,
                                 history_message_list: List = None,
                                 using_history_message_list=True, tools=None, print_messages=False, strip=False,
-                                max_tokens=None):
+                                max_tokens=None, real=False):
+    if real:
+        print(F"IMPORTANT 1: real OpenAI")
     start_time = time.time()
     # token_count = 0
     # encoding = tiktoken.encoding_for_model(model)
@@ -95,9 +116,9 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     # https://platform.openai.com/docs/models
     # turbo 一般指向最新的模型副本
     if model not in ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-turbo"]:
-        print(F"IMPORTANT: {model}")
+        print(F"IMPORTANT 2: {model}")
 
-    client = Client.instance()
+    client = Client.instance(real=real)
 
     if user_prompt is not None or system_prompt is not None:
         assert messages is None, "user_prompt 和 system_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者不为空，但是后者也不为空."
@@ -176,7 +197,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
 
     # 主要是判断是不是被截断，例如 length
     if finish_reason not in {"tool_calls", "stop"}:
-        print("IMPORTANT: finish_reason = {finish_reason}.")
+        print("IMPORTANT 3: finish_reason = {finish_reason}.")
 
     # token_count += len(encoding.encode(content))
 
@@ -193,8 +214,10 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     # from 20240225，gpt-3.5-turbo-0125
     # assert_equal(true_model, "gpt-3.5-turbo-0125")
     # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
-    if true_model not in ["gpt-3.5-turbo-0125", "gpt-3.5-turbo-16k-0613", "gpt-4-0613", "gpt-4-turbo-2024-04-09"]:
-        print(F"IMPORTANT: {model}: {true_model}")
+    if model not in OPENAI_TRUE_MODEL_DICT:
+        print(F"IMPORTANT 4: {model}: {true_model}")
+    elif true_model != OPENAI_TRUE_MODEL_DICT[model]:
+        print(F"IMPORTANT 5: {model}: {true_model}")
 
     # assert_equal(true_model, "gpt-35-turbo")
 
@@ -228,13 +251,15 @@ def get_completion_content(user_prompt=None, model="gpt-3.5-turbo-instruct", tem
                            presence_penalty=0, stop=None, messages=None,
                            max_tokens=1000, history_message_list: List = None,
                            using_history_message_list=True, strip=False, print_messages=False, print_token_count=False,
-                           print_cost_time=False, print_response=False):
+                           print_cost_time=False, print_response=False, real=False):
+    if real:
+        print(F"IMPORTANT 1: real OpenAI")
     start_time = time.time()
 
     if model not in ["gpt-3.5-turbo-instruct"]:
-        print(F"IMPORTANT: {model}")
+        print(F"IMPORTANT 2: {model}")
 
-    client = Client.instance()
+    client = Client.instance(real=real)
 
     if user_prompt is not None:
         assert messages is None, "user_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者不为空，但是后者也不为空."
@@ -291,7 +316,7 @@ def get_completion_content(user_prompt=None, model="gpt-3.5-turbo-instruct", tem
 
     # 主要是判断是不是被截断，例如 length
     if finish_reason not in {"stop"}:
-        print("IMPORTANT: finish_reason = {finish_reason}.")
+        print("IMPORTANT 3: finish_reason = {finish_reason}.")
 
     prompt_token_count = response.usage.prompt_tokens
     completion_token_count = response.usage.completion_tokens
@@ -301,7 +326,7 @@ def get_completion_content(user_prompt=None, model="gpt-3.5-turbo-instruct", tem
     true_model = response.model
 
     if true_model not in ["gpt-3.5-turbo-instruct"]:
-        print(F"IMPORTANT: {true_model}")
+        print(F"IMPORTANT 4: {true_model}")
 
     # 无论如何，都保存到历史对话中
     # if not using_history and history_message_list is not None:
@@ -327,24 +352,27 @@ def get_chatgpt_completion_content(user_prompt=None, system_prompt=None, message
                                    model="gpt-3.5-turbo", temperature=0.1,
                                    print_token_count=False, print_cost_time=False, print_response=False,
                                    history_message_list: List = None,
-                                   using_history_message_list=True, tools=None, print_messages=False):
+                                   using_history_message_list=True, tools=None, print_messages=False, real=False):
     return get_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt, messages=messages,
                                        model=model, temperature=temperature,
                                        print_token_count=print_token_count, print_cost_time=print_cost_time,
                                        print_response=print_response,
                                        history_message_list=history_message_list,
                                        using_history_message_list=using_history_message_list, tools=tools,
-                                       print_messages=print_messages)
+                                       print_messages=print_messages, real=real)
 
 
 # 一个封装 OpenAI 接口的函数，参数为 Prompt，返回对应结果
 # 图像创建接口只支持一个 prompt
 # 推荐用 b64_json + 本地保存的方式做持久化，因为 url 本身就有 1 小时的过期时间
 def get_image_create(prompt, model="dall-e-3", response_format="b64_json", size="1024x1024",
-                     style="natural", print_response=False, save_image=True, image_name=None, print_prompt=False):
+                     style="natural", print_response=False, save_image=True, image_name=None, print_prompt=False,
+                     real=False):
+    if real:
+        print(F"IMPORTANT 1: real OpenAI")
     start_time = time.time()
 
-    client = Client.instance()
+    client = Client.instance(real=real)
 
     if len(prompt) >= 4000:
         raise ValueError(F"prompt 最多只支持 4000 字的 prompt，目前是 {len(prompt)}.")
@@ -1159,3 +1187,53 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # def summarize(user_prompt: str, temperature=0.8, model="gpt-4-turbo") -> List[Tuple[str, str]]:
+    #     response = get_chatgpt_completion_content(user_prompt=user_prompt, model=model, temperature=temperature)
+    #
+    #     return [(user_prompt, response)]
+    #
+    # def reset() -> List:
+    #     return list()
+    #
+    # with gr.Blocks() as demo:
+    #     # gr.Markdown(F"# Summarization\nFill in any article you like and let the chatbot summarize it for you")
+    #     chatbot = gr.Chatbot(show_copy_button=True)
+    #     # prompt_box = gr.Textbox(label="Prompt", value="请帮我总结一下下面的文章，在 100 字以内.", show_copy_button=True)
+    #     initial_prompt = """
+    #             生成一个校歌歌词，120个字以内。歌词要求如下：
+    #
+    #             1.歌词主题
+    #             （1）体现学校精神：歌词应深入挖掘并传达德胜中学的办学理念、校训等核心精神。
+    #             （2）展现学校特色：反映学校的教育理念、学科优势、教育特色和校园文化。
+    #             （3）激发爱国爱校情怀：强调热爱祖国、热爱中华民族、热爱德胜中学，体现对国家的忠诚和对民族的自豪。
+    #             2.歌词内容
+    #             （1）积极向上：积极乐观，鼓舞人心，传递正能量。
+    #             （2）简洁明了：用词通俗易懂，避免复杂的修辞和晦涩的表达。
+    #             （3）易于传唱：歌词应具有一定的韵律和节奏感，便于记忆和传唱。
+    #             （4）包容性强：歌词应具有普遍性，能够代表全体师生的共同心声。
+    #             3.歌词结构
+    #             （1）清晰的段落划分：歌词应分为若干段落，如主歌、副歌等，每段落应有明确的主题。
+    #             （2）重复与变化：适当使用重复的句式或词汇以增强记忆点，同时保持一定的变化以避免单调。
+    #             （3）整体的起承转合：歌词应有完整的结构，包括开头（起）、发展（承）、高潮（转）、结尾（合），或者包括主歌、副歌部分。
+    #             4.创作原则
+    #             （1）合法性：歌词内容必须符合国家法律法规，不得含有违法违规内容。
+    #             （2）适宜性：歌词应适合不同年龄层的师生传唱，避免使用可能引起争议的敏感词汇。
+    #             5.创作者可以附上简短的创作说明，介绍歌词的创作背景和寓意。
+    #
+    #             最后，请附上简短的创作说明，介绍歌词的创作背景和寓意。
+    #         """
+    #     prompt_box = gr.Textbox(label="提示词", interactive=True, value=initial_prompt, show_copy_button=True)
+    #
+    #     with gr.Column():
+    #         gr.Markdown(F"## 温度越高，随机性越强，温度越低，随机性越弱")
+    #         temperature_slide = gr.Slider(minimum=0.2, maximum=2.0, value=0.8, step=0.1, label="温度")
+    #
+    #     with gr.Row():
+    #         send_button = gr.Button(value="提交")
+    #         reset_button = gr.Button(value="重置")
+    #
+    #     send_button.click(fn=summarize, inputs=[prompt_box, temperature_slide], outputs=[chatbot])
+    #     reset_button.click(fn=reset, outputs=[chatbot])
+    #
+    # demo.launch(share=True)

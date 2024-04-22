@@ -590,6 +590,7 @@ def example_positional():
 
 # Here we define a function from hyperparameters to a full model.
 # 注意一共有 3 * n 个多注意力头，分别是 encoder 的、decoder 的，encoder 和 decoder 交叉的，他们之间并不共享权重
+# 注意 cross attention 也重复了 n 次，但每一次 cross attention 只会对 encoder 最后的结果做，称为 memory
 def make_model(src_vocab, tgt_vocab, n=6, d_model=512, d_ff=2048, h=8, dropout=0.1, max_len=5000):
     """Helper: Construct a model from hyperparameters."""
     c = copy.deepcopy
