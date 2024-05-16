@@ -23,6 +23,7 @@ from random import shuffle
 # noinspection PyUnresolvedReferences
 from typing import List, Tuple, Dict, Union, Any, Optional
 
+from collections import OrderedDict
 import numpy as np
 # noinspection PyUnresolvedReferences
 import pandas as pd
@@ -65,6 +66,31 @@ CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
 
 PYTHON_CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
 JSON_CODE_BLOCK_REGEX = re.compile(r"```json(.*?)```", re.DOTALL)
+
+# 汉字中的数字转阿拉伯数字
+CN_TO_NUMBER_DICT = OrderedDict()
+for first_cn, first_number in zip(["十", "二十", "三十", "四十", "五十", "六十", "七十", "八十", "九十", ""], "123456789 "):
+    for second_cn, second_number in zip(["一", "二", "三", "四", "五", "六", "七", "八", "九", ""], "1234567890"):
+        cn = first_cn.strip() + second_cn.strip()
+        number_str = str(first_number).strip() + str(second_number).strip()
+        if len(cn) > 0:
+            CN_TO_NUMBER_DICT[cn] = number_str
+
+assert len(CN_TO_NUMBER_DICT) == 99, len(CN_TO_NUMBER_DICT)
+assert len(CN_TO_NUMBER_DICT.values()) == 99
+assert sum(map(int, CN_TO_NUMBER_DICT.values())) == 4950
+
+
+# 按照字符字典替换字符串，注意是字符字典，而不是字符串字典，这样与顺序无关
+def replace_chars(_str, _char_map):
+    return ''.join(_char_map.get(c, c) for c in _str)
+
+
+# 按照字符串字典替换字符串，注意是字符串字典，这样与顺序有关，最好传入 OrderedDict，注意与 replace_chars 的区别
+def replace_strs(_str, _str_map):
+    for k, v in _str_map.items():
+        _str = _str.replace(k, v)
+    return _str
 
 
 # 打印历史对话
@@ -377,6 +403,7 @@ def fix_all_seed(_seed=13, _print=True, _simple=True, _warn_only=False):
             torch.backends.cudnn.benchmark = False
             # torch.use_deterministic_algorithms(True) 允许你配置 PyTorch 在可用的情况下使用确定性算法而不是非确定性算法，
             # 并且如果已知某个操作是不确定的(并且没有确定的替代方法)，则抛出 RuntimeError 错误。
+            # warn_only (:class:`bool`, optional): If True, operations that do not have a deterministic implementation will throw a warning instead of an error. Default: ``False``
             torch.use_deterministic_algorithms(True, warn_only=_warn_only)
             # RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)`
             # or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic

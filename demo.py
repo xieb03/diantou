@@ -432,7 +432,7 @@ def check_weight_norm():
     assert_tensor_equal(weight, weight_v)
 
 
-def check_gpu(_with_speed=False):
+def check_gpu(_with_speed=False, _with_gpu=True):
     # 2.2.2+cu121
     print(torch.__version__)
 
@@ -446,13 +446,15 @@ def check_gpu(_with_speed=False):
         # spent 111.40064930915833
         # i9-14900KF
         # spent 40.08144783973694
-        # device = torch.device("cpu")
+        if not _with_gpu:
+            device = torch.device("cpu")
 
         # 2080Ti
         # spent 4.195726633071899
         # 4090
         # spent 2.9713356494903564
-        device = torch.device("cuda")
+        else:
+            device = torch.device("cuda")
 
         x = torch.rand((dimension, dimension), dtype=torch.float32)
         y = torch.rand((dimension, dimension), dtype=torch.float32)
@@ -472,6 +474,10 @@ def check_gpu(_with_speed=False):
         print_gpu_memory_summary()
 
         print("spent {}".format(end_time - start_time))
+
+
+def check_cpu():
+    check_gpu(_with_speed=True, _with_gpu=False)
 
 
 # 检查 half 的用法，其实就是转化为 float 16
@@ -1729,8 +1735,34 @@ def check_concurrent():
         print(22222)
 
 
+# 批量修改文件名，主要是将汉字改成阿拉伯数字，这样比较容易排序
+def rename_filenames():
+    import glob
+
+    suffix = ".mp4"
+    start_word = "第"
+    end_word = "章"
+    # 注意要用非贪婪
+    pattern = re.compile(F".*?" + start_word + "(.+?)" + end_word + ".*" + suffix)
+    directory = r"F:\bilibili\分集_2024-05-16_必看！【乐橙网】2024年最新大纲基金从业资格证考试-基金基础知识"
+    for filename in glob.glob(os.path.join(directory, "*{start_word}*{end_word}*{suffix}".format(start_word=start_word,
+                                                                                                 end_word=end_word,
+                                                                                                 suffix=suffix))):
+        matches = re.findall(pattern, filename)
+        # 有且只能有一个命中
+        assert len(matches) == 1, filename
+        match_word = start_word + matches[0] + end_word
+        assert filename.count(match_word) == 1, filename.count(match_word)
+        new_filename = filename.replace(match_word, replace_strs(match_word, CN_TO_NUMBER_DICT))
+        if new_filename == filename:
+            continue
+        os.rename(filename, new_filename)
+        print(new_filename)
+
+
 @func_timer(arg=True)
 def main():
+    # check_cpu()
     # check_gpu(True)
 
     # check_mul()
@@ -1751,7 +1783,11 @@ def main():
     # check_scan_dataset()
 
     # check_glob()
-    check_concurrent()
+    # check_concurrent()
+
+    # rename_filenames()
+
+    pass
 
 
 if __name__ == '__main__':
