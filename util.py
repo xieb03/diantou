@@ -12,6 +12,7 @@ import random
 import re
 import time
 import traceback
+from collections import OrderedDict
 # noinspection PyUnresolvedReferences
 from collections import defaultdict
 from functools import partial
@@ -23,7 +24,6 @@ from random import shuffle
 # noinspection PyUnresolvedReferences
 from typing import List, Tuple, Dict, Union, Any, Optional
 
-from collections import OrderedDict
 import numpy as np
 # noinspection PyUnresolvedReferences
 import pandas as pd
@@ -69,7 +69,8 @@ JSON_CODE_BLOCK_REGEX = re.compile(r"```json(.*?)```", re.DOTALL)
 
 # 汉字中的数字转阿拉伯数字
 CN_TO_NUMBER_DICT = OrderedDict()
-for first_cn, first_number in zip(["十", "二十", "三十", "四十", "五十", "六十", "七十", "八十", "九十", ""], "123456789 "):
+for first_cn, first_number in zip(["十", "二十", "三十", "四十", "五十", "六十", "七十", "八十", "九十", ""],
+                                  "123456789 "):
     for second_cn, second_number in zip(["一", "二", "三", "四", "五", "六", "七", "八", "九", ""], "1234567890"):
         cn = first_cn.strip() + second_cn.strip()
         number_str = str(first_number).strip() + str(second_number).strip()
@@ -221,9 +222,10 @@ def multiply_split(_sep_list, _str):
 # 打印系统信息
 def print_requirements():
     # deepspeed 几乎不能在 windows 下面安装
-    packages = ("torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,tiktoken,"
-                "transformers,deepspeed,peft,rouge_chinese,"
-                "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy")
+    packages = (
+        "torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,langchain-community,tiktoken,"
+        "transformers,deepspeed,peft,rouge_chinese,"
+        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -546,35 +548,36 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
-    # Last updated: 2024-04-14 22:00:42中国标准时间
+    # Last updated: 2024-05-18 22:11:41中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
     # IPython version      : 8.15.0
     #
-    # torch           : 2.2.2+cu121
-    # torchvision     : 0.17.2+cu121
-    # torchaudio      : 2.2.2+cu121
-    # torchdata       : 0.7.1
-    # torchtext       : 0.17.2
-    # openai          : 1.17.1
-    # langchain       : 0.1.16
-    # langchain_openai: 0.1.3
-    # tiktoken        : 0.6.0
-    # transformers    : 4.39.3
-    # deepspeed       : not installed
-    # peft            : 0.7.1
-    # rouge_chinese   : 1.0.3
-    # mpi4py          : 3.1.5
-    # datasets        : 2.18.0
-    # jieba           : 0.42.1
-    # ruamel_yaml     : 0.18.6
-    # scikit-learn    : 1.4.1.post1
-    # numpy           : 1.24.3
-    # pandas          : 2.2.1
-    # matplotlib      : 3.8.3
-    # seaborn         : 0.13.2
-    # scipy           : 1.11.1
+    # torch              : 2.3.0+cu121
+    # torchvision        : 0.18.0+cu121
+    # torchaudio         : 2.3.0+cu121
+    # torchdata          : 0.7.1
+    # torchtext          : 0.18.0
+    # openai             : 1.30.1
+    # langchain          : 0.2.0
+    # langchain_openai   : 0.1.7
+    # langchain-community: not installed
+    # tiktoken           : 0.7.0
+    # transformers       : 4.39.3
+    # deepspeed          : not installed
+    # peft               : 0.7.1
+    # rouge_chinese      : 1.0.3
+    # mpi4py             : 3.1.5
+    # datasets           : 2.18.0
+    # jieba              : 0.42.1
+    # ruamel_yaml        : 0.18.6
+    # scikit-learn       : 1.4.1.post1
+    # numpy              : 1.24.3
+    # pandas             : 2.2.1
+    # matplotlib         : 3.8.3
+    # seaborn            : 0.13.2
+    # scipy              : 1.11.1
     #
     # conda environment: base
     #

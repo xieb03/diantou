@@ -433,7 +433,7 @@ def check_weight_norm():
 
 
 def check_gpu(_with_speed=False, _with_gpu=True):
-    # 2.2.2+cu121
+    # 2.3.0+cu121
     print(torch.__version__)
 
     assert torch.cuda.is_available()
@@ -1763,7 +1763,7 @@ def rename_filenames():
 @func_timer(arg=True)
 def main():
     # check_cpu()
-    # check_gpu(True)
+    check_gpu(True)
 
     # check_mul()
     # check_mean_op()
