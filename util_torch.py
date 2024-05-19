@@ -242,6 +242,9 @@ def get_vector_norm(_vector: torch.Tensor, _p=2):
 
 # 求正则化结果
 # 对哪个维度做 Norm，就在其他维度不动的情况下，基于该维度下的所有元素计算均值和方差，然后再做 Norm。
+# 说简单点，其实深度学习里的正则化方法就是“通过把一部分不重要的复杂信息损失掉，以此来降低拟合难度以及过拟合的风险，从而加速了模型的收敛”。Normalization 目的就是让分布稳定下来（降低各维度数据的方差）。
+# 不同正则化方法的区别只是操作的信息维度不同，即选择损失信息的维度不同。
+# 选择什么样的归一化方式，取决于你关注数据的哪部分信息。如果某个维度信息的差异性很重要，需要被拟合，那就别在那个维度进行归一化。
 def get_tensor_norm(_x: torch.Tensor, _dim, _keepdim=True, _unbiased=False, _eps=1E-5):
     return (_x - _x.mean(dim=_dim, keepdim=_keepdim)) / torch.sqrt(
         (_x.var(dim=_dim, keepdim=_keepdim, unbiased=_unbiased) + _eps))
