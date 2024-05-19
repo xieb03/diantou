@@ -241,9 +241,15 @@ def get_vector_norm(_vector: torch.Tensor, _p=2):
 
 
 # 求正则化结果
+# 对哪个维度做 Norm，就在其他维度不动的情况下，基于该维度下的所有元素计算均值和方差，然后再做 Norm。
 def get_tensor_norm(_x: torch.Tensor, _dim, _keepdim=True, _unbiased=False, _eps=1E-5):
     return (_x - _x.mean(dim=_dim, keepdim=_keepdim)) / torch.sqrt(
         (_x.var(dim=_dim, keepdim=_keepdim, unbiased=_unbiased) + _eps))
+
+
+# 求指定维度上的均值
+def get_tensor_mean(_x: torch.Tensor, _dim, _keepdim=True):
+    return _x.mean(dim=_dim, keepdim=_keepdim)
 
 
 def main():
