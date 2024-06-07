@@ -2,6 +2,8 @@ import ast
 # noinspection PyUnresolvedReferences
 import atexit
 import inspect
+# noinspection PyUnresolvedReferences
+import itertools
 import json
 import math
 import operator
@@ -12,6 +14,11 @@ import random
 import re
 import time
 import traceback
+# 要将一个字符串转换成对应的 python 类型可以使用 eval() 函数，可是这个函数有必定的安全漏洞，容易被不法人员利用，所以 python 中出了一个安全处理方式 ast.literal_eval()
+# ast.literal_eval 仅能解析 Python 字面量和一些容器类型（如列表、字典、元组、集合等），这意味着它不能计算包含 Python 表达式或函数调用的字符串，例如 literal_eval("4 + 4") 会报错
+# 这是一个设计上的限制，以确保安全性，防止执行潜在危险的代码。
+# noinspection PyUnresolvedReferences
+from ast import literal_eval
 from collections import OrderedDict
 # noinspection PyUnresolvedReferences
 from collections import defaultdict
