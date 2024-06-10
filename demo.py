@@ -1,5 +1,6 @@
 import glob
 
+import networkx as nx
 import torch.cuda
 from torchinfo import summary
 
@@ -1815,6 +1816,28 @@ def check_tensor_mean():
     print(get_tensor_mean(x, (2,)))
 
 
+def check_pagerank():
+    fix_all_seed()
+    graph = nx.DiGraph()
+    graph.add_nodes_from(range(100))
+
+    for _ in range(500):
+        j = random.randint(0, 99)
+        k = random.randint(0, 99)
+        graph.add_edge(j, k)
+
+    nx.draw(graph, with_labels=True)
+    plt.show()
+
+    pr = nx.pagerank(graph, alpha=0.85)
+    # 1.0000000000000002
+    print(sum(pr.values()))
+    # DiGraph with 100 nodes and 491 edges
+    print(graph)
+    # (36, 0.031084189052993122)
+    print(max(pr.items(), key=operator.itemgetter(1)))
+
+
 @func_timer(arg=True)
 def main():
     # check_cpu()
@@ -1843,6 +1866,8 @@ def main():
     # rename_filenames()
 
     # check_tensor_mean()
+
+    # check_pagerank()
 
     pass
 

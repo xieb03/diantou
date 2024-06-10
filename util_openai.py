@@ -92,6 +92,7 @@ OPENAI_TRUE_MODEL_DICT = {"gpt-3.5-turbo": "gpt-3.5-turbo-0125",
                           "gpt-4": "gpt-4-0613",
                           "gpt-4-turbo": "gpt-4-turbo-2024-04-09",
                           "gpt-4-turbo-2024-04-09": "gpt-4-turbo-2024-04-09",
+                          "gpt-4o": "gpt-4o-2024-05-13",
                           }
 
 
@@ -115,8 +116,8 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
 
     # https://platform.openai.com/docs/models
     # turbo 一般指向最新的模型副本
-    if model not in ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-turbo"]:
-        print(F"IMPORTANT 2: {model}")
+    # if model not in OPENAI_TRUE_MODEL_DICT:
+    #     print(F"IMPORTANT 2: {model}")
 
     client = Client.instance(real=real)
 
@@ -197,7 +198,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
 
     # 主要是判断是不是被截断，例如 length
     if finish_reason not in {"tool_calls", "stop"}:
-        print("IMPORTANT 3: finish_reason = {finish_reason}.")
+        print("IMPORTANT 2: finish_reason = {finish_reason}.")
 
     # token_count += len(encoding.encode(content))
 
@@ -215,9 +216,9 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
     # assert_equal(true_model, "gpt-3.5-turbo-0125")
     # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
     if model not in OPENAI_TRUE_MODEL_DICT:
-        print(F"IMPORTANT 4: {model}: {true_model}")
+        print(F"IMPORTANT 3: {model}: {true_model}")
     elif true_model != OPENAI_TRUE_MODEL_DICT[model]:
-        print(F"IMPORTANT 5: {model}: {true_model}")
+        print(F"IMPORTANT 4: {model}: {true_model}")
 
     # assert_equal(true_model, "gpt-35-turbo")
 
@@ -1117,9 +1118,9 @@ def get_chat_moderation_content(prompt, model="text-moderation-latest", print_co
     # encoding = tiktoken.encoding_for_model(model)
 
     if model not in ["text-moderation-latest", "text-moderation-stable"]:
-        print(F"IMPORTANT: {model}")
+        print(F"IMPORTANT 1: {model}")
 
-    # 注意 closeai 没有提供这个接口，需要用 openai
+    # 注意 closeai 没有提供这个接口，需要用 openai，可能需要魔法
     client = Client.instance(real=True)
 
     if print_messages:
@@ -1187,6 +1188,32 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # user_prompt = """
+    #     润色一下下面这句话：
+    #     很看重这次机会，和文勇哥也聊了一下，做的方向还是很匹配的（整个面临的情况和我当时在美团打车时候的场景非常像，我们当时也是要自建地图来代替高德），同时也了解到勇哥和金星哥都是百度的元老级的人物，能在这样的团队中工作，在整个技术广度、深度，业务场景上都有学习、发展的机会。
+    #     像之前也提到了，当时在美团离职的主要原因有两个，一个是业务场景迟迟不能拓展，当时我们大的目标是在打车场景上替换高德，但因为种种原因一直也没能上线，相当于一直在隐形的迭代指标，成就感少了很多，但实际上很多实际的业务问题都还没有触碰到，不知道我们不知道什么，感觉做的非常窄。
+    #     另外也有一个晋升的问题，在中间美团做了一次职级调整，使得大量的人被卡在了 L8，因为在学校读书的时间比较长，所以我的实际工作时间还不够长，但早早就就面临 35 岁危机，也有些焦虑，所以也想能更快的迭代自己各方面的能力，快速的成长。
+    #     跳出舒适圈：见到更多的真实的业务场景，丰富技术广度、深度，在这个基础上，快速做出被认可的成就，获得晋升，从而可以在更大的舞台上继续成长。
+    #     后面选择了滴滴，也是基于上面的这些思考。首先当时自动驾驶这个领域还是一个相对蓝海的，而且滴滴的核心就是有大量的司机实际数据，所以我觉得这是一个非常好的机会，能真正做出一些落地的产品。但后面确实是因为客观的原因，整个这个大项目被砍掉了
+    # """
+    #
+    # user_prompt = """
+    #         "如何让大模型输出一个问题的难度"
+    #     """
+    #
+    # user_prompt = """
+    #             我是一个算法工程师，已经工作了 10 年，面试的时候被问到职业规划是什么，该如何回答。
+    #         """
+    #
+    # user_prompt = """
+    #                 三角形的定义是什么？
+    #             """
+    #
+    # content = get_chat_completion_content(user_prompt=user_prompt, model="gpt-4-turbo",
+    #                                       temperature=0.8, real=False)
+    #
+    # print(content)
 
     # def summarize(user_prompt: str, temperature=0.8, model="gpt-4-turbo") -> List[Tuple[str, str]]:
     #     response = get_chatgpt_completion_content(user_prompt=user_prompt, model=model, temperature=temperature)

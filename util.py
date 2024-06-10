@@ -232,7 +232,7 @@ def print_requirements():
     packages = (
         "torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,langchain-community,tiktoken,"
         "transformers,deepspeed,peft,rouge_chinese,"
-        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy")
+        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,networkx")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -555,7 +555,7 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
-    # Last updated: 2024-05-18 22:11:41中国标准时间
+    # Last updated: 2024-06-10 19:24:43中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
@@ -585,6 +585,7 @@ def main():
     # matplotlib         : 3.8.3
     # seaborn            : 0.13.2
     # scipy              : 1.11.1
+    # networkx           : 3.3
     #
     # conda environment: base
     #
