@@ -1,0 +1,22 @@
+1. scrapy startproject sina，创建名为 sina 的爬虫项目，会自动构造 sina 文件夹，里面是一些必要的文件，文件夹结构如下
+2. ls -lhR sina;
+    sina:
+    total 5.0K
+    -rw-r--r-- 1 admin 197121 262 Jun 11 14:50 scrapy.cfg
+    drwxr-xr-x 1 admin 197121   0 Jun 11 14:50 sina/
+    -rw-r--r-- 1 admin 197121 860 Jun 11 14:59 todo_list.txt
+
+    sina/sina:
+    total 10K
+    -rw-r--r-- 1 admin 197121    0 Jun 11 14:41 __init__.py
+    -rw-r--r-- 1 admin 197121  272 Jun 11 14:50 items.py
+    -rw-r--r-- 1 admin 197121 3.7K Jun 11 14:50 middlewares.py
+    -rw-r--r-- 1 admin 197121  371 Jun 11 14:50 pipelines.py
+    -rw-r--r-- 1 admin 197121 3.3K Jun 11 14:50 settings.py
+    drwxr-xr-x 1 admin 197121    0 Jun 11 14:41 spiders/
+
+    sina/sina/spiders:
+    total 1.0K
+    -rw-r--r-- 1 admin 197121 161 Jun 11 14:41 __init__.py
+
+3.

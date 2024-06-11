@@ -232,7 +232,7 @@ def print_requirements():
     packages = (
         "torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,langchain-community,tiktoken,"
         "transformers,deepspeed,peft,rouge_chinese,"
-        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,networkx")
+        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,networkx,scrapy")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -586,6 +586,7 @@ def main():
     # seaborn            : 0.13.2
     # scipy              : 1.11.1
     # networkx           : 3.3
+    # scrapy             : 2.11.2
     #
     # conda environment: base
     #
