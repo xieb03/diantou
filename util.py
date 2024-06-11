@@ -232,7 +232,8 @@ def print_requirements():
     packages = (
         "torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,langchain-community,tiktoken,"
         "transformers,deepspeed,peft,rouge_chinese,"
-        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,networkx,scrapy")
+        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,networkx,scrapy,"
+        "jupyter_server,jupyterlab,brotlipy,brotli,selenium")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -587,6 +588,11 @@ def main():
     # scipy              : 1.11.1
     # networkx           : 3.3
     # scrapy             : 2.11.2
+    # jupyter_server     : None
+    # jupyterlab         : 4.2.2
+    # brotlipy           : not installed
+    # brotli             : 1.1.0
+    # selenium           : 4.21.0
     #
     # conda environment: base
     #

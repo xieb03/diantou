@@ -15,7 +15,7 @@ NEWSPIDER_MODULE = "sina.spiders"
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = "sina (+http://www.yourdomain.com)"
 
-# Obey robots.txt rules
+# Obey robots.txt rules，如果设置成 False，则不再遵守 robots 协议
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)

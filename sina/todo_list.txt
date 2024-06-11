@@ -19,4 +19,4 @@
     total 1.0K
     -rw-r--r-- 1 admin 197121 161 Jun 11 14:41 __init__.py
 
-3.
+3. cd sina; scrapy genspider sina_spider sina.com.cn，创建一个名为 sina_spider 的爬虫程序。会发现在 sina\sina\spiders 下面出现了一个名为 sina_spider.py 的文件。

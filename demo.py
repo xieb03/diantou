@@ -1838,6 +1838,36 @@ def check_pagerank():
     print(max(pr.items(), key=operator.itemgetter(1)))
 
 
+def check_selenium():
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    import time
+
+    # 打开谷歌浏览器
+    driver = webdriver.Chrome()
+
+    # 输入网址
+    url = "https://www.baidu.com"
+    driver.get(url)
+
+    # 定位搜索框
+    search = driver.find_element(by=By.ID, value="kw")
+    # 输入 查找词selenium
+    search.send_keys("selenium")
+
+    time.sleep(1)
+
+    # 定位到搜索按钮
+    search_button = driver.find_element(by=By.ID, value="su")
+
+    # 调用提交 submit 作用等同于click
+    search_button.submit()
+
+    time.sleep(3)
+    # 退出浏览器
+    driver.quit()
+
+
 @func_timer(arg=True)
 def main():
     # check_cpu()
@@ -1868,6 +1898,8 @@ def main():
     # check_tensor_mean()
 
     # check_pagerank()
+
+    # check_selenium()
 
     pass
 
