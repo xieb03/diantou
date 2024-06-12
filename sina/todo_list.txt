@@ -21,3 +21,4 @@
 
 3. cd sina; scrapy genspider sina_spider sina.com.cn，创建一个名为 sina_spider 的爬虫程序。会发现在 sina\sina\spiders 下面出现了一个名为 sina_spider.py 的文件。
 4. 在 settings.py 文件下加入 pipelines 相关的内容。
+5. 增加 flask 网页端。
