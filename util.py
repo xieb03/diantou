@@ -233,7 +233,7 @@ def print_requirements():
         "torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,langchain-community,tiktoken,"
         "transformers,deepspeed,peft,rouge_chinese,"
         "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,networkx,scrapy,"
-        "jupyter_server,jupyterlab,brotlipy,brotli,selenium,pymongo,jieba,flask,redis")
+        "jupyter_server,jupyterlab,brotlipy,brotli,selenium,pymongo,jieba,flask,redis,pymysql,sqlalchemy")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -596,6 +596,8 @@ def main():
     # pymongo            : 4.7.3
     # flask              : 3.0.3
     # redis              : 5.0.5
+    # pymysql            : 1.1.1
+    # sqlalchemy         : 1.4.39
     #
     # conda environment: base
     #

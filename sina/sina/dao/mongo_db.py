@@ -5,6 +5,7 @@ class MongoDB(object):
     def __init__(self, db):
         mongo_client = self._connect('127.0.0.1', 27017, '', '', db)
         self.db_scrapy = mongo_client['scrapy_data']
+        self.db_recommendation = mongo_client['db_recommendation']
         self.collection_test = self.db_scrapy['test_collections']
 
     def _connect(self, host, port, user, pwd, db):
