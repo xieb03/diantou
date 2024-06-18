@@ -63,7 +63,7 @@ def print_gpu_memory_summary(_digit=2):
 # 获得 dtype 对应的 byte 数
 def get_dtype_byte_count(_dtype):
     # 半精度
-    if _dtype in (torch.float16, torch.half):
+    if _dtype in (torch.float16, torch.half, torch.bfloat16):
         return 2
     # 浮点数
     elif _dtype in (torch.float32, torch.float):

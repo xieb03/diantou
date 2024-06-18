@@ -102,7 +102,9 @@ OPENAI_TRUE_MODEL_DICT = {"gpt-3.5-turbo": "gpt-3.5-turbo-0125",
 # gpt-4: 苏东坡和苏轼其实是同一个人，只是受到尊敬的称呼不同。"苏东坡"是宋朝文人苏轼的字，他不可能参加自己的葬礼。
 # gpt-4-turbo: 苏东坡和苏轼是同一个人，苏轼（1037年—1101年）是北宋时期的文学家、政治家、画家、书法家，别称东坡居士，所以他自身当然无法参加自己的葬礼。在历史上，苏轼因其多才多艺和深刻的文学影响而被后人尊称为“苏东坡”。
 # gpt-4-turbo-2024-04-09: 苏东坡和苏轼是同一个人，他的本名是苏轼，字子瞻，号东坡居士，是北宋时期的文学家、书画家、政治家和思想家。因此，苏东坡不能参加苏轼的葬礼，是因为他们是同一人，一个人自然不能参加自己的葬礼。这个问题实质上是一个语言游戏或者说是一个文字陷阱，通过使用苏轼的不同称呼来制造误解。
-# 历史消息队列
+# gpt-4o: 苏东坡（苏轼）是北宋时期著名的文学家、书法家和画家，他的弟弟苏辙也是一位著名的文学家。你提到的“苏东坡不能参加苏轼的葬礼”可能是一个误解，因为苏东坡和苏轼实际上是同一个人。苏东坡是苏轼的号，所以苏东坡和苏轼是同一个人，不存在苏东坡参加苏轼葬礼的问题。
+# history_message_list：历史消息队列
+# messages：不用 system_prompt 和 user_prompt，而是自己封装消息（list 形式，每个元素是 dict 的形式），注意二者只能选择一种。
 def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0.2,
                                 messages=None, print_token_count=False, print_cost_time=False, print_response=False,
                                 history_message_list: List = None,
@@ -187,6 +189,10 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
 
     choices = response.choices
     choice_count = len(choices)
+    if choice_count < 1:
+        print(F"ERROR 1: choice_count = {choice_count}.")
+        raise ValueError("Generate Answer Error")
+
     # 目前只取第一条
     choice = choices[0]
     message = choice.message
@@ -198,7 +204,7 @@ def get_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt
 
     # 主要是判断是不是被截断，例如 length
     if finish_reason not in {"tool_calls", "stop"}:
-        print("IMPORTANT 2: finish_reason = {finish_reason}.")
+        print(F"IMPORTANT 2: finish_reason = {finish_reason}.")
 
     # token_count += len(encoding.encode(content))
 
@@ -1187,33 +1193,36 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
 
-    # user_prompt = """
-    #     润色一下下面这句话：
-    #     很看重这次机会，和文勇哥也聊了一下，做的方向还是很匹配的（整个面临的情况和我当时在美团打车时候的场景非常像，我们当时也是要自建地图来代替高德），同时也了解到勇哥和金星哥都是百度的元老级的人物，能在这样的团队中工作，在整个技术广度、深度，业务场景上都有学习、发展的机会。
-    #     像之前也提到了，当时在美团离职的主要原因有两个，一个是业务场景迟迟不能拓展，当时我们大的目标是在打车场景上替换高德，但因为种种原因一直也没能上线，相当于一直在隐形的迭代指标，成就感少了很多，但实际上很多实际的业务问题都还没有触碰到，不知道我们不知道什么，感觉做的非常窄。
-    #     另外也有一个晋升的问题，在中间美团做了一次职级调整，使得大量的人被卡在了 L8，因为在学校读书的时间比较长，所以我的实际工作时间还不够长，但早早就就面临 35 岁危机，也有些焦虑，所以也想能更快的迭代自己各方面的能力，快速的成长。
-    #     跳出舒适圈：见到更多的真实的业务场景，丰富技术广度、深度，在这个基础上，快速做出被认可的成就，获得晋升，从而可以在更大的舞台上继续成长。
-    #     后面选择了滴滴，也是基于上面的这些思考。首先当时自动驾驶这个领域还是一个相对蓝海的，而且滴滴的核心就是有大量的司机实际数据，所以我觉得这是一个非常好的机会，能真正做出一些落地的产品。但后面确实是因为客观的原因，整个这个大项目被砍掉了
-    # """
-    #
-    # user_prompt = """
-    #         "如何让大模型输出一个问题的难度"
-    #     """
-    #
-    # user_prompt = """
-    #             我是一个算法工程师，已经工作了 10 年，面试的时候被问到职业规划是什么，该如何回答。
-    #         """
-    #
-    # user_prompt = """
-    #                 三角形的定义是什么？
-    #             """
-    #
-    # content = get_chat_completion_content(user_prompt=user_prompt, model="gpt-4-turbo",
-    #                                       temperature=0.8, real=False)
-    #
-    # print(content)
+    user_prompt = """
+        润色一下下面这句话：
+        很看重这次机会，和文勇哥也聊了一下，做的方向还是很匹配的（整个面临的情况和我当时在美团打车时候的场景非常像，我们当时也是要自建地图来代替高德），同时也了解到勇哥和金星哥都是百度的元老级的人物，能在这样的团队中工作，在整个技术广度、深度，业务场景上都有学习、发展的机会。
+        像之前也提到了，当时在美团离职的主要原因有两个，一个是业务场景迟迟不能拓展，当时我们大的目标是在打车场景上替换高德，但因为种种原因一直也没能上线，相当于一直在隐形的迭代指标，成就感少了很多，但实际上很多实际的业务问题都还没有触碰到，不知道我们不知道什么，感觉做的非常窄。
+        另外也有一个晋升的问题，在中间美团做了一次职级调整，使得大量的人被卡在了 L8，因为在学校读书的时间比较长，所以我的实际工作时间还不够长，但早早就就面临 35 岁危机，也有些焦虑，所以也想能更快的迭代自己各方面的能力，快速的成长。
+        跳出舒适圈：见到更多的真实的业务场景，丰富技术广度、深度，在这个基础上，快速做出被认可的成就，获得晋升，从而可以在更大的舞台上继续成长。
+        后面选择了滴滴，也是基于上面的这些思考。首先当时自动驾驶这个领域还是一个相对蓝海的，而且滴滴的核心就是有大量的司机实际数据，所以我觉得这是一个非常好的机会，能真正做出一些落地的产品。但后面确实是因为客观的原因，整个这个大项目被砍掉了
+    """
+
+    user_prompt = """
+            "如何让大模型输出一个问题的难度"
+        """
+
+    user_prompt = """
+                我是一个算法工程师，已经工作了 10 年，面试的时候被问到职业规划是什么，该如何回答。
+            """
+
+    user_prompt = """
+                    为什么苏东坡不能参加苏轼的葬礼
+                """
+    user_prompt = """
+                    老鼠生病了，可以吃老鼠药治好么？
+                """
+
+    content = get_chat_completion_content(user_prompt=user_prompt, model="gpt-4-turbo",
+                                          temperature=0.2, real=False)
+
+    print(content)
 
     # def summarize(user_prompt: str, temperature=0.8, model="gpt-4-turbo") -> List[Tuple[str, str]]:
     #     response = get_chatgpt_completion_content(user_prompt=user_prompt, model=model, temperature=temperature)

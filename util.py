@@ -54,6 +54,12 @@ CHATGLM3_6B_model_id = "ZhipuAI/chatglm3-6b"
 CHATGLM3_6B_model_revision = "v1.0.0"
 CHATGLM3_6B_model_dir = BIGDATA_MODELS_PATH + "ZhipuAI" + PATH_SEPARATOR + "chatglm3-6b"
 
+# "torch_dtype": "bfloat16"
+# https://modelscope.cn/models/ZhipuAI/glm-4-9b-chat/summary
+GLM4_9B_CHAT_model_id = "ZhipuAI/glm-4-9b-chat"
+GLM4_9B_CHAT_model_revision = "master"
+GLM4_9B_CHAT_model_dir = BIGDATA_MODELS_PATH + "ZhipuAI" + PATH_SEPARATOR + "glm-4-9b-chat"
+
 # "torch_dtype": "float32"
 BGE_LARGE_CN_model_id = "AI-ModelScope/bge-large-zh-v1.5"
 BGE_LARGE_CN_model_revision = "master"
@@ -68,6 +74,12 @@ BGE_LARGE_EN_model_dir = BIGDATA_MODELS_PATH + "AI-ModelScope" + PATH_SEPARATOR 
 BGE_RERANKER_LARGE_model_id = "quietnight/bge-reranker-large"
 BGE_RERANKER_LARGE_revision = "master"
 BGE_RERANKER_LARGE_model_dir = BIGDATA_MODELS_PATH + "quietnight" + PATH_SEPARATOR + "bge-reranker-large"
+
+# "torch_dtype": "bfloat16"
+# https://modelscope.cn/models/qwen/Qwen2-7B-Instruct/summary
+QWEN2_7B_INSTRUCT_model_id = "qwen/Qwen2-7B-Instruct"
+QWEN2_7B_INSTRUCT_model_revision = "master"
+QWEN2_7B_INSTRUCT_model_dir = BIGDATA_MODELS_PATH + "qwen" + PATH_SEPARATOR + "Qwen2-7B-Instruct"
 
 CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
 
@@ -230,10 +242,28 @@ def multiply_split(_sep_list, _str):
 def print_requirements():
     # deepspeed 几乎不能在 windows 下面安装
     packages = (
-        "torch,torchvision,torchaudio,torchdata,torchtext,openai,langchain,langchain_openai,langchain-community,tiktoken,"
-        "transformers,deepspeed,peft,rouge_chinese,"
-        "mpi4py,datasets,jieba,ruamel_yaml,scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,networkx,scrapy,"
-        "jupyter_server,jupyterlab,brotlipy,brotli,selenium,pymongo,jieba,flask,redis,pymysql,sqlalchemy")
+        "pip,"
+        # pytorch
+        "torch,torchvision,torchaudio,torchdata,torchtext,"
+        # openai
+        "openai,tiktoken,"
+        # huggingface
+        "transformers,tokenizers,huggingface-hub,"
+        # modelscope
+        "modelscope,"
+        "deepspeed,peft,rouge_chinese,mpi4py,datasets,jieba,ruamel_yaml,networkx,brotlipy,brotli,"
+        # data science
+        "scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,"
+        # langchain
+        "langchain,langchain-core,langsmith,langchain-community,langchain_openai,"
+        # web
+        "flask,"
+        # jupyter
+        "jupyter_server,jupyterlab,"
+        # spider
+        "scrapy,selenium,"
+        # database
+        "pymongo,redis,pymysql,sqlalchemy,chromadb")
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -556,23 +586,24 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
 
 
 def main():
-    # Last updated: 2024-06-10 19:24:43中国标准时间
+    # Last updated: 2024-06-18 15:20:39中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
     # IPython version      : 8.15.0
     #
+    # pip                : 23.2.1
     # torch              : 2.3.0+cu121
     # torchvision        : 0.18.0+cu121
     # torchaudio         : 2.3.0+cu121
     # torchdata          : 0.7.1
     # torchtext          : 0.18.0
-    # openai             : 1.30.1
-    # langchain          : 0.2.0
-    # langchain_openai   : 0.1.7
-    # langchain-community: not installed
+    # openai             : 1.34.0
     # tiktoken           : 0.7.0
-    # transformers       : 4.39.3
+    # transformers       : 4.41.2
+    # tokenizers         : 0.19.1
+    # huggingface-hub    : not installed
+    # modelscope         : 1.15.0
     # deepspeed          : not installed
     # peft               : 0.7.1
     # rouge_chinese      : 1.0.3
@@ -580,24 +611,30 @@ def main():
     # datasets           : 2.18.0
     # jieba              : 0.42.1
     # ruamel_yaml        : 0.18.6
+    # networkx           : 3.3
+    # brotlipy           : not installed
+    # brotli             : 1.1.0
     # scikit-learn       : 1.4.1.post1
     # numpy              : 1.24.3
     # pandas             : 2.2.1
     # matplotlib         : 3.8.3
     # seaborn            : 0.13.2
     # scipy              : 1.11.1
-    # networkx           : 3.3
-    # scrapy             : 2.11.2
-    # jupyter_server     : None
+    # langchain          : 0.2.5
+    # langchain-core     : not installed
+    # langsmith          : 0.1.79
+    # langchain-community: not installed
+    # langchain_openai   : 0.1.8
+    # flask              : 3.0.3
+    # jupyter_server     : 2.14.1
     # jupyterlab         : 4.2.2
-    # brotlipy           : not installed
-    # brotli             : 1.1.0
+    # scrapy             : 2.11.2
     # selenium           : 4.21.0
     # pymongo            : 4.7.3
-    # flask              : 3.0.3
     # redis              : 5.0.5
     # pymysql            : 1.1.1
     # sqlalchemy         : 1.4.39
+    # chromadb           : 0.5.1
     #
     # conda environment: base
     #
