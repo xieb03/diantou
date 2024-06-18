@@ -1193,36 +1193,23 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
+    main()
 
-    user_prompt = """
-        润色一下下面这句话：
-        很看重这次机会，和文勇哥也聊了一下，做的方向还是很匹配的（整个面临的情况和我当时在美团打车时候的场景非常像，我们当时也是要自建地图来代替高德），同时也了解到勇哥和金星哥都是百度的元老级的人物，能在这样的团队中工作，在整个技术广度、深度，业务场景上都有学习、发展的机会。
-        像之前也提到了，当时在美团离职的主要原因有两个，一个是业务场景迟迟不能拓展，当时我们大的目标是在打车场景上替换高德，但因为种种原因一直也没能上线，相当于一直在隐形的迭代指标，成就感少了很多，但实际上很多实际的业务问题都还没有触碰到，不知道我们不知道什么，感觉做的非常窄。
-        另外也有一个晋升的问题，在中间美团做了一次职级调整，使得大量的人被卡在了 L8，因为在学校读书的时间比较长，所以我的实际工作时间还不够长，但早早就就面临 35 岁危机，也有些焦虑，所以也想能更快的迭代自己各方面的能力，快速的成长。
-        跳出舒适圈：见到更多的真实的业务场景，丰富技术广度、深度，在这个基础上，快速做出被认可的成就，获得晋升，从而可以在更大的舞台上继续成长。
-        后面选择了滴滴，也是基于上面的这些思考。首先当时自动驾驶这个领域还是一个相对蓝海的，而且滴滴的核心就是有大量的司机实际数据，所以我觉得这是一个非常好的机会，能真正做出一些落地的产品。但后面确实是因为客观的原因，整个这个大项目被砍掉了
-    """
-
-    user_prompt = """
-            "如何让大模型输出一个问题的难度"
-        """
-
-    user_prompt = """
-                我是一个算法工程师，已经工作了 10 年，面试的时候被问到职业规划是什么，该如何回答。
-            """
-
-    user_prompt = """
-                    为什么苏东坡不能参加苏轼的葬礼
-                """
-    user_prompt = """
-                    老鼠生病了，可以吃老鼠药治好么？
-                """
-
-    content = get_chat_completion_content(user_prompt=user_prompt, model="gpt-4-turbo",
-                                          temperature=0.2, real=False)
-
-    print(content)
+    # user_prompt = """
+    #         "如何让大模型输出一个问题的难度"
+    #     """
+    #
+    # user_prompt = """
+    #             我是一个算法工程师，已经工作了 10 年，面试的时候被问到职业规划是什么，该如何回答。
+    #         """
+    #
+    # user_prompt = """
+    #                 为什么苏东坡不能参加苏轼的葬礼
+    #             """
+    #
+    # content = get_chat_completion_content(user_prompt=user_prompt, model="gpt-4-turbo",
+    #                                       temperature=0.2, real=False)
+    # print(content)
 
     # def summarize(user_prompt: str, temperature=0.8, model="gpt-4-turbo") -> List[Tuple[str, str]]:
     #     response = get_chatgpt_completion_content(user_prompt=user_prompt, model=model, temperature=temperature)
