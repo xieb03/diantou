@@ -100,6 +100,14 @@ def get_sentence_embedding(_tokenizer: PreTrainedTokenizerFast, _model: PreTrain
     return sentence_embeddings
 
 
+# 不考虑 tokenizer，只是判断 words 是不是在 tokenizer 的 vocab 中
+# 而如果考虑 tokenizer，即使是一个 word，也可能会被分为多个 token，即这个 word 不再 vocab 中，但这多个 token 都在 vocab 中
+# 即严格意义上来说这个方法是不准确的，即没有 word 的 embedding，只有 token 的 embedding
+# 而且 word 和 token 即使是一堆野，也不一定是明文文对应的，例如在 QWEN2_7B_INSTRUCT_model_dir 中，"月"对应的 token 是 æľĪ，id 是 9754
+# 即 input_ids = tokenizer.encode("月") = [9754]，而 对应的 vocab 中 value = 9754 的 key 是 æľĪ
+# tokenizer.convert_ids_to_tokens(tokenizer.encode_plus('月', truncation=True, max_length=5,
+#                                 padding="max_length", return_token_type_ids=True, return_special_tokens_mask=True)['input_ids']) = ['æľĪ', '<|endoftext|>', '<|endoftext|>', '<|endoftext|>', '<|endoftext|>']
+# 注意 tokenizer.encode() 是对一个字符串进行 encoder，即使一个字符串只有一个字，也可能会有多个 tokens.
 def get_word_embeddings(_vocab_or_tokenizer: Union[Dict[str, int], PreTrainedTokenizerFast], _model: PreTrainedModel,
                         _words):
     # 注意不能用 encode，因为形如 "##月" 实际上是在 vocab 中，但会被当做 3 个字来处理
