@@ -1131,6 +1131,7 @@ def get_chat_moderation_content(prompt, model="text-moderation-latest", print_co
 
     if print_messages:
         print("messages:")
+        print(prompt)
         print()
 
     # ModerationCreateResponse(id='modr-9B2CnCp0zFjMIlABME6XTe4Gp36vP', model='text-moderation-007',
@@ -1176,6 +1177,85 @@ def check_openai_moderation():
     print(result.model_dump_json())
 
 
+# 获取一个字符串的 embedding，可以支持同时传入多个，返回一个 np.ndarray，shape = (n * 512)
+def get_chatgpt_str_embedding(prompt, model="text-embedding-3-large", print_cost_time=False,
+                              print_response=False, print_messages=False, real=False):
+    start_time = time.time()
+
+    assert model in ['text-embedding-3-small', 'text-embedding-3-large',
+                     'text-embedding-ada-002'], F"IMPORTANT 1: {model}"
+    if model == "text-embedding-ada-002":
+        embedding_dim = 1536
+    elif model == "text-embedding-3-small":
+        embedding_dim = 1536
+    else:
+        embedding_dim = 3072
+
+    client = Client.instance(real=real)
+
+    if print_messages:
+        print("messages:")
+        print(prompt)
+        print()
+
+    prompt = to_list(prompt)
+    response = client.embeddings.create(
+        input=prompt,
+        model=model,
+    )
+
+    if print_response:
+        print(response)
+    assert_equal(response.model, model)
+    assert_equal(len(response.data), len(prompt))
+
+    embedding_list = [data.embedding for data in response.data]
+
+    embedding_array = np.array(embedding_list, ndmin=2)
+    assert_equal(embedding_array.shape, (len(prompt), embedding_dim))
+
+    end_time = time.time()
+    cost_time = end_time - start_time
+
+    if print_cost_time:
+        print(F"result_count = {len(prompt)}, cost time = {cost_time:.1F}s.")
+        print()
+
+    return embedding_array
+
+
+# 检查 openai 的获取字符串 embedding 的方法，注意每次调用返回的结果不一定完全一样，但是向量长度和内积都很接近 1
+def check_chatgpt_str_embedding():
+    # for _ in range(5):
+    #     result = get_chatgpt_str_embedding("要生成 embedding 的输入文本，字符串形式。")
+    #     print(result)
+
+    embedding_array = get_chatgpt_str_embedding(["要生成 embedding 的输入文本，字符串形式。"] * 5)
+    # [[ 0.01019017 -0.00101959 -0.00220625 ... -0.02183119 -0.0038156
+    #    0.01192661]
+    #  [ 0.00979668 -0.00099283 -0.00210726 ... -0.02182509 -0.00363084
+    #    0.0119254 ]
+    #  [ 0.00991689 -0.0006509  -0.00216181 ... -0.02183546 -0.0036402
+    #    0.01205583]
+    #  [ 0.00991689 -0.0006509  -0.00216181 ... -0.02183546 -0.0036402
+    #    0.01205583]
+    #  [ 0.00979668 -0.00099283 -0.00210726 ... -0.02182509 -0.00363084
+    #    0.0119254 ]]
+    print(embedding_array)
+
+    # 逐个内积，(5, 5)
+    # [[0.99999993 0.99995868 0.99998331 0.99998331 0.99995868]
+    #  [0.99995868 0.9999999  0.99997407 0.99997407 0.9999999 ]
+    #  [0.99998331 0.99997407 0.99999995 0.99999995 0.99997407]
+    #  [0.99998331 0.99997407 0.99999995 0.99999995 0.99997407]
+    #  [0.99995868 0.9999999  0.99997407 0.99997407 0.9999999 ]]
+    print(np.inner(embedding_array, embedding_array))
+
+    # 逐个向量长度，(5,)
+    # [0.99999996 0.99999995 0.99999997 0.99999997 0.99999995]
+    print(np.linalg.norm(embedding_array, ord=2, axis=-1))
+
+
 @func_timer(arg=True)
 def main():
     # check_openai_interfaces()
@@ -1187,7 +1267,8 @@ def main():
     # check_openai_completion()
     # check_chat_now()
 
-    check_openai_moderation()
+    # check_openai_moderation()
+    check_chatgpt_str_embedding()
 
     pass
 
