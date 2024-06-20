@@ -1,4 +1,5 @@
 # 安装 langchain 后要额外安装 pip install pymupdf rapidocr-onnxruntime
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyMuPDFLoader
 # 要额外安装 pip install unstructured
 # Resource punkt not found.
@@ -71,6 +72,20 @@ def check_get_pdf_pages():
           f"查看该文档的内容:\n{pdf_page.page_content}",
           sep="\n------\n")
 
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n", " ", ""],
+        chunk_size=500,
+        chunk_overlap=50
+    )
+    split_text_list = text_splitter.split_text(pdf_page.page_content)
+    # 分割前文档一共有 1312 个文字.
+    # 分割后，一共有 3 段，每段文字分别为 [497, 498, 314]，总文字数是 1309.
+    print(F"分割前文档一共有 {len(pdf_page.page_content)} 个文字.")
+    print(
+        F"分割后，一共有 {len(split_text_list)} 段，每段文字分别为 {[len(text) for text in split_text_list]}，总文字数是 {sum(len(text) for text in split_text_list)}.")
+
+    print_list(split_text_list)
+
 
 def check_get_md_pages():
     md_page = get_md_pages(BIGDATA_MD_PATH + "1. 简介 Introduction.md")
@@ -85,10 +100,12 @@ def check_get_md_pages():
 
 @func_timer(arg=True)
 def main():
+    assert_equal(len("\n"), 1)
+    assert_equal(len("\n\n"), 2)
+    assert_equal(len("  \n \n"), 5)
+
     check_get_pdf_pages()
     check_get_md_pages()
-
-    pass
 
 
 if __name__ == '__main__':
