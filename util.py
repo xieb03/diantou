@@ -41,6 +41,8 @@ from watermark import watermark
 
 PATH_SEPARATOR = os.path.sep
 BIGDATA_PATH = "D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\"
+BIGDATA_PDF_PATH = BIGDATA_PATH + "pdfs" + PATH_SEPARATOR
+BIGDATA_MD_PATH = BIGDATA_PATH + "mds" + PATH_SEPARATOR
 BIGDATA_IMAGE_PATH = BIGDATA_PATH + "images" + PATH_SEPARATOR
 BIGDATA_WHISPER_PATH = BIGDATA_PATH + "whisper" + PATH_SEPARATOR
 BIGDATA_VOICES_PATH = BIGDATA_PATH + "voices" + PATH_SEPARATOR
@@ -248,14 +250,16 @@ def print_requirements():
         # openai
         "openai,tiktoken,"
         # huggingface
-        "transformers,tokenizers,huggingface-hub,"
+        "transformers,tokenizers,huggingface_hub,"
         # modelscope
         "modelscope,"
         "deepspeed,peft,rouge_chinese,mpi4py,datasets,jieba,ruamel_yaml,networkx,brotlipy,brotli,"
         # data science
         "scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,"
-        # langchain
-        "langchain,langchain-core,langsmith,langchain-community,langchain_openai,"
+        # nltk
+        "nltk,"
+        # langchain，注意有的时候 package 中是 -，但是 import 要用 _
+        "langchain,langchain_core,langchain_openai,langchain_community,langsmith,langgraph,pymupdf,rapidocr_onnxruntime,unstructured,"
         # web
         "flask,"
         # jupyter
@@ -274,6 +278,19 @@ def print_requirements():
 # 删除所有空字符串
 def delete_all_blank(_str):
     return re.sub("\\s+", "", _str)
+
+
+delete_all_blanks = delete_all_blank
+
+
+# 删除所有回车，注意包含统一回车为 \n
+def delete_all_break_lines(_str):
+    return re.sub(r'\n+', '', replace_break_line(_str))
+
+
+# 删除所有空格
+def delete_all_spaces(_str):
+    return re.sub(r' +', '', _str)
 
 
 # 将多个空格变为一个
@@ -585,56 +602,103 @@ def tailf(_file_path, _interval_duration=1, _interval_line=0.1, _callback=print,
                 time.sleep(_interval_duration)
 
 
+# 获取一个字符的Unicode编码（即其的\u形式）
+def get_unicode_escape(_char):
+    code_point = ord(_char)
+    return r'\u{:04x}'.format(code_point)
+
+
+# # 而关于中文的正则表达式, 应该是 [\u4E00-\u9FFF], 和论坛里常被人提起的^[\u4E00-\u9FA5]很接近
+# # 需要注意的是论坛里说的 [\u4E00-\u9FA5] 这是专门用于匹配简体中文的正则表达式
+# # _include_traditional 表示是否包含繁体字
+# # 实测不太对，例如 華
+# def check_char_chinese(_char, _include_traditional=True):
+#     if _include_traditional:
+#         return '\u4e00' <= _char <= '\u9fff'
+#     else:
+#         return '\u4e00' <= _char <= '\u9fa5'
+
+
+def check_char_chinese(_char):
+    return '\u4e00' <= _char <= '\u9fff'
+
+
+# 统一换行符为 \n
+# 微软Windows系统：每行结尾有“<回车><换行>”，即“\r\n”
+# Unix/Linux系统: 每行结尾只有“<换行>”，即"\n"
+# 苹果Mac系统： 每行结尾只有“<回车>”，即"\r"
+def replace_break_line(_str):
+    return _str.replace("\r\n", "\n").replace("\r", "\n")
+
+
+# 删除额外的回车，langchain 会在原本两个符号中间插入了 \n
+# 注意这里只匹配一个
+# 。\n“...”\n。 -> 。“...”。
+def delete_one_extra_break_line(_str):
+    pattern = re.compile(r'[^\u4e00-\u9fff](\n)[^\u4e00-\u9fff]', re.DOTALL)
+    return re.sub(pattern, lambda match: match.group(0).replace('\n', ''), _str)
+
+
+# 删除所有汉字间的多余空格，但保留英文字符间的，例如 "how are you", "one bag", "1 bag"
+def delete_all_spaces_between_chinese(_str):
+    pattern = re.compile(r'[\u4e00-\u9fff]( +)[\u4e00-\u9fff]', re.DOTALL)
+    return re.sub(pattern, lambda match: delete_all_spaces(match.group(0)), _str)
+
+
 def main():
-    # Last updated: 2024-06-18 15:20:39中国标准时间
+    # Last updated: 2024-06-20 17:14:10中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
     # IPython version      : 8.15.0
     #
-    # pip                : 23.2.1
-    # torch              : 2.3.0+cu121
-    # torchvision        : 0.18.0+cu121
-    # torchaudio         : 2.3.0+cu121
-    # torchdata          : 0.7.1
-    # torchtext          : 0.18.0
-    # openai             : 1.34.0
-    # tiktoken           : 0.7.0
-    # transformers       : 4.41.2
-    # tokenizers         : 0.19.1
-    # huggingface-hub    : not installed
-    # modelscope         : 1.15.0
-    # deepspeed          : not installed
-    # peft               : 0.7.1
-    # rouge_chinese      : 1.0.3
-    # mpi4py             : 3.1.5
-    # datasets           : 2.18.0
-    # jieba              : 0.42.1
-    # ruamel_yaml        : 0.18.6
-    # networkx           : 3.3
-    # brotlipy           : not installed
-    # brotli             : 1.1.0
-    # scikit-learn       : 1.4.1.post1
-    # numpy              : 1.24.3
-    # pandas             : 2.2.1
-    # matplotlib         : 3.8.3
-    # seaborn            : 0.13.2
-    # scipy              : 1.11.1
-    # langchain          : 0.2.5
-    # langchain-core     : not installed
-    # langsmith          : 0.1.79
-    # langchain-community: not installed
-    # langchain_openai   : 0.1.8
-    # flask              : 3.0.3
-    # jupyter_server     : 2.14.1
-    # jupyterlab         : 4.2.2
-    # scrapy             : 2.11.2
-    # selenium           : 4.21.0
-    # pymongo            : 4.7.3
-    # redis              : 5.0.5
-    # pymysql            : 1.1.1
-    # sqlalchemy         : 1.4.39
-    # chromadb           : 0.5.1
+    # pip                 : 23.2.1
+    # torch               : 2.3.0+cu121
+    # torchvision         : 0.18.0+cu121
+    # torchaudio          : 2.3.0+cu121
+    # torchdata           : 0.7.1
+    # torchtext           : 0.18.0
+    # openai              : 1.34.0
+    # tiktoken            : 0.7.0
+    # transformers        : 4.41.2
+    # tokenizers          : 0.19.1
+    # huggingface_hub     : 0.23.4
+    # modelscope          : 1.15.0
+    # deepspeed           : not installed
+    # peft                : 0.7.1
+    # rouge_chinese       : 1.0.3
+    # mpi4py              : 3.1.5
+    # datasets            : 2.18.0
+    # jieba               : 0.42.1
+    # ruamel_yaml         : 0.18.6
+    # networkx            : 3.3
+    # brotlipy            : not installed
+    # brotli              : 1.1.0
+    # scikit-learn        : 1.4.1.post1
+    # numpy               : 1.24.3
+    # pandas              : 2.2.1
+    # matplotlib          : 3.8.3
+    # seaborn             : 0.13.2
+    # scipy               : 1.11.1
+    # langchain           : 0.2.5
+    # langchain_core      : 0.2.9
+    # langchain_openai    : 0.1.8
+    # langchain_community : 0.2.5
+    # langsmith           : 0.1.81
+    # langgraph           : 0.0.69
+    # pymupdf             : 1.24.5
+    # rapidocr_onnxruntime: 1.3.22
+    # unstructured        : 0.14.6
+    # flask               : 3.0.3
+    # jupyter_server      : 2.14.1
+    # jupyterlab          : 4.2.2
+    # scrapy              : 2.11.2
+    # selenium            : 4.21.0
+    # pymongo             : 4.7.3
+    # redis               : 5.0.5
+    # pymysql             : 1.1.1
+    # sqlalchemy          : 1.4.39
+    # chromadb            : 0.5.1
     #
     # conda environment: base
     #
@@ -675,6 +739,24 @@ def main():
     python_code = "blue_car_position = [current_position[0] + 10, current_position[1], current_position[2]"
     assert not check_python_code_syntax_error(python_code)
 
+    # 注意要用 r'\u4f60' 而不是 '\u4f60'，后者不是字符串，而是字符
+    assert_equal(get_unicode_escape("华"), r'\u534e')
+    assert_equal(get_unicode_escape("華"), r'\u83ef')
+    # 注意汉语的标点符号不在汉字体系内
+    assert_equal(get_unicode_escape("。"), r'\u3002')
+    assert_equal(get_unicode_escape("."), r'\u002e')
+
+    assert check_char_chinese("华")
+    assert check_char_chinese("華")
+    assert not check_char_chinese("。")
+    assert not check_char_chinese("，")
+    assert not check_char_chinese(".")
+
+    assert_equal(delete_one_extra_break_line("。\n“...”\n。"), "。“...”。")
+    assert_equal(delete_all_spaces_between_chinese("你好， 世  界！a b   c"), "你好， 世界！a b   c")
+    assert_equal(replace_break_line("\r\n\r\n\r"), "\n\n\n")
+
 
 if __name__ == '__main__':
     main()
+
