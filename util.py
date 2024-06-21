@@ -218,6 +218,22 @@ get_round_2 = partial(get_round_value, _digit=2)
 get_round_1 = partial(get_round_value, _digit=1)
 
 
+# 返回字符串列表的所有字符数
+def get_str_list_length(_str_list: List[str]) -> int:
+    return sum(len(text) for text in _str_list)
+
+
+# 返回 document 列表的每一个的字符数
+def get_str_list_each_length(_str_list: List[str]) -> List[int]:
+    return [len(text) for text in _str_list]
+
+
+# 返回一个函数，其作用是获得一个对象的某个属性，注意是属性而不是方法
+# 如果不包含这个属性，会抛异常：AttributeError: '...' object has no attribute '...'.
+def function_get_attr(_attr):
+    return lambda x: getattr(x, _attr)
+
+
 # 获得一个函数的源代码
 def get_function_source(_func):
     return inspect.getsource(_func)
@@ -759,4 +775,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

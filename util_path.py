@@ -3,6 +3,19 @@ import os.path
 from util_date import *
 
 
+# 列出所有目录下对应的文件的绝对路径，但不包括文件夹
+def list_all_file_list(_folder_path_list: Union[str, List[str]]):
+    file_path_list = list()
+    for folder_path in to_list(_folder_path_list):
+        # 注意 dirs 与 files 是并列的，即 root 下面包含 dirs（文件夹）和 files（文件）
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                file_path_list.append(file_path)
+
+    return file_path_list
+
+
 # 一个路径是否存在，同时支持文件或者文件夹
 def is_file_or_dir_exist(_file_path):
     return os.path.exists(_file_path)
