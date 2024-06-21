@@ -6,6 +6,7 @@ from langchain_community.document_loaders import PyMuPDFLoader
 # Resource punkt not found.
 # Please use the NLTK Downloader to obtain the resource: nltk.download('punkt')，需要魔术方法，下载到 C:\Users\admin\AppData\Roaming\nltk_data 中
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
+from langchain_community.vectorstores import Chroma
 from langchain_core.documents.base import Document
 from transformers import AutoModel, AutoTokenizer
 
@@ -60,6 +61,25 @@ class LangchainEmbeddings(Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return [self.embed_query(text) for text in texts]
+
+    # 获得两两相似度
+    def check_similarities(self, text: str, other_texts: Union[str, List[str]], method="ip"):
+
+        assert method in ["cosine", "l2", "ip"]
+        embedding = np.array(self.embed_query(text))
+        other_embedding_list = self.embed_documents(to_list(other_texts))
+        other_embedding_list = np.array(other_embedding_list, ndmin=2)
+
+        if method == "ip":
+            return np.inner(embedding, other_embedding_list)
+        elif method == "l2":
+            return np.linalg.norm(embedding - other_embedding_list, axis=1)
+        elif method == "cosine":
+            return np.inner(embedding, other_embedding_list) / (
+                    np.linalg.norm(embedding, ord=2, axis=-1) *
+                    np.linalg.norm(other_embedding_list, ord=2, axis=-1))
+        else:
+            raise ValueError(F"not support {method}")
 
 
 # 清洗 pdf 的 document，注意是原位修改
@@ -327,6 +347,123 @@ def check_get_file_document_list_all_in_one():
         F"分割后，一共有 {len(split_document_list)} 段，每段文字分别为 {get_document_list_each_length(split_document_list)}，总文字数是 {get_document_list_length(split_document_list)}.")
 
 
+def check_langchain_chroma():
+    # 获取当前函数名
+    collection_name = inspect.currentframe().f_code.co_name
+
+    document_list = get_file_document_list_all_in_one([BIGDATA_MD_PATH, BIGDATA_PDF_PATH])
+
+    # 切分文档
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n", " ", ""],
+        chunk_size=500, chunk_overlap=50, add_start_index=True)
+
+    # List[Document]
+    split_document_list = text_splitter.split_documents(document_list)
+    # 分割前，一共有 10 段，每段文字分别为 [1782, 13385, 11190, 8920, 9816, 14607, 6176, 9428, 441, 281944]，总文字数是 357689.
+    # 分割后，一共有 815 段，每段文字分别为 [322, 416, 300, 349, 391, 449, 498, 465, 478, 491, 467, 420, 491, 486, 487, 440, 480, 392, 487, 463, 449, 459, 487, 470, 480, 490, 451, 491, 493, 496, 460, 480, 485, 476, 480, 409, 477, 496, 481, 466, 491, 439, 356, 495, 414, 479, 490, 474, 498, 495, 494, 473, 474, 471, 141, 209, 383, 421, 267, 451, 356, 411, 415, 497, 491, 373, 386, 481, 463, 456, 495, 491, 452, 495, 495, 466, 458, 444, 470, 493, 491, 497, 496, 495, 416, 493, 497, 487, 493, 419, 487, 471, 482, 494, 490, 497, 497, 468, 464, 477, 495, 481, 433, 193, 405, 496, 347, 404, 445, 477, 484, 482, 464, 495, 466, 483, 490, 495, 493, 486, 461, 453, 491, 497, 487, 488, 441, 493, 393, 447, 460, 411, 406, 480, 400, 350, 489, 459, 490, 490, 433, 494, 479, 499, 445, 494, 491, 454, 488, 498, 167, 423, 464, 462, 460, 487, 493, 475, 496, 434, 493, 496, 488, 428, 472, 462, 468, 452, 440, 490, 497, 426, 441, 470, 497, 492, 450, 479, 481, 471, 492, 491, 463, 478, 421, 476, 467, 494, 475, 480, 476, 481, 474, 468, 472, 471, 461, 476, 474, 466, 467, 489, 464, 464, 464, 488, 498, 464, 478, 466, 491, 480, 456, 476, 476, 480, 429, 484, 474, 490, 480, 389, 454, 227, 478, 481, 385, 499, 186, 56, 498, 160, 378, 498, 212, 229, 476, 284, 499, 499, 235, 398, 420, 387, 498, 498, 498, 498, 105, 498, 493, 498, 67, 373, 422, 474, 381, 498, 493, 350, 499, 84, 499, 74, 295, 498, 134, 499, 181, 485, 382, 499, 81, 495, 415, 364, 348, 322, 289, 499, 497, 241, 493, 494, 487, 462, 470, 495, 490, 457, 463, 476, 462, 475, 489, 487, 474, 494, 466, 464, 479, 482, 491, 466, 466, 477, 475, 478, 473, 485, 490, 461, 492, 498, 498, 490, 497, 473, 479, 474, 437, 456, 457, 476, 472, 488, 489, 499, 445, 473, 453, 494, 490, 477, 469, 469, 470, 496, 461, 497, 499, 490, 485, 495, 467, 476, 478, 497, 475, 475, 469, 477, 482, 496, 473, 492, 408, 478, 489, 468, 486, 499, 475, 482, 492, 448, 476, 478, 469, 481, 451, 486, 491, 496, 433, 452, 473, 456, 496, 478, 498, 490, 478, 475, 484, 474, 486, 497, 492, 382, 464, 498, 330, 279, 456, 464, 429, 493, 468, 499, 499, 484, 471, 499, 498, 441, 420, 482, 468, 459, 470, 484, 498, 452, 489, 493, 495, 493, 341, 444, 492, 468, 455, 499, 477, 477, 357, 498, 492, 462, 498, 485, 491, 476, 480, 486, 495, 413, 494, 499, 490, 461, 451, 491, 454, 484, 482, 492, 430, 499, 498, 497, 496, 489, 483, 497, 496, 499, 478, 434, 452, 461, 470, 499, 488, 490, 481, 441, 492, 450, 474, 452, 499, 479, 493, 499, 491, 477, 466, 479, 496, 495, 496, 485, 433, 499, 445, 461, 463, 471, 451, 474, 485, 472, 468, 440, 485, 498, 498, 492, 469, 485, 431, 447, 460, 498, 483, 459, 470, 498, 479, 459, 473, 472, 486, 449, 491, 456, 489, 447, 481, 453, 466, 448, 460, 441, 471, 444, 471, 480, 454, 460, 455, 492, 471, 496, 490, 492, 475, 483, 492, 490, 472, 489, 493, 468, 493, 472, 479, 480, 497, 480, 461, 413, 496, 496, 497, 376, 494, 275, 469, 487, 456, 456, 463, 434, 486, 495, 493, 496, 438, 442, 440, 450, 490, 498, 446, 472, 492, 495, 484, 480, 457, 479, 497, 471, 467, 497, 470, 496, 495, 496, 495, 491, 497, 481, 475, 490, 469, 462, 475, 356, 472, 493, 490, 489, 451, 461, 470, 480, 433, 452, 496, 376, 488, 458, 497, 493, 474, 476, 464, 381, 471, 436, 492, 456, 489, 492, 471, 464, 488, 473, 481, 464, 499, 493, 490, 499, 443, 464, 422, 499, 496, 480, 459, 467, 452, 494, 497, 450, 484, 490, 466, 475, 487, 486, 481, 479, 488, 412, 406, 499, 472, 496, 499, 466, 449, 448, 481, 484, 495, 241, 492, 462, 459, 480, 458, 498, 497, 441, 473, 493, 396, 483, 490, 481, 434, 473, 414, 471, 464, 492, 458, 307, 481, 495, 478, 462, 485, 495, 497, 477, 486, 486, 459, 447, 411, 477, 465, 499, 488, 497, 492, 458, 492, 472, 451, 482, 488, 449, 487, 495, 468, 487, 345, 499, 194, 463, 436, 473, 469, 495, 490, 489, 466, 494, 486, 484, 495, 495, 488, 478, 489, 476, 496, 470, 469, 465, 465, 469, 468, 499, 486, 458, 499, 475, 492, 494, 468, 471, 424, 467, 427, 496, 468, 469, 443, 446, 487, 488, 478, 475, 450, 486, 487, 496, 491, 469, 456, 475, 429, 496, 486, 483, 442, 450, 483, 497, 456, 493, 468, 478, 465, 491, 497, 432, 491, 499, 449, 481, 438, 465, 460, 453, 481, 464, 466, 476, 473, 496, 484, 453, 493, 443, 458]，总文字数是 375316.
+    print(
+        F"分割前，一共有 {len(document_list)} 段，每段文字分别为 {get_document_list_each_length(document_list)}，总文字数是 {get_document_list_length(document_list)}.")
+    print(
+        F"分割后，一共有 {len(split_document_list)} 段，每段文字分别为 {get_document_list_each_length(split_document_list)}，总文字数是 {get_document_list_length(split_document_list)}.")
+
+    langchain_embeddings = LangchainEmbeddings(embedding_model_path=BGE_LARGE_CN_model_dir)
+
+    # 内部调用 get_or_create_collection，因此不存在会新建，否则沿用
+    chroma_db = Chroma(embedding_function=langchain_embeddings,
+                       persist_directory=CHROMADB_PATH,
+                       collection_name=collection_name,
+                       # 指定相似度用内积，支持 cosine, l2, ip
+                       collection_metadata={"hnsw:space": "ip"})
+    assert_equal(len(chroma_db), 0)
+
+    try:
+        chroma_db.add_documents(documents=split_document_list[:10])
+        # Since Chroma 0.4.x the manual persistence method is no longer supported as docs are automatically persisted.
+        # chroma_db.persist()
+
+        assert_equal(len(chroma_db), 10)
+
+        query = "什么是大语言模型"
+        k = 3
+
+        # where: A Where type dict used to filter results by. E.g. `{"$and": [{"color" : "red"}, {"price": {"$gte": 4.20}}]}`. Optional.
+        # 从 metadata 里面筛选
+        where = None
+        # where_document: A WhereDocument type dict used to filter by the documents. E.g. `{$contains: {"text": "hello"}}`. Optional.
+        # 从 document 中筛选
+        where_document = None
+
+        # 调用的是 similarity_search_with_score，只不过将 score 去掉了
+        # chroma_db.similarity_search(query, k, where_document=where_document)
+
+        # Run similarity search with Chroma with distance，注意返回是距离而不是相似度
+        sim_document_list = chroma_db.similarity_search_with_score(query, k, filter=where,
+                                                                   where_document=where_document)
+        answer_list = [query]
+        # 检索到的第0个内容 0.628823: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\1. 简介 Introduction.md', 'start_index': 323}, 网络上有许多关于提示词（Prompt， 本教程中将保留该术语）设计的材料，例如《30 prompts
+        # 检索到的第1个内容 0.517759: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\1. 简介 Introduction.md', 'start_index': 1041}, 与基础语言模型不同，指令微调 LLM 通过专门的训练，可以更好地理解并遵循指令。举个例子，当询问“法
+        # 检索到的第2个内容 0.510242: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\2. 提示原则 Guidelines.md', 'start_index': 433}, 一、原则一 编写清晰、具体的指令
+        # 亲爱的读者，在与语言模型交互时，您需要牢记一点:以清晰、具体的方式
+        for i, (sim_doc, distance) in enumerate(sim_document_list):
+            answer_list.append(sim_doc.page_content)
+            print(f"检索到的第{i}个内容 {1 - distance:.6f}: {sim_doc.metadata}, {sim_doc.page_content[:50]}")
+
+        # [0.99999995 0.62882254 0.51775886 0.51024218]
+        print(langchain_embeddings.check_similarities(query, answer_list))
+        # [1.         0.62882253 0.51775886 0.5102422 ]
+        print(langchain_embeddings.check_similarities(query, answer_list, method="cosine"))
+
+        # 将 score 的范围限定在 0.0 ~ 1.0 之间，但并不一定是准确的，例如用内积的时候，distance 转相关性用的是如下的公式，对于负数的处理感觉不太准确，因为官网给的 d = 1 - ip
+        # https://docs.trychroma.com/guides
+        #     def _max_inner_product_relevance_score_fn(distance: float) -> float:
+        #         """Normalize the distance to a score on a scale [0, 1]."""
+        #         if distance > 0:
+        #             return 1.0 - distance
+        #
+        #         return -1.0 * distance
+        sim_document_list = chroma_db.similarity_search_with_relevance_scores(query, k, filter=where,
+                                                                              where_document=where_document)
+        for i, (sim_doc, similarity) in enumerate(sim_document_list):
+            print(f"检索到的第{i}个内容 {similarity:.6f}: {sim_doc.metadata}, {sim_doc.page_content[:50]}")
+
+        # 利用 where_document 限制 metadata
+        sim_document_list = chroma_db.similarity_search_with_score(query, k, filter=None,
+                                                                   # 要求 document 中必须含有如下子串
+                                                                   where_document={"$contains": "例子"})
+        # 检索到的第0个内容 0.517759: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\1. 简介 Introduction.md', 'start_index': 1041}, 与基础语言模型不同，指令微调 LLM 通过专门的训练，可以更好地理解并遵循指令。举个例子，当询问“法
+        # 检索到的第1个内容 0.339630: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\2. 提示原则 Guidelines.md', 'start_index': 885}, 在编写 Prompt 时，我们可以使用各种标点符号作为“分隔符”，将不同的文本部分区分开来。
+        for i, (sim_doc, distance) in enumerate(sim_document_list):
+            print(f"检索到的第{i}个内容 {1 - distance:.6f}: {sim_doc.metadata}, {sim_doc.page_content[:50]}")
+
+        # 利用 filter 限制 metadata
+        # noinspection PyTypeChecker
+        sim_document_list = chroma_db.similarity_search_with_score(query, k,
+                                                                   filter={"$and": [{"start_index": {"$lte": 2000}},
+                                                                                    {"start_index": {"$gte": 1000}}]},
+                                                                   # 要求 document 中必须含有如下子串
+                                                                   where_document={"$contains": "例子"})
+        # 检索到的第0个内容 0.517759: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\1. 简介 Introduction.md', 'start_index': 1041}, 与基础语言模型不同，指令微调 LLM 通过专门的训练，可以更好地理解并遵循指令。举个例子，当询问“法
+        for i, (sim_doc, distance) in enumerate(sim_document_list):
+            print(f"检索到的第{i}个内容 {1 - distance:.6f}: {sim_doc.metadata}, {sim_doc.page_content[:50]}")
+
+        # 用于根据向量搜索相似的文本，并把结果根据 mmr（max marginal relevance）重新排序，同时考虑相关性和多样性
+        # 需要指定预先 fetch 的数量，和 lambda 参数
+        sim_document_list = chroma_db.max_marginal_relevance_search(query, k, fetch_k=10, lambda_mult=0.5, filter=where,
+                                                                    where_document=where_document)
+        # 检索到的第0个内容 0.628823: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\1. 简介 Introduction.md', 'start_index': 323}, 网络上有许多关于提示词（Prompt， 本教程中将保留该术语）设计的材料，例如《30 prompts
+        # 检索到的第1个内容 0.517759: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\1. 简介 Introduction.md', 'start_index': 1041}, 与基础语言模型不同，指令微调 LLM 通过专门的训练，可以更好地理解并遵循指令。举个例子，当询问“法
+        # 检索到的第2个内容 0.357993: {'source': 'D:\\PycharmProjects\\xiebo\\diantou\\bigdata\\mds\\2. 提示原则 Guidelines.md', 'start_index': 1758}, prompt = f"""
+        # 请生成包括书名、作者和类别的三本虚构的、非真实存在的中文书籍清单，\
+        # 并
+        for i, sim_doc in enumerate(sim_document_list):
+            distance = 1 - langchain_embeddings.check_similarities(query, sim_doc.page_content)
+            print(f"检索到的第{i}个内容 {1 - distance[0]:.6f}: {sim_doc.metadata}, {sim_doc.page_content[:50]}")
+    finally:
+        # 完整删除 collection，不光是 length = 0，而是完全不存在
+        chroma_db.delete_collection()
+
+
 @func_timer(arg=True)
 def main():
     assert_equal(len("\n"), 1)
@@ -341,6 +478,8 @@ def main():
     # check_get_file_document_list_all_in_one()
     #
     # check_langchain_embeddings()
+
+    # check_langchain_chroma()
 
 
 if __name__ == '__main__':
