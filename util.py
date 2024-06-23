@@ -283,9 +283,10 @@ def print_requirements():
         # jupyter
         "jupyter_server,jupyterlab,"
         # spider
-        "scrapy,selenium,"
+        "scrapy,selenium,urllib3,requests,"
         # database
-        "pymongo,redis,pymysql,sqlalchemy,chromadb")
+        "pymongo,redis,pymysql,sqlalchemy,chromadb"
+    )
     print(
         watermark(updated=True, current_date=True, current_time=True, timezone=True, python=True, conda=True,
                   hostname=True,
@@ -664,7 +665,7 @@ def delete_all_spaces_between_chinese(_str):
 
 
 def main():
-    # Last updated: 2024-06-20 17:14:10中国标准时间
+    # Last updated: 2024-06-23 13:13:01中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
@@ -698,6 +699,7 @@ def main():
     # matplotlib          : 3.8.3
     # seaborn             : 0.13.2
     # scipy               : 1.11.1
+    # nltk                : 3.8.1
     # langchain           : 0.2.5
     # langchain_core      : 0.2.9
     # langchain_openai    : 0.1.8
@@ -712,6 +714,8 @@ def main():
     # jupyterlab          : 4.2.2
     # scrapy              : 2.11.2
     # selenium            : 4.21.0
+    # urllib3             : 2.2.2
+    # requests            : 2.31.0
     # pymongo             : 4.7.3
     # redis               : 5.0.5
     # pymysql             : 1.1.1

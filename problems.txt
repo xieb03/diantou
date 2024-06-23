@@ -31,3 +31,6 @@ SwitchHosts
     https://blog.csdn.net/qq_44376306/article/details/135046168
 
 先安装 360、360杀毒、鲁大师（跑分），在安装其它的。如果可以的话，可以提前设置 360 杀毒的白名单，为后面转 Jetbrains、anaconda 等打下基础
+
+ImportError: cannot import name 'DEFAULT_CIPHERS' from 'urllib3.util.ssl_' (D:\Users\admin\anaconda3\Lib\site-packages\urllib3\util\ssl_.py)
+    在 D:\Users\admin\anaconda3\Lib\site-packages\urllib3\util\ssl_.py 文件中增加 DEFAULT_CIPHERS = 'ALL:@SECLEVEL=1'
