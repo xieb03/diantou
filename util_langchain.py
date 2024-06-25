@@ -8,10 +8,155 @@ from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents.base import Document
+from langchain_openai import ChatOpenAI
 from transformers import AutoModel, AutoTokenizer
 
+from util_openai import *
 from util_path import *
 from util_torch import *
+
+
+# 利用 langchain 自带的 openAI 进行聊天
+def get_langchain_openai_chat_completion_content(user_prompt=None, system_prompt=None, model="gpt-3.5-turbo",
+                                                 temperature=0.2,
+                                                 messages=None, print_token_count=False, print_cost_time=False,
+                                                 print_response=False,
+                                                 history_message_list: List = None,
+                                                 using_history_message_list=True, tools=None, print_messages=False,
+                                                 strip=False,
+                                                 max_tokens=None, real=False, timeout=None, max_retries=2,
+                                                 llm: ChatOpenAI = None, reset_llm=False):
+    if real:
+        print(F"IMPORTANT 1: real OpenAI")
+        openai_base_url, openai_api_key = get_openai_parameter()
+    else:
+        openai_base_url, openai_api_key = get_closeai_parameter()
+
+    start_time = time.time()
+
+    if user_prompt is not None or system_prompt is not None:
+        assert messages is None, "user_prompt 和 system_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者不为空，但是后者也不为空."
+    else:
+        assert messages is not None, "user_prompt 和 system_prompt 为一组，messages 为另外一组，这两组有且只能有一组不为空，目前前者为空，后者也为空."
+
+    total_messages = list()
+    using_history = using_history_message_list and history_message_list is not None and len(history_message_list) != 0
+
+    # 如果明确要求用历史对话，而且传入了历史对话，那么历史对话也要也要进入 prompt
+    # 因为 closeAI 是负载均衡的，每次会随机请求不同的服务器，因此是不具备 openAI 自动保存一段历史对话的能力的，需要自己用历史对话来恢复
+    # 注意如果同时有 messages 和 history_message_list，那么 history_message_list 会在前
+    if using_history:
+        total_messages = history_message_list
+
+    if messages is None:
+        if system_prompt is not None:
+            for prompt in to_list(system_prompt):
+                total_messages.append(dict(role="system", content=prompt))
+                # token_count += len(encoding.encode(prompt))
+        if user_prompt is not None:
+            for prompt in to_list(user_prompt):
+                total_messages.append(dict(role="user", content=prompt))
+                # token_count += len(encoding.encode(prompt))
+    else:
+        total_messages.extend(messages)
+
+    # 如果不要求用历史对话，那么需要将本轮的对话也记录到历史对话中
+    # 否则上面已经自动记录其中
+    if not using_history and history_message_list is not None:
+        history_message_list.extend(total_messages)
+
+    if print_messages:
+        print("messages:")
+        print_history_message_list(total_messages)
+        print()
+
+    if llm is None:
+        llm = ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            max_retries=max_retries,
+            api_key=openai_api_key,
+            base_url=openai_base_url,
+        )
+
+    else:
+        # 传入了 llm，但仍然用参数重置，一般用不到
+        if reset_llm:
+            if model is not None:
+                llm.model_name = model
+            if temperature is not None:
+                llm.temperature = temperature
+            if max_retries is not None:
+                llm.max_retries = max_retries
+            if max_tokens is not None:
+                llm.max_tokens = max_tokens
+            if timeout is not None:
+                llm.request_timeout = timeout
+
+    # content='你好，我是一个智能助手，专门为您提供各种服务和帮助。我可以回答您的问题、提供信息、帮助您解决问题等等。如果您有任何需要，请随时告诉我，
+    # 我会尽力帮助您的。感谢您使用我的服务！如果您有任何问题，欢迎随时问我。'
+    # response_metadata={'token_usage': {'completion_tokens': 106, 'prompt_tokens': 20, 'total_tokens': 126},
+    # 'model_name': 'gpt-3.5-turbo', 'system_fingerprint': None, 'finish_reason': 'stop', 'logprobs': None}
+    # id='run-600f3f8b-8cb5-4615-9033-913321eb48a4-0'
+    # usage_metadata={'input_tokens': 20, 'output_tokens': 106, 'total_tokens': 126}
+    message = llm.invoke(total_messages)
+    if print_response:
+        print(message)
+
+    content = message.content
+    if strip:
+        content = content.strip()
+
+    response_metadata = message.response_metadata
+    finish_reason = response_metadata["finish_reason"]
+    # 主要是判断是不是被截断，例如 length
+    if finish_reason not in {"tool_calls", "stop"}:
+        print(F"IMPORTANT 2: finish_reason = {finish_reason}.")
+
+    prompt_token_count = response_metadata["token_usage"]["prompt_tokens"]
+    completion_token_count = response_metadata["token_usage"]["completion_tokens"]
+    total_token_count = prompt_token_count + completion_token_count
+    assert_equal(total_token_count, response_metadata["token_usage"]["total_tokens"])
+    if print_token_count:
+        print(F"prompt_token_count = {prompt_token_count}, completion_token_count = {completion_token_count}, "
+              F"total_token_count = {total_token_count}.")
+
+    # noinspection PyUnresolvedReferences
+    true_model = response_metadata["model_name"]
+
+    # 上面的 turbo 对应的真实版本
+    # from 20240204，gpt-3.5-turbo-0613
+    # assert_equal(true_model, "gpt-3.5-turbo-0613")
+    # from 20240225，gpt-3.5-turbo-0125
+    # assert_equal(true_model, "gpt-3.5-turbo-0125")
+    # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
+    if model not in OPENAI_TRUE_MODEL_DICT:
+        print(F"IMPORTANT 3: {model}: {true_model}")
+    # 注意，与 openAI 的返回不一样
+    # elif true_model != OPENAI_TRUE_MODEL_DICT[model]:
+    elif true_model != model:
+        print(F"IMPORTANT 4: {model}: {true_model}")
+
+    # 无论如何，都保存到历史对话中
+    # if not using_history and history_message_list is not None:
+    if history_message_list is not None:
+        history_message_list.append({"role": "assistant", "content": content})
+        # history_message_list.append(message.to_dict())
+
+    end_time = time.time()
+    cost_time = end_time - start_time
+
+    if print_cost_time:
+        print(F"choice_count = 1, cost time = {cost_time:.1F}s, finish_reason = {finish_reason}.")
+        print()
+
+    # 如果有 tools 参数，那么单独回传 content 已经不够了，需要传回 message
+    if tools is not None:
+        return message
+    else:
+        return content
 
 
 # 返回 document 列表的所有字符数
@@ -464,6 +609,19 @@ def check_langchain_chroma():
         chroma_db.delete_collection()
 
 
+def check_get_langchain_openai_chat_completion_content():
+    system_prompt = "你是一个小学一年级的老师。"
+    user_prompt = "请你自我介绍一下自己！"
+
+    # 大家好，我是你们的一年级老师，我在教育领域工作多年，特别喜欢和小朋友们一起学习新事物。我的教学风格温和而富有耐心，我相信每个孩子都有自己独特的学习方式，
+    # 我会尽力帮助你们找到最适合自己的学习方法。在课堂上，我们不仅会学习语文、数学等基础知诀，还会有很多有趣的活动来帮助你们更好地理解和运用所学知识。
+    # 希望我们能一起度过一个充满乐趣和学习的美好时光！
+    content = get_langchain_openai_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt,
+                                                           model="gpt-4-turbo",
+                                                           temperature=0.2, real=False)
+    print(content)
+
+
 @func_timer(arg=True)
 def main():
     assert_equal(len("\n"), 1)
@@ -480,6 +638,8 @@ def main():
     # check_langchain_embeddings()
 
     # check_langchain_chroma()
+
+    # check_get_langchain_openai_chat_completion_content()
 
 
 if __name__ == '__main__':
