@@ -1,4 +1,5 @@
 from langchain.embeddings.base import Embeddings
+from langchain.prompts.chat import ChatPromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 # 安装 langchain 后要额外安装 pip install pymupdf rapidocr-onnxruntime
 from langchain_community.document_loaders import PyMuPDFLoader
@@ -8,12 +9,50 @@ from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents.base import Document
+from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 from transformers import AutoModel, AutoTokenizer
 
 from util_openai import *
 from util_path import *
 from util_torch import *
+
+
+# 获取 langchain 自带的 openAI
+def get_langchain_openai_llm(real=False, model="gpt-3.5-turbo", temperature=0.2, max_tokens=None,
+                             timeout=None, max_retries=2, llm: ChatOpenAI = None, reset_llm=False):
+    if llm is None:
+        if real:
+            print(F"IMPORTANT 1: real OpenAI")
+            openai_base_url, openai_api_key = get_openai_parameter()
+        else:
+            openai_base_url, openai_api_key = get_closeai_parameter()
+
+        llm = ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            max_retries=max_retries,
+            api_key=openai_api_key,
+            base_url=openai_base_url,
+        )
+
+    else:
+        # 传入了 llm，但仍然用参数重置，一般用不到
+        if reset_llm:
+            if model is not None:
+                llm.model_name = model
+            if temperature is not None:
+                llm.temperature = temperature
+            if max_retries is not None:
+                llm.max_retries = max_retries
+            if max_tokens is not None:
+                llm.max_tokens = max_tokens
+            if timeout is not None:
+                llm.request_timeout = timeout
+
+    return llm
 
 
 # 利用 langchain 自带的 openAI 进行聊天
@@ -26,12 +65,6 @@ def get_langchain_openai_chat_completion_content(user_prompt=None, system_prompt
                                                  strip=False,
                                                  max_tokens=None, real=False, timeout=None, max_retries=2,
                                                  llm: ChatOpenAI = None, reset_llm=False):
-    if real:
-        print(F"IMPORTANT 1: real OpenAI")
-        openai_base_url, openai_api_key = get_openai_parameter()
-    else:
-        openai_base_url, openai_api_key = get_closeai_parameter()
-
     start_time = time.time()
 
     if user_prompt is not None or system_prompt is not None:
@@ -70,30 +103,8 @@ def get_langchain_openai_chat_completion_content(user_prompt=None, system_prompt
         print_history_message_list(total_messages)
         print()
 
-    if llm is None:
-        llm = ChatOpenAI(
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=timeout,
-            max_retries=max_retries,
-            api_key=openai_api_key,
-            base_url=openai_base_url,
-        )
-
-    else:
-        # 传入了 llm，但仍然用参数重置，一般用不到
-        if reset_llm:
-            if model is not None:
-                llm.model_name = model
-            if temperature is not None:
-                llm.temperature = temperature
-            if max_retries is not None:
-                llm.max_retries = max_retries
-            if max_tokens is not None:
-                llm.max_tokens = max_tokens
-            if timeout is not None:
-                llm.request_timeout = timeout
+    llm = get_langchain_openai_llm(real=real, model=model, temperature=temperature, max_tokens=max_tokens,
+                                   timeout=timeout, max_retries=max_retries, llm=llm, reset_llm=reset_llm)
 
     # content='你好，我是一个智能助手，专门为您提供各种服务和帮助。我可以回答您的问题、提供信息、帮助您解决问题等等。如果您有任何需要，请随时告诉我，
     # 我会尽力帮助您的。感谢您使用我的服务！如果您有任何问题，欢迎随时问我。'
@@ -132,12 +143,13 @@ def get_langchain_openai_chat_completion_content(user_prompt=None, system_prompt
     # from 20240225，gpt-3.5-turbo-0125
     # assert_equal(true_model, "gpt-3.5-turbo-0125")
     # from 20240304，gpt-35-turbo 或者 gpt-3.5-turbo-0125
-    if model not in OPENAI_TRUE_MODEL_DICT:
-        print(F"IMPORTANT 3: {model}: {true_model}")
+    # 在 langchain 中，model 是在创建模型的时候就传入的，而不是在 chat/invoke 传入的
+    if llm.model_name not in OPENAI_TRUE_MODEL_DICT:
+        print(F"IMPORTANT 3: {llm.model_name}: {true_model}")
     # 注意，与 openAI 的返回不一样
-    # elif true_model != OPENAI_TRUE_MODEL_DICT[model]:
-    elif true_model != model:
-        print(F"IMPORTANT 4: {model}: {true_model}")
+    # elif true_model != OPENAI_TRUE_MODEL_DICT[llm.model_name]:
+    elif true_model != llm.model_name:
+        print(F"IMPORTANT 4: {llm.model_name}: {true_model}")
 
     # 无论如何，都保存到历史对话中
     # if not using_history and history_message_list is not None:
@@ -610,6 +622,8 @@ def check_langchain_chroma():
 
 
 def check_get_langchain_openai_chat_completion_content():
+    llm = get_langchain_openai_llm(model="gpt-4-turbo", temperature=0.2, real=False)
+
     system_prompt = "你是一个小学一年级的老师。"
     user_prompt = "请你自我介绍一下自己！"
 
@@ -617,9 +631,50 @@ def check_get_langchain_openai_chat_completion_content():
     # 我会尽力帮助你们找到最适合自己的学习方法。在课堂上，我们不仅会学习语文、数学等基础知诀，还会有很多有趣的活动来帮助你们更好地理解和运用所学知识。
     # 希望我们能一起度过一个充满乐趣和学习的美好时光！
     content = get_langchain_openai_chat_completion_content(user_prompt=user_prompt, system_prompt=system_prompt,
-                                                           model="gpt-4-turbo",
-                                                           temperature=0.2, real=False)
+                                                           llm=llm)
     print(content)
+
+
+def check_langchain_chat_prompt_template():
+    template = "你是一个翻译助手，可以帮助我将 {input_language} 翻译成 {output_language}."
+    human_template = "{text}"
+
+    chat_prompt = ChatPromptTemplate.from_messages([
+        ("system", template),
+        ("human", human_template),
+    ])
+
+    text = "我带着比身体重的行李，游入尼罗河底，经过几道闪电 看到一堆光圈，不确定是不是这里。"
+    messages = chat_prompt.format_messages(input_language="中文", output_language="英文", text=text)
+
+    # [SystemMessage(content='你是一个翻译助手，可以帮助我将 中文 翻译成 英文.'),
+    # HumanMessage(content='我带着比身体重的行李，游入尼罗河底，经过几道闪电 看到一堆光圈，不确定是不是这里。')]
+    print(messages)
+
+
+# 简单的 langchain icel 实例
+def check_langchain_icel():
+    template = "你是一个翻译助手，可以帮助我将 {input_language} 翻译成 {output_language}."
+    human_template = "{text}"
+
+    chat_prompt = ChatPromptTemplate.from_messages([
+        ("system", template),
+        ("human", human_template),
+    ])
+
+    llm = get_langchain_openai_llm(model="gpt-4-turbo", temperature=0.2, real=False)
+
+    output_parser = StrOutputParser()
+
+    chain = chat_prompt | llm | output_parser
+
+    text = "我带着比身体重的行李，游入尼罗河底，经过几道闪电 看到一堆光圈，不确定是不是这里。"
+    output = chain.invoke({"input_language": "中文", "output_language": "英文", "text": text})
+
+    assert isinstance(output, str)
+    # I carried luggage heavier than my body weight, diving into the bottom of the Nile River.
+    # After passing through several flashes of lightning, I saw a bunch of halos, unsure if this is the place.
+    print(output)
 
 
 @func_timer(arg=True)
@@ -640,6 +695,10 @@ def main():
     # check_langchain_chroma()
 
     # check_get_langchain_openai_chat_completion_content()
+
+    # check_langchain_chat_prompt_template()
+
+    # check_langchain_icel()
 
 
 if __name__ == '__main__':
