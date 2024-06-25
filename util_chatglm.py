@@ -11,7 +11,7 @@ from util_torch import *
 def get_chatglm_completion_content(_tokenizer, _model, user_prompt=None, system_prompt=None,
                                    temperature=0.1, print_cost_time=False, print_response=False,
                                    history_message_list: List = None,
-                                   using_history_message_list=True, print_messages=False):
+                                   using_history_message_list=True, print_messages=False) -> str:
     start_time = time.time()
 
     assert user_prompt is None or system_prompt is None, "不支持批量问题，user_prompt 和 system_prompt 只能给一个."
@@ -61,7 +61,7 @@ def get_chatglm_completion_content(_tokenizer, _model, user_prompt=None, system_
 def get_qwen2_completion_content(_tokenizer: Qwen2TokenizerFast, _model: Qwen2Model, user_prompt=None,
                                  system_prompt=None, temperature=0.1, print_cost_time=False, print_response=False,
                                  history_message_list: List = None, using_history_message_list=True,
-                                 print_messages=False):
+                                 print_messages=False) -> str:
     start_time = time.time()
 
     total_messages = list()

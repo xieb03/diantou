@@ -8,14 +8,66 @@ from langchain_community.document_loaders import PyMuPDFLoader
 # Please use the NLTK Downloader to obtain the resource: nltk.download('punkt')，需要魔术方法，下载到 C:\Users\admin\AppData\Roaming\nltk_data 中
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
 from langchain_community.vectorstores import Chroma
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.documents.base import Document
+from langchain_core.language_models.llms import LLM
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
-from transformers import AutoModel, AutoTokenizer
 
+from util_chatglm import *
 from util_openai import *
-from util_path import *
-from util_torch import *
+
+
+# 自定义 langchain + chatglm4
+class CHATGLM4LLM(LLM):
+    _single_lock = RLock()
+    # 温度系数
+    temperature: float = 0.2
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None,
+              run_manager: Optional[CallbackManagerForLLMRun] = None,
+              temperature: float = None,
+              **kwargs: Any):
+        if stop is not None:
+            raise ValueError("stop kwargs are not permitted.")
+
+        # 在执行的时候也可以重新传入 temperature
+        if temperature is None:
+            temperature = self.temperature
+
+        # 懒加载，调用 call 才会真正加载模型
+        model, tokenizer = CHATGLM4LLM.instance()
+        return get_chatglm_completion_content(tokenizer, model, user_prompt=prompt,
+                                              temperature=temperature)
+
+    # 单例，返回 model 和 tokenizer
+    @classmethod
+    def instance(cls):
+        # 为了在多线程环境下保证数据安全，在需要并发枷锁的地方加上 RLock 锁
+        with CHATGLM4LLM._single_lock:
+            if not hasattr(CHATGLM4LLM, "_model"):
+                CHATGLM4LLM._model, CHATGLM4LLM._tokenizer = load_chatglm_model_and_tokenizer(
+                    _pretrained_path=GLM4_9B_CHAT_model_dir)
+        return CHATGLM4LLM._model, CHATGLM4LLM._tokenizer
+
+    # 首先定义一个返回默认参数的方法
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        normal_params = {
+            "temperature": self.temperature,
+            "model_name": "CustomChatglm4LLM",
+        }
+        return {**normal_params}
+
+    @property
+    def _llm_type(self) -> str:
+        return "glm4"
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        # return {**{"model": self.model, "tokenizer": self.tokenizer}, **self._default_params}
+        return {**self._default_params}
 
 
 # 获取 langchain 自带的 openAI
@@ -670,11 +722,24 @@ def check_langchain_icel():
 
     text = "我带着比身体重的行李，游入尼罗河底，经过几道闪电 看到一堆光圈，不确定是不是这里。"
     output = chain.invoke({"input_language": "中文", "output_language": "英文", "text": text})
-
-    assert isinstance(output, str)
     # I carried luggage heavier than my body weight, diving into the bottom of the Nile River.
     # After passing through several flashes of lightning, I saw a bunch of halos, unsure if this is the place.
     print(output)
+
+    text = 'I carried luggage heavier than my body and dived into the bottom of the Nile River. After passing through several flashes of lightning, I saw a pile of halos, not sure if this is the place.'
+    output = chain.invoke({"input_language": "英文", "output_language": "中文", "text": text})
+    # 我背着比我身体还重的行李，潜入尼罗河的底部。穿过几道闪电之后，我看到了一堆光环，不确定这是不是那个地方。
+    print(output)
+
+
+# 自定义 langchain + chatglm4
+def check_custom_chatglm4_llm():
+    llm = CHATGLM4LLM()
+    # Params: {'temperature': 0.2, 'model_name': 'CustomChatglm4LLM'}
+    print(llm)
+    # LangChainDeprecationWarning: The method `BaseLLM.__call__` was deprecated in langchain-core 0.1.7 and will be removed in 0.3.0. Use invoke instead.
+    print(llm("老鼠生病了，可以吃老鼠药治好么？"))
+    print(llm("为什么苏东坡不能参加苏轼的葬礼？", temperatur=0.8))
 
 
 @func_timer(arg=True)
@@ -699,6 +764,8 @@ def main():
     # check_langchain_chat_prompt_template()
 
     # check_langchain_icel()
+
+    # check_custom_chatglm4_llm()
 
 
 if __name__ == '__main__':

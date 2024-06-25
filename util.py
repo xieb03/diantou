@@ -31,7 +31,7 @@ from functools import partial
 from functools import wraps
 from random import shuffle
 # noinspection PyUnresolvedReferences
-from typing import List, Tuple, Dict, Union, Any, Optional
+from typing import List, Tuple, Dict, Union, Any, Optional, Mapping
 
 import numpy as np
 # noinspection PyUnresolvedReferences
