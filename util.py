@@ -279,7 +279,7 @@ def print_requirements():
         # langchain，注意有的时候 package 中是 -，但是 import 要用 _
         "langchain,langchain_core,langchain_openai,langchain_community,langsmith,langgraph,pymupdf,rapidocr_onnxruntime,unstructured,"
         # web
-        "flask,"
+        "flask,streamlit,"
         # jupyter
         "jupyter_server,jupyterlab,"
         # spider
@@ -710,6 +710,7 @@ def main():
     # rapidocr_onnxruntime: 1.3.22
     # unstructured        : 0.14.6
     # flask               : 3.0.3
+    # streamlit           : 1.36.0
     # jupyter_server      : 2.14.1
     # jupyterlab          : 4.2.2
     # scrapy              : 2.11.2

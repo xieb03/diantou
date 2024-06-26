@@ -1,4 +1,8 @@
+# noinspection PyUnresolvedReferences
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain, ConversationChain
 from langchain.embeddings.base import Embeddings
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 # 安装 langchain 后要额外安装 pip install pymupdf rapidocr-onnxruntime
@@ -44,11 +48,11 @@ class CHATGLM4LLM(LLM):
     @classmethod
     def instance(cls):
         # 为了在多线程环境下保证数据安全，在需要并发枷锁的地方加上 RLock 锁
-        with CHATGLM4LLM._single_lock:
-            if not hasattr(CHATGLM4LLM, "_model"):
-                CHATGLM4LLM._model, CHATGLM4LLM._tokenizer = load_chatglm_model_and_tokenizer(
+        with cls._single_lock:
+            if not hasattr(cls, "_model"):
+                cls._model, cls._tokenizer = load_chatglm_model_and_tokenizer(
                     _pretrained_path=GLM4_9B_CHAT_model_dir)
-        return CHATGLM4LLM._model, CHATGLM4LLM._tokenizer
+        return cls._model, cls._tokenizer
 
     # 首先定义一个返回默认参数的方法
     @property
@@ -62,6 +66,58 @@ class CHATGLM4LLM(LLM):
     @property
     def _llm_type(self) -> str:
         return "glm4"
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        # return {**{"model": self.model, "tokenizer": self.tokenizer}, **self._default_params}
+        return {**self._default_params}
+
+
+# 自定义 langchain + qwen2
+class QWEN2LLM(LLM):
+    _single_lock = RLock()
+    # 温度系数
+    temperature: float = 0.2
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None,
+              run_manager: Optional[CallbackManagerForLLMRun] = None,
+              temperature: float = None,
+              **kwargs: Any):
+        if stop is not None:
+            raise ValueError("stop kwargs are not permitted.")
+
+        # 在执行的时候也可以重新传入 temperature
+        if temperature is None:
+            temperature = self.temperature
+
+        # 懒加载，调用 call 才会真正加载模型
+        model, tokenizer = QWEN2LLM.instance()
+        return get_qwen2_completion_content(tokenizer, model, user_prompt=prompt,
+                                            temperature=temperature)
+
+    # 单例，返回 model 和 tokenizer
+    @classmethod
+    def instance(cls):
+        # 为了在多线程环境下保证数据安全，在需要并发枷锁的地方加上 RLock 锁
+        with cls._single_lock:
+            if not hasattr(cls, "_model"):
+                cls._model, cls._tokenizer = load_chatglm_model_and_tokenizer(
+                    _pretrained_path=QWEN2_7B_INSTRUCT_model_dir)
+        return cls._model, cls._tokenizer
+
+    # 首先定义一个返回默认参数的方法
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        normal_params = {
+            "temperature": self.temperature,
+            "model_name": "CustomQwen2LLM",
+        }
+        return {**normal_params}
+
+    @property
+    def _llm_type(self) -> str:
+        return "qwen2"
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -738,8 +794,184 @@ def check_custom_chatglm4_llm():
     # Params: {'temperature': 0.2, 'model_name': 'CustomChatglm4LLM'}
     print(llm)
     # LangChainDeprecationWarning: The method `BaseLLM.__call__` was deprecated in langchain-core 0.1.7 and will be removed in 0.3.0. Use invoke instead.
-    print(llm("老鼠生病了，可以吃老鼠药治好么？"))
-    print(llm("为什么苏东坡不能参加苏轼的葬礼？", temperatur=0.8))
+    # print(llm("老鼠生病了，可以吃老鼠药治好么？"))
+    print(llm.invoke("老鼠生病了，可以吃老鼠药治好么？"))
+    print(llm.invoke("为什么苏东坡不能参加苏轼的葬礼？", temperature=0.8))
+    # invoke 最后还是调用的 __call__ 方法，但注意，即使传入的是一个 list，还是会被认为是一次对话，底层会处理为 "
+    # 'Human: 老鼠生病了，可以吃老鼠药治好么？
+    # Human: 为什么苏东坡不能参加苏轼的葬礼？'"
+    # 即用 \n 将多个元素拼接起来，作为整体的问句。
+    # 关于第一个问题，老鼠生病了是否可以吃老鼠药来治疗，这实际上是一个错误的做法。老鼠药通常是用来控制老鼠数量或者用于农业害虫防治的，它的成分对老鼠来说是致命的，对人类同样也是有害的。如果家中的宠物老鼠生病了，应该带它去看兽医，由专业的兽医来诊断和治疗。
+    # 至于第二个问题，苏东坡和苏轼实际上是同一个人。苏轼（1037-1101），字子瞻，号东坡居士，是中国北宋时期的文学家、书画家、政治家，而苏东坡是他的号。因此，苏东坡就是苏轼，他当然可以参加自己的葬礼。这里可能是一个误解或者是一个玩笑。在现实生活中，人无法参加自己的葬礼，因为葬礼是在人去世后举行的。
+    print(llm.invoke(["老鼠生病了，可以吃老鼠药治好么？", "为什么苏东坡不能参加苏轼的葬礼？"], temperature=0.8))
+
+
+def check_a_whole_rag_demo():
+    # 获取当前函数名
+    collection_name = inspect.currentframe().f_code.co_name
+
+    document_list = get_file_document_list_all_in_one([BIGDATA_MD_PATH, BIGDATA_PDF_PATH])
+
+    # 切分文档
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n", " ", ""],
+        chunk_size=500, chunk_overlap=50, add_start_index=True)
+
+    # List[Document]
+    split_document_list = text_splitter.split_documents(document_list)
+    # 分割前，一共有 10 段，每段文字分别为 [1782, 13385, 11190, 8920, 9816, 14607, 6176, 9428, 441, 281944]，总文字数是 357689.
+    # 分割后，一共有 815 段，每段文字分别为 [322, 416, 300, 349, 391, 449, 498, 465, 478, 491, 467, 420, 491, 486, 487, 440, 480, 392, 487, 463, 449, 459, 487, 470, 480, 490, 451, 491, 493, 496, 460, 480, 485, 476, 480, 409, 477, 496, 481, 466, 491, 439, 356, 495, 414, 479, 490, 474, 498, 495, 494, 473, 474, 471, 141, 209, 383, 421, 267, 451, 356, 411, 415, 497, 491, 373, 386, 481, 463, 456, 495, 491, 452, 495, 495, 466, 458, 444, 470, 493, 491, 497, 496, 495, 416, 493, 497, 487, 493, 419, 487, 471, 482, 494, 490, 497, 497, 468, 464, 477, 495, 481, 433, 193, 405, 496, 347, 404, 445, 477, 484, 482, 464, 495, 466, 483, 490, 495, 493, 486, 461, 453, 491, 497, 487, 488, 441, 493, 393, 447, 460, 411, 406, 480, 400, 350, 489, 459, 490, 490, 433, 494, 479, 499, 445, 494, 491, 454, 488, 498, 167, 423, 464, 462, 460, 487, 493, 475, 496, 434, 493, 496, 488, 428, 472, 462, 468, 452, 440, 490, 497, 426, 441, 470, 497, 492, 450, 479, 481, 471, 492, 491, 463, 478, 421, 476, 467, 494, 475, 480, 476, 481, 474, 468, 472, 471, 461, 476, 474, 466, 467, 489, 464, 464, 464, 488, 498, 464, 478, 466, 491, 480, 456, 476, 476, 480, 429, 484, 474, 490, 480, 389, 454, 227, 478, 481, 385, 499, 186, 56, 498, 160, 378, 498, 212, 229, 476, 284, 499, 499, 235, 398, 420, 387, 498, 498, 498, 498, 105, 498, 493, 498, 67, 373, 422, 474, 381, 498, 493, 350, 499, 84, 499, 74, 295, 498, 134, 499, 181, 485, 382, 499, 81, 495, 415, 364, 348, 322, 289, 499, 497, 241, 493, 494, 487, 462, 470, 495, 490, 457, 463, 476, 462, 475, 489, 487, 474, 494, 466, 464, 479, 482, 491, 466, 466, 477, 475, 478, 473, 485, 490, 461, 492, 498, 498, 490, 497, 473, 479, 474, 437, 456, 457, 476, 472, 488, 489, 499, 445, 473, 453, 494, 490, 477, 469, 469, 470, 496, 461, 497, 499, 490, 485, 495, 467, 476, 478, 497, 475, 475, 469, 477, 482, 496, 473, 492, 408, 478, 489, 468, 486, 499, 475, 482, 492, 448, 476, 478, 469, 481, 451, 486, 491, 496, 433, 452, 473, 456, 496, 478, 498, 490, 478, 475, 484, 474, 486, 497, 492, 382, 464, 498, 330, 279, 456, 464, 429, 493, 468, 499, 499, 484, 471, 499, 498, 441, 420, 482, 468, 459, 470, 484, 498, 452, 489, 493, 495, 493, 341, 444, 492, 468, 455, 499, 477, 477, 357, 498, 492, 462, 498, 485, 491, 476, 480, 486, 495, 413, 494, 499, 490, 461, 451, 491, 454, 484, 482, 492, 430, 499, 498, 497, 496, 489, 483, 497, 496, 499, 478, 434, 452, 461, 470, 499, 488, 490, 481, 441, 492, 450, 474, 452, 499, 479, 493, 499, 491, 477, 466, 479, 496, 495, 496, 485, 433, 499, 445, 461, 463, 471, 451, 474, 485, 472, 468, 440, 485, 498, 498, 492, 469, 485, 431, 447, 460, 498, 483, 459, 470, 498, 479, 459, 473, 472, 486, 449, 491, 456, 489, 447, 481, 453, 466, 448, 460, 441, 471, 444, 471, 480, 454, 460, 455, 492, 471, 496, 490, 492, 475, 483, 492, 490, 472, 489, 493, 468, 493, 472, 479, 480, 497, 480, 461, 413, 496, 496, 497, 376, 494, 275, 469, 487, 456, 456, 463, 434, 486, 495, 493, 496, 438, 442, 440, 450, 490, 498, 446, 472, 492, 495, 484, 480, 457, 479, 497, 471, 467, 497, 470, 496, 495, 496, 495, 491, 497, 481, 475, 490, 469, 462, 475, 356, 472, 493, 490, 489, 451, 461, 470, 480, 433, 452, 496, 376, 488, 458, 497, 493, 474, 476, 464, 381, 471, 436, 492, 456, 489, 492, 471, 464, 488, 473, 481, 464, 499, 493, 490, 499, 443, 464, 422, 499, 496, 480, 459, 467, 452, 494, 497, 450, 484, 490, 466, 475, 487, 486, 481, 479, 488, 412, 406, 499, 472, 496, 499, 466, 449, 448, 481, 484, 495, 241, 492, 462, 459, 480, 458, 498, 497, 441, 473, 493, 396, 483, 490, 481, 434, 473, 414, 471, 464, 492, 458, 307, 481, 495, 478, 462, 485, 495, 497, 477, 486, 486, 459, 447, 411, 477, 465, 499, 488, 497, 492, 458, 492, 472, 451, 482, 488, 449, 487, 495, 468, 487, 345, 499, 194, 463, 436, 473, 469, 495, 490, 489, 466, 494, 486, 484, 495, 495, 488, 478, 489, 476, 496, 470, 469, 465, 465, 469, 468, 499, 486, 458, 499, 475, 492, 494, 468, 471, 424, 467, 427, 496, 468, 469, 443, 446, 487, 488, 478, 475, 450, 486, 487, 496, 491, 469, 456, 475, 429, 496, 486, 483, 442, 450, 483, 497, 456, 493, 468, 478, 465, 491, 497, 432, 491, 499, 449, 481, 438, 465, 460, 453, 481, 464, 466, 476, 473, 496, 484, 453, 493, 443, 458]，总文字数是 375316.
+    print(
+        F"分割前，一共有 {len(document_list)} 段，每段文字分别为 {get_document_list_each_length(document_list)}，总文字数是 {get_document_list_length(document_list)}.")
+    print(
+        F"分割后，一共有 {len(split_document_list)} 段，每段文字分别为 {get_document_list_each_length(split_document_list)}，总文字数是 {get_document_list_length(split_document_list)}.")
+
+    langchain_embeddings = LangchainEmbeddings(embedding_model_path=BGE_LARGE_CN_model_dir)
+
+    # 内部调用 get_or_create_collection，因此不存在会新建，否则沿用
+    chroma_db = Chroma(embedding_function=langchain_embeddings,
+                       persist_directory=CHROMADB_PATH,
+                       collection_name=collection_name,
+                       # 指定相似度用内积，支持 cosine, l2, ip
+                       collection_metadata={"hnsw:space": "ip"})
+    assert_equal(len(chroma_db), 0)
+
+    try:
+        chroma_db.add_documents(documents=split_document_list[:20])
+        assert_equal(len(chroma_db), 20)
+
+        # llm = CHATGLM4LLM()
+        # llm = QWEN2LLM()
+        llm = get_langchain_openai_llm(model="gpt-4-turbo", temperature=0.2, real=False)
+
+        template = """抛开以前的知识，只能根据以下上下文来回答最后的问题，如果无法根据上下文来回答，就说你不知道，不要试图编造答
+        案。最多使用三句话。尽量使答案简明扼要。总是在回答的最后说“谢谢你的提问！”。
+        {context}
+        问题: {question}
+        """
+
+        chain_prompt = PromptTemplate(template=template)
+
+        # llm：指定使用的 LLM
+        # 指定 chain type : RetrievalQA.from_chain_type(chain_type="stuff")，也可以利用load_qa_chain()方法指定chain type。
+        # 自定义 prompt ：通过在RetrievalQA.from_chain_type()方法中，指定chain_type_kwargs参数，而该参数：chain_type_kwargs = {"prompt": PROMPT}
+        # 返回源文档：通过RetrievalQA.from_chain_type()方法中指定：return_source_documents=True参数；也可以使用RetrievalQAWithSourceChain()方法，返回源文档的引用（坐标或者叫主键、索引）
+        qa_chain = RetrievalQA.from_chain_type(llm,
+                                               chain_type="stuff",
+                                               retriever=chroma_db.as_retriever(search_type="similarity",
+                                                                                search_kwargs={'k': 3}),
+                                               return_source_documents=False,
+                                               chain_type_kwargs={"prompt": chain_prompt})
+
+        question_1 = "什么是南瓜书？"
+        question_2 = "王阳明是谁？"
+
+        result = qa_chain({"query": question_1})
+        print("大模型 + 知识库后回答 question_1 的结果：")
+        # 我不知道什么是南瓜书，因为提供的上下文中没有相关信息。
+        print(result["result"], end="\n-----------------------\n")
+
+        result = qa_chain({"query": question_2})
+        print("大模型 + 知识库后回答 question_2 的结果：")
+        # 王阳明是中国明代著名的哲学家、思想家、军事家和教育家，也是心学的集大成者。他提出了“致良知”的理念，强调内心修养的重要性。王阳明的学说对后世产生了深远影响。
+        print(result["result"], end="\n-----------------------\n")
+
+        print("大模型独立回答 question_1 的结果：")
+        result = llm.invoke(question_1)
+        # “南瓜书”这个说法可能源自于网络上的一个梗或者特定的语境，但通常并没有一个明确、广泛接受的定义。如果“南瓜书”指的是某个特定的书籍或系列书籍，那么可能需要提供更多的上下文信息来准确回答。在一些文化或网络社区中，“南瓜书”可能被用来描述某种类型的书籍，比如可能是以南瓜为主题、与万圣节相关的读物，或者是某种风格独特、内容特别的书籍。然而，没有足够的信息来确定“南瓜书”的确切含义，因此在回答时需要保持一定的灵活性和开放性。如果你能提供更多关于“南瓜书”的具体信息，我或许能给出更精确的回答。
+        print(result if isinstance(result, str) else result.content, end="\n-----------------------\n")
+
+        print("大模型独立回答 question_2 的结果：")
+        result = llm.invoke(question_2)
+        # 王阳明，名守仁，字伯安，号阳明子，故被称为王阳明。他是明代著名的思想家、哲学家、教育家、军事家及文学家，也是心学的集大成者。王阳明的学术思想主要体现在“心即理”、“知行合一”和“致良知”三个方面。
+        # 王阳明在明朝中叶提出的心学理论，对后世产生了深远的影响，不仅在中国文化界有着重要的地位，在东亚乃至全球范围内也具有广泛的文化影响力。他的思想强调内心修养与道德实践的重要性，认为人的心灵本自具足，通过自我反省和实践可以达到道德完善和个人成长的目的。
+        # 此外，王阳明还是一位杰出的军事战略家，在平定宁王朱宸濠叛乱中表现出卓越的军事才能，为明朝的稳定做出了贡献。他的文笔流畅，作品涵盖了诗歌、散文、小说等多个领域，留下了许多脍炙人口的作品。
+        print(result if isinstance(result, str) else result.content, end="\n-----------------------\n")
+
+    finally:
+        # 完整删除 collection，不光是 length = 0，而是完全不存在
+        chroma_db.delete_collection()
+
+
+def check_a_whole_rag_demo_with_memory():
+    # 获取当前函数名
+    collection_name = inspect.currentframe().f_code.co_name
+
+    document_list = get_file_document_list_all_in_one([BIGDATA_MD_PATH, BIGDATA_PDF_PATH])
+
+    # 切分文档
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n", " ", ""],
+        chunk_size=500, chunk_overlap=50, add_start_index=True)
+
+    # List[Document]
+    split_document_list = text_splitter.split_documents(document_list)
+    # 分割前，一共有 10 段，每段文字分别为 [1782, 13385, 11190, 8920, 9816, 14607, 6176, 9428, 441, 281944]，总文字数是 357689.
+    # 分割后，一共有 815 段，每段文字分别为 [322, 416, 300, 349, 391, 449, 498, 465, 478, 491, 467, 420, 491, 486, 487, 440, 480, 392, 487, 463, 449, 459, 487, 470, 480, 490, 451, 491, 493, 496, 460, 480, 485, 476, 480, 409, 477, 496, 481, 466, 491, 439, 356, 495, 414, 479, 490, 474, 498, 495, 494, 473, 474, 471, 141, 209, 383, 421, 267, 451, 356, 411, 415, 497, 491, 373, 386, 481, 463, 456, 495, 491, 452, 495, 495, 466, 458, 444, 470, 493, 491, 497, 496, 495, 416, 493, 497, 487, 493, 419, 487, 471, 482, 494, 490, 497, 497, 468, 464, 477, 495, 481, 433, 193, 405, 496, 347, 404, 445, 477, 484, 482, 464, 495, 466, 483, 490, 495, 493, 486, 461, 453, 491, 497, 487, 488, 441, 493, 393, 447, 460, 411, 406, 480, 400, 350, 489, 459, 490, 490, 433, 494, 479, 499, 445, 494, 491, 454, 488, 498, 167, 423, 464, 462, 460, 487, 493, 475, 496, 434, 493, 496, 488, 428, 472, 462, 468, 452, 440, 490, 497, 426, 441, 470, 497, 492, 450, 479, 481, 471, 492, 491, 463, 478, 421, 476, 467, 494, 475, 480, 476, 481, 474, 468, 472, 471, 461, 476, 474, 466, 467, 489, 464, 464, 464, 488, 498, 464, 478, 466, 491, 480, 456, 476, 476, 480, 429, 484, 474, 490, 480, 389, 454, 227, 478, 481, 385, 499, 186, 56, 498, 160, 378, 498, 212, 229, 476, 284, 499, 499, 235, 398, 420, 387, 498, 498, 498, 498, 105, 498, 493, 498, 67, 373, 422, 474, 381, 498, 493, 350, 499, 84, 499, 74, 295, 498, 134, 499, 181, 485, 382, 499, 81, 495, 415, 364, 348, 322, 289, 499, 497, 241, 493, 494, 487, 462, 470, 495, 490, 457, 463, 476, 462, 475, 489, 487, 474, 494, 466, 464, 479, 482, 491, 466, 466, 477, 475, 478, 473, 485, 490, 461, 492, 498, 498, 490, 497, 473, 479, 474, 437, 456, 457, 476, 472, 488, 489, 499, 445, 473, 453, 494, 490, 477, 469, 469, 470, 496, 461, 497, 499, 490, 485, 495, 467, 476, 478, 497, 475, 475, 469, 477, 482, 496, 473, 492, 408, 478, 489, 468, 486, 499, 475, 482, 492, 448, 476, 478, 469, 481, 451, 486, 491, 496, 433, 452, 473, 456, 496, 478, 498, 490, 478, 475, 484, 474, 486, 497, 492, 382, 464, 498, 330, 279, 456, 464, 429, 493, 468, 499, 499, 484, 471, 499, 498, 441, 420, 482, 468, 459, 470, 484, 498, 452, 489, 493, 495, 493, 341, 444, 492, 468, 455, 499, 477, 477, 357, 498, 492, 462, 498, 485, 491, 476, 480, 486, 495, 413, 494, 499, 490, 461, 451, 491, 454, 484, 482, 492, 430, 499, 498, 497, 496, 489, 483, 497, 496, 499, 478, 434, 452, 461, 470, 499, 488, 490, 481, 441, 492, 450, 474, 452, 499, 479, 493, 499, 491, 477, 466, 479, 496, 495, 496, 485, 433, 499, 445, 461, 463, 471, 451, 474, 485, 472, 468, 440, 485, 498, 498, 492, 469, 485, 431, 447, 460, 498, 483, 459, 470, 498, 479, 459, 473, 472, 486, 449, 491, 456, 489, 447, 481, 453, 466, 448, 460, 441, 471, 444, 471, 480, 454, 460, 455, 492, 471, 496, 490, 492, 475, 483, 492, 490, 472, 489, 493, 468, 493, 472, 479, 480, 497, 480, 461, 413, 496, 496, 497, 376, 494, 275, 469, 487, 456, 456, 463, 434, 486, 495, 493, 496, 438, 442, 440, 450, 490, 498, 446, 472, 492, 495, 484, 480, 457, 479, 497, 471, 467, 497, 470, 496, 495, 496, 495, 491, 497, 481, 475, 490, 469, 462, 475, 356, 472, 493, 490, 489, 451, 461, 470, 480, 433, 452, 496, 376, 488, 458, 497, 493, 474, 476, 464, 381, 471, 436, 492, 456, 489, 492, 471, 464, 488, 473, 481, 464, 499, 493, 490, 499, 443, 464, 422, 499, 496, 480, 459, 467, 452, 494, 497, 450, 484, 490, 466, 475, 487, 486, 481, 479, 488, 412, 406, 499, 472, 496, 499, 466, 449, 448, 481, 484, 495, 241, 492, 462, 459, 480, 458, 498, 497, 441, 473, 493, 396, 483, 490, 481, 434, 473, 414, 471, 464, 492, 458, 307, 481, 495, 478, 462, 485, 495, 497, 477, 486, 486, 459, 447, 411, 477, 465, 499, 488, 497, 492, 458, 492, 472, 451, 482, 488, 449, 487, 495, 468, 487, 345, 499, 194, 463, 436, 473, 469, 495, 490, 489, 466, 494, 486, 484, 495, 495, 488, 478, 489, 476, 496, 470, 469, 465, 465, 469, 468, 499, 486, 458, 499, 475, 492, 494, 468, 471, 424, 467, 427, 496, 468, 469, 443, 446, 487, 488, 478, 475, 450, 486, 487, 496, 491, 469, 456, 475, 429, 496, 486, 483, 442, 450, 483, 497, 456, 493, 468, 478, 465, 491, 497, 432, 491, 499, 449, 481, 438, 465, 460, 453, 481, 464, 466, 476, 473, 496, 484, 453, 493, 443, 458]，总文字数是 375316.
+    print(
+        F"分割前，一共有 {len(document_list)} 段，每段文字分别为 {get_document_list_each_length(document_list)}，总文字数是 {get_document_list_length(document_list)}.")
+    print(
+        F"分割后，一共有 {len(split_document_list)} 段，每段文字分别为 {get_document_list_each_length(split_document_list)}，总文字数是 {get_document_list_length(split_document_list)}.")
+
+    langchain_embeddings = LangchainEmbeddings(embedding_model_path=BGE_LARGE_CN_model_dir)
+
+    # 内部调用 get_or_create_collection，因此不存在会新建，否则沿用
+    chroma_db = Chroma(embedding_function=langchain_embeddings,
+                       persist_directory=CHROMADB_PATH,
+                       collection_name=collection_name,
+                       # 指定相似度用内积，支持 cosine, l2, ip
+                       collection_metadata={"hnsw:space": "ip"})
+    assert_equal(len(chroma_db), 0)
+
+    try:
+        chroma_db.add_documents(documents=split_document_list[:20])
+        assert_equal(len(chroma_db), 20)
+
+        # llm = CHATGLM4LLM()
+        # llm = QWEN2LLM()
+        llm = get_langchain_openai_llm(model="gpt-4-turbo", temperature=0.2, real=False)
+
+        memory = ConversationBufferMemory(
+            memory_key="chat_history",  # 与 prompt 的输入变量保持一致。
+            return_messages=True  # 将以消息列表的形式返回聊天记录，而不是单个字符串
+        )
+
+        qa = ConversationalRetrievalChain.from_llm(
+            llm,
+            retriever=chroma_db.as_retriever(search_type="similarity", search_kwargs={'k': 3}),
+            memory=memory
+        )
+
+        question = "我可以学习到关于提示工程的知识吗？"
+        result = qa({"question": question})
+        print(result, end="\n-----------------------\n")
+
+        question = "为什么这门课需要教这方面的知识？"
+        result = qa({"question": question})
+        print(result, end="\n-----------------------\n")
+
+        # 可能和 langchain 组织数据的方式有关，目前不能完美的回答上一个问题是什么
+        question = "通过上下文，我问的上一个问题是什么，告诉我问题本身即可。"
+        result = qa({"question": question})
+        print(result, end="\n-----------------------\n")
+
+        # qa = ConversationChain.from_llm(
+        #     llm,
+        #     # retriever=chroma_db.as_retriever(search_type="similarity", search_kwargs={'k': 3}),
+        #     memory=memory
+        # )
+        #
+        # question = "介绍一下你自己"
+        # result = qa({"question": question})
+        # print(result, end="\n-----------------------\n")
+        #
+        # question = "我上一个问题是什么？"
+        # result = qa({"question": question})
+        # print(result, end="\n-----------------------\n")
+
+    finally:
+        # 完整删除 collection，不光是 length = 0，而是完全不存在
+        chroma_db.delete_collection()
 
 
 @func_timer(arg=True)
@@ -766,6 +998,9 @@ def main():
     # check_langchain_icel()
 
     # check_custom_chatglm4_llm()
+
+    # check_a_whole_rag_demo()
+    # check_a_whole_rag_demo_with_memory()
 
 
 if __name__ == '__main__':
