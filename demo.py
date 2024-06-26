@@ -5,6 +5,7 @@ import torch.cuda
 from torchinfo import summary
 
 from project_utils import *
+from util_langchain import *
 
 
 def other_simple():
@@ -1999,6 +2000,132 @@ def check_prompt_injection():
     print(get_chat_completion_content(user_prompt=user_prompt, model="gpt-4-turbo"))
 
 
+def _init_chroma_db(chroma_db):
+    print("------------init------------")
+    document_list = get_file_document_list_all_in_one([BIGDATA_MD_PATH, BIGDATA_PDF_PATH])
+
+    # 切分文档
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n", " ", ""],
+        chunk_size=500, chunk_overlap=50, add_start_index=True)
+
+    # List[Document]
+    split_document_list = text_splitter.split_documents(document_list)
+    # 分割前，一共有 10 段，每段文字分别为 [1782, 13385, 11190, 8920, 9816, 14607, 6176, 9428, 441, 281944]，总文字数是 357689.
+    # 分割后，一共有 815 段，每段文字分别为 [322, 416, 300, 349, 391, 449, 498, 465, 478, 491, 467, 420, 491, 486, 487, 440, 480, 392, 487, 463, 449, 459, 487, 470, 480, 490, 451, 491, 493, 496, 460, 480, 485, 476, 480, 409, 477, 496, 481, 466, 491, 439, 356, 495, 414, 479, 490, 474, 498, 495, 494, 473, 474, 471, 141, 209, 383, 421, 267, 451, 356, 411, 415, 497, 491, 373, 386, 481, 463, 456, 495, 491, 452, 495, 495, 466, 458, 444, 470, 493, 491, 497, 496, 495, 416, 493, 497, 487, 493, 419, 487, 471, 482, 494, 490, 497, 497, 468, 464, 477, 495, 481, 433, 193, 405, 496, 347, 404, 445, 477, 484, 482, 464, 495, 466, 483, 490, 495, 493, 486, 461, 453, 491, 497, 487, 488, 441, 493, 393, 447, 460, 411, 406, 480, 400, 350, 489, 459, 490, 490, 433, 494, 479, 499, 445, 494, 491, 454, 488, 498, 167, 423, 464, 462, 460, 487, 493, 475, 496, 434, 493, 496, 488, 428, 472, 462, 468, 452, 440, 490, 497, 426, 441, 470, 497, 492, 450, 479, 481, 471, 492, 491, 463, 478, 421, 476, 467, 494, 475, 480, 476, 481, 474, 468, 472, 471, 461, 476, 474, 466, 467, 489, 464, 464, 464, 488, 498, 464, 478, 466, 491, 480, 456, 476, 476, 480, 429, 484, 474, 490, 480, 389, 454, 227, 478, 481, 385, 499, 186, 56, 498, 160, 378, 498, 212, 229, 476, 284, 499, 499, 235, 398, 420, 387, 498, 498, 498, 498, 105, 498, 493, 498, 67, 373, 422, 474, 381, 498, 493, 350, 499, 84, 499, 74, 295, 498, 134, 499, 181, 485, 382, 499, 81, 495, 415, 364, 348, 322, 289, 499, 497, 241, 493, 494, 487, 462, 470, 495, 490, 457, 463, 476, 462, 475, 489, 487, 474, 494, 466, 464, 479, 482, 491, 466, 466, 477, 475, 478, 473, 485, 490, 461, 492, 498, 498, 490, 497, 473, 479, 474, 437, 456, 457, 476, 472, 488, 489, 499, 445, 473, 453, 494, 490, 477, 469, 469, 470, 496, 461, 497, 499, 490, 485, 495, 467, 476, 478, 497, 475, 475, 469, 477, 482, 496, 473, 492, 408, 478, 489, 468, 486, 499, 475, 482, 492, 448, 476, 478, 469, 481, 451, 486, 491, 496, 433, 452, 473, 456, 496, 478, 498, 490, 478, 475, 484, 474, 486, 497, 492, 382, 464, 498, 330, 279, 456, 464, 429, 493, 468, 499, 499, 484, 471, 499, 498, 441, 420, 482, 468, 459, 470, 484, 498, 452, 489, 493, 495, 493, 341, 444, 492, 468, 455, 499, 477, 477, 357, 498, 492, 462, 498, 485, 491, 476, 480, 486, 495, 413, 494, 499, 490, 461, 451, 491, 454, 484, 482, 492, 430, 499, 498, 497, 496, 489, 483, 497, 496, 499, 478, 434, 452, 461, 470, 499, 488, 490, 481, 441, 492, 450, 474, 452, 499, 479, 493, 499, 491, 477, 466, 479, 496, 495, 496, 485, 433, 499, 445, 461, 463, 471, 451, 474, 485, 472, 468, 440, 485, 498, 498, 492, 469, 485, 431, 447, 460, 498, 483, 459, 470, 498, 479, 459, 473, 472, 486, 449, 491, 456, 489, 447, 481, 453, 466, 448, 460, 441, 471, 444, 471, 480, 454, 460, 455, 492, 471, 496, 490, 492, 475, 483, 492, 490, 472, 489, 493, 468, 493, 472, 479, 480, 497, 480, 461, 413, 496, 496, 497, 376, 494, 275, 469, 487, 456, 456, 463, 434, 486, 495, 493, 496, 438, 442, 440, 450, 490, 498, 446, 472, 492, 495, 484, 480, 457, 479, 497, 471, 467, 497, 470, 496, 495, 496, 495, 491, 497, 481, 475, 490, 469, 462, 475, 356, 472, 493, 490, 489, 451, 461, 470, 480, 433, 452, 496, 376, 488, 458, 497, 493, 474, 476, 464, 381, 471, 436, 492, 456, 489, 492, 471, 464, 488, 473, 481, 464, 499, 493, 490, 499, 443, 464, 422, 499, 496, 480, 459, 467, 452, 494, 497, 450, 484, 490, 466, 475, 487, 486, 481, 479, 488, 412, 406, 499, 472, 496, 499, 466, 449, 448, 481, 484, 495, 241, 492, 462, 459, 480, 458, 498, 497, 441, 473, 493, 396, 483, 490, 481, 434, 473, 414, 471, 464, 492, 458, 307, 481, 495, 478, 462, 485, 495, 497, 477, 486, 486, 459, 447, 411, 477, 465, 499, 488, 497, 492, 458, 492, 472, 451, 482, 488, 449, 487, 495, 468, 487, 345, 499, 194, 463, 436, 473, 469, 495, 490, 489, 466, 494, 486, 484, 495, 495, 488, 478, 489, 476, 496, 470, 469, 465, 465, 469, 468, 499, 486, 458, 499, 475, 492, 494, 468, 471, 424, 467, 427, 496, 468, 469, 443, 446, 487, 488, 478, 475, 450, 486, 487, 496, 491, 469, 456, 475, 429, 496, 486, 483, 442, 450, 483, 497, 456, 493, 468, 478, 465, 491, 497, 432, 491, 499, 449, 481, 438, 465, 460, 453, 481, 464, 466, 476, 473, 496, 484, 453, 493, 443, 458]，总文字数是 375316.
+    print(
+        F"分割前，一共有 {len(document_list)} 段，每段文字分别为 {get_document_list_each_length(document_list)}，总文字数是 {get_document_list_length(document_list)}.")
+    print(
+        F"分割后，一共有 {len(split_document_list)} 段，每段文字分别为 {get_document_list_each_length(split_document_list)}，总文字数是 {get_document_list_length(split_document_list)}.")
+
+    assert_equal(len(chroma_db), 0)
+
+    chroma_db.add_documents(documents=split_document_list[:20])
+    # Since Chroma 0.4.x the manual persistence method is no longer supported as docs are automatically persisted.
+    # chroma_db.persist()
+
+    assert_equal(len(chroma_db), 20)
+
+
+def check_streamlit():
+    collection_name = "check_streamlit"
+    langchain_embeddings = LangchainEmbeddings(embedding_model_path=BGE_LARGE_CN_model_dir)
+
+    chroma_db = Chroma(embedding_function=langchain_embeddings,
+                       persist_directory=CHROMADB_PATH,
+                       collection_name=collection_name,
+                       # 指定相似度用内积，支持 cosine, l2, ip
+                       collection_metadata={"hnsw:space": "ip"})
+
+    if len(chroma_db) == 0:
+        _init_chroma_db(chroma_db)
+
+    import streamlit as st
+    from langchain.chains import RetrievalQA, ConversationalRetrievalChain
+
+    # 添加一个选择按钮来选择不同的模型
+    # selected_method = st.sidebar.selectbox("选择模式", ["normal", "rag", "rag + memory"])
+    selected_method = st.radio(
+        "你想选择哪种模式进行对话？",
+        ["normal", "rag", "rag + memory"],
+        captions=["普通模式", "rag", "rag + memory"])
+
+    # 用于跟踪对话历史
+    if 'messages' not in st.session_state:
+        st.session_state.messages = list()
+
+    llm = get_langchain_openai_llm(model="gpt-4-turbo", temperature=0.2, real=False)
+
+    template = """抛开以前的知识，只能根据以下上下文来回答最后的问题，如果无法根据上下文来回答，就说你不知道，不要试图编造答
+            案。最多使用三句话。尽量使答案简明扼要。总是在回答的最后说“谢谢你的提问！”。
+            {context}
+            问题: {question}
+            """
+
+    chain_prompt = PromptTemplate(template=template)
+
+    # llm：指定使用的 LLM
+    # 指定 chain type : RetrievalQA.from_chain_type(chain_type="stuff")，也可以利用load_qa_chain()方法指定chain type。
+    # 自定义 prompt ：通过在RetrievalQA.from_chain_type()方法中，指定chain_type_kwargs参数，而该参数：chain_type_kwargs = {"prompt": PROMPT}
+    # 返回源文档：通过RetrievalQA.from_chain_type()方法中指定：return_source_documents=True参数；也可以使用RetrievalQAWithSourceChain()方法，返回源文档的引用（坐标或者叫主键、索引）
+    rag_chain = RetrievalQA.from_chain_type(llm,
+                                            chain_type="stuff",
+                                            retriever=chroma_db.as_retriever(search_type="similarity",
+                                                                             search_kwargs={'k': 3}),
+                                            return_source_documents=False,
+                                            chain_type_kwargs={"prompt": chain_prompt})
+
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",  # 与 prompt 的输入变量保持一致。
+        return_messages=True  # 将以消息列表的形式返回聊天记录，而不是单个字符串
+    )
+
+    rag_memory_chain = ConversationalRetrievalChain.from_llm(
+        llm,
+        retriever=chroma_db.as_retriever(search_type="similarity", search_kwargs={'k': 3}),
+        memory=memory
+    )
+
+    def chat(query):
+        return get_langchain_openai_chat_completion_content(user_prompt=query, llm=llm)
+
+    def chat_with_rag(query):
+        return rag_chain({"query": query})["result"]
+
+    def chat_with_rag_with_memory(query):
+        return rag_memory_chain({"question": query})["answer"]
+
+    st.title('🦜🔗 动手学大模型应用开发')
+
+    messages = st.container(height=500)
+    if prompt := st.chat_input("Say something"):
+        # 将用户输入添加到对话历史中
+        st.session_state.messages.append({"role": "user", "text": prompt})
+
+        # 普通对话
+        if selected_method == "normal":
+            answer = chat(prompt)
+        # 带有 rag
+        elif selected_method == "rag":
+            answer = chat_with_rag(prompt)
+        elif selected_method == "rag + memory":
+            answer = chat_with_rag_with_memory(prompt)
+        else:
+            raise ValueError(F"not support {selected_method}")
+
+        # 检查回答是否为 None
+        if answer is not None:
+            # 将LLM的回答添加到对话历史中
+            st.session_state.messages.append({"role": "assistant", "text": answer})
+
+        # 显示整个对话历史
+        for message in st.session_state.messages:
+            if message["role"] == "user":
+                messages.chat_message("user").write(message["text"])
+            elif message["role"] == "assistant":
+                messages.chat_message("assistant").write(message["text"])
+
+
 @func_timer(arg=True)
 def main():
     # check_cpu()
@@ -2037,6 +2164,10 @@ def main():
     # check_decay_function()
 
     # check_prompt_injection()
+
+    # streamlit run D:\PycharmProjects\xiebo\diantou\demo.py [ARGUMENTS]
+    # 用 chrome 浏览器
+    # check_streamlit()
 
     pass
 
