@@ -837,18 +837,37 @@ def check_a_whole_rag_demo():
     assert_equal(len(chroma_db), 0)
 
     try:
-        chroma_db.add_documents(documents=split_document_list[:20])
-        assert_equal(len(chroma_db), 20)
+        chroma_db.add_documents(documents=split_document_list)
+        assert_equal(len(chroma_db), 815)
 
         # llm = CHATGLM4LLM()
         # llm = QWEN2LLM()
         llm = get_langchain_openai_llm(model="gpt-4-turbo", temperature=0.2, real=False)
 
-        template = """抛开以前的知识，只能根据以下上下文来回答最后的问题，如果无法根据上下文来回答，就说你不知道，不要试图编造答
-        案。最多使用三句话。尽量使答案简明扼要。总是在回答的最后说“谢谢你的提问！”。
+        # template = """抛开以前的知识，只能根据以下上下文来回答最后的问题，如果无法根据上下文来回答，就说你不知道，不要试图编造答
+        # 案。最多使用三句话。尽量使答案简明扼要。总是在回答的最后说“谢谢你的提问！”。
+        # {context}
+        # 问题: {question}
+        # """
+
+        # template = """从文档 “““{context}””” 中找问题 “““{question}””” 的答案，能找到答案就借助文档回答问题，否则就说不知道。
+        # 不要试图编造答案。最多使用三句话。尽量使答案简明扼要。总是在回答的最后说“谢谢你的提问！”。
+        # """
+
+        template = """
+        从文档
+        \"\"\"
         {context}
-        问题: {question}
+        \"\"\"
+        中找问题
+        \"\"\"
+        {question}
+        \"\"\"
+        的答案，找到答案就仅使用文档语句回答问题，找不到答案就用自身知识回答并且告诉用户该信息不是来自文档。
+        不要复述问题，直接开始回答。
         """
+        # import langchain
+        # langchain.debug = True
 
         chain_prompt = PromptTemplate(template=template)
 
@@ -999,7 +1018,7 @@ def main():
 
     # check_custom_chatglm4_llm()
 
-    # check_a_whole_rag_demo()
+    check_a_whole_rag_demo()
     # check_a_whole_rag_demo_with_memory()
 
 
