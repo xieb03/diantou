@@ -2020,11 +2020,11 @@ def _init_chroma_db(chroma_db):
 
     assert_equal(len(chroma_db), 0)
 
-    chroma_db.add_documents(documents=split_document_list[:20])
+    chroma_db.add_documents(documents=split_document_list)
     # Since Chroma 0.4.x the manual persistence method is no longer supported as docs are automatically persisted.
     # chroma_db.persist()
 
-    assert_equal(len(chroma_db), 20)
+    assert_equal(len(chroma_db), 815)
 
 
 def check_streamlit():
@@ -2037,8 +2037,12 @@ def check_streamlit():
                        # 指定相似度用内积，支持 cosine, l2, ip
                        collection_metadata={"hnsw:space": "ip"})
 
+    # 完整删除 collection，不光是 length = 0，而是完全不存在
+    # chroma_db.delete_collection()
     if len(chroma_db) == 0:
         _init_chroma_db(chroma_db)
+    else:
+        assert_equal(len(chroma_db), 815)
 
     import streamlit as st
     from langchain.chains import RetrievalQA, ConversationalRetrievalChain
