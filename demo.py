@@ -2130,6 +2130,103 @@ def check_streamlit():
                 messages.chat_message("assistant").write(message["text"])
 
 
+def check_select_score():
+    # 错选扣 1 分，少选 0.5 分，不选为 0 分，全对 1 分
+    def multi_select_score_v2(true_answers: str, generate_answer: str) -> float:
+        # true_answer : 正确答案，str 类型，例如 'BCD'
+        # generate_answer : 模型生成答案，str 类型
+        true_answers = list(true_answers)
+        '''为便于计算，我们假设每道题都只有 A B C D 四个选项'''
+        # 先找出错误答案集合
+        false_answers = [item for item in ['A', 'B', 'C', 'D'] if item not in true_answers]
+        # 如果生成答案出现了错误答案
+        for one_answer in false_answers:
+            if one_answer in generate_answer:
+                return -1
+        # 再判断是否全选了正确答案
+        if_correct = 0
+        for one_answer in true_answers:
+            if one_answer in generate_answer:
+                if_correct += 1
+                continue
+        if if_correct == 0:
+            # 不选
+            return 0
+        elif if_correct == len(true_answers):
+            # 全选
+            return 1
+        else:
+            # 漏选
+            return 0.5
+
+    answer1 = 'B C'
+    answer2 = '西瓜书的作者是 A 周志华'
+    answer3 = '应该选择 B C D'
+    answer4 = '我不知道'
+    answer5 = '除了 A 周志华之外，其他都是南瓜书的作者'
+    true_answer = 'BCD'
+    # 少选 0.5
+    print("答案一得分：", multi_select_score_v2(true_answer, answer1))
+    # 错选 -1
+    # 我们要求模型在不能回答的情况下不做选择，而不是随便选。但是在我们的打分策略中，错选和不选均为0分，这样其实鼓励了模型的幻觉回答，因此我们可以根据情况调整打分策略，让错选扣一分
+    print("答案二得分：", multi_select_score_v2(true_answer, answer2))
+    # 全对 1
+    print("答案三得分：", multi_select_score_v2(true_answer, answer3))
+    # 不选，0
+    print("答案四得分：", multi_select_score_v2(true_answer, answer4))
+    # 误判，-1，但这其实也是考验模型的输出能力，否则下游很难提炼出正确答案
+    print("答案五得分：", multi_select_score_v2(true_answer, answer5))
+
+
+def check_bleu_score():
+    from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+    import jieba
+
+    def bleu_score(_true_answer: str, generate_answer: str) -> float:
+        # true_answer : 标准答案，str 类型
+        # generate_answer : 模型生成答案，str 类型
+        true_answers = list(jieba.cut(_true_answer))
+        generate_answers = list(jieba.cut(generate_answer))
+        print(true_answers)
+        print(generate_answers)
+        # weights 代表了 1-gram 2-gram 3-gram 4-gram占得比重，缺省情况下为各占1/4。
+        _weights = (0.25, 0.25, 0.25, 0.25)
+        # noinspection PyShadowingNames,PyTypeChecker
+        # 用 SmoothingFunction().method1 进行平滑，否则在没有高阶的 n-gram 的时候，会导致整体输出 0 或很小的值
+        # The hypothesis contains 0 counts of 4-gram overlaps. Therefore, the BLEU score evaluates to 0, independently of
+        # how many N-gram overlaps of lower order it contains. Consider using lower n-gram order or use SmoothingFunction()
+        bleu_score = sentence_bleu(references=[true_answers], hypothesis=generate_answers, weights=_weights,
+                                   smoothing_function=SmoothingFunction().method1)
+        return bleu_score
+
+    true_answer = '周志华老师的《机器学习》（西瓜书）是机器学习领域的经典入门教材之一，周老师为了使尽可能多的读者通过西瓜书对机器学习有所了解, 所以在书中对部分公式的推导细节没有详述，但是这对那些想深究公式推导细节的读者来说可能“不太友好”，本书旨在对西瓜书里比较难理解的公式加以解析，以及对部分公式补充具体的推导细节。'
+
+    print("答案一：")
+    answer1 = true_answer
+    print(answer1)
+    score = bleu_score(true_answer, answer1)
+    # 得分： 1.0
+    print("得分：", score)
+
+    print("答案二：")
+    answer2 = '相比于西瓜书，南瓜书只能算是我等数学渣渣在自学的时候记下来的笔记，希望能够帮助大家都成为一名合格的“理工科数学基础扎实点的大二下学生”'
+    print(answer2)
+    score = bleu_score(true_answer, answer2)
+    # 得分： 0.004316664442984526
+    print("得分：", score)
+
+    pn = [6 / 7, 4 / 6, 2 / 5, 1 / 4]
+    bp = np.exp(1 - 8 / 7)
+    weights = (0.25, 0.25, 0.25, 0.25)
+    # 下面的式子也可以看出，如果没有平滑的话，pn 中的 0 会导致最终结果趋近于 0，在 nltk 中，用 sys.float_info.min ≈ 2.2250738585072014e-308 来表示 0
+    check_bleu = bp * np.exp(np.dot(np.log(pn), weights))
+    ideal_bleu = sentence_bleu(references=[["Going", "to", "play", "basketball", "in", "the", "afternoon", "?"]],
+                               hypothesis=["Going", "to", "play", "basketball", "this", "afternoon", "?"])
+    # 0.42383656282787796
+    print(check_bleu)
+    assert_close(check_bleu, ideal_bleu)
+
+
 @func_timer(arg=True)
 def main():
     # check_cpu()
@@ -2172,6 +2269,10 @@ def main():
     # streamlit run D:\PycharmProjects\xiebo\diantou\demo.py [ARGUMENTS]
     # 用 chrome 浏览器
     # check_streamlit()
+
+    # check_select_score()
+
+    # check_bleu_score()
 
     pass
 
