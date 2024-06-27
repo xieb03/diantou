@@ -87,7 +87,8 @@ QWEN2_7B_INSTRUCT_model_dir = BIGDATA_MODELS_PATH + "qwen" + PATH_SEPARATOR + "Q
 
 CHROMADB_PATH = BIGDATA_PATH + "chromadb" + PATH_SEPARATOR
 
-PYTHON_CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
+CODE_BLOCK_REGEX = re.compile(r"```(.*?)```", re.DOTALL)
+PYTHON_CODE_BLOCK_REGEX = re.compile(r"```python(.*?)```", re.DOTALL)
 JSON_CODE_BLOCK_REGEX = re.compile(r"```json(.*?)```", re.DOTALL)
 
 # 汉字中的数字转阿拉伯数字
@@ -149,15 +150,21 @@ def check_python_code_syntax_error(_python_code, _print_error=False):
 
 # 从一段字符串中接触 三引号 的部分，主要用来抽离出 python 代码
 # 支持多个三引号，会将多段代码串联起来
-def extract_python_code(content):
-    code_blocks = PYTHON_CODE_BLOCK_REGEX.findall(content)
+def extract_python_code(_response):
+    if "```python" in _response:
+        code_blocks = PYTHON_CODE_BLOCK_REGEX.findall(_response)
+    else:
+        code_blocks = CODE_BLOCK_REGEX.findall(_response)
     if code_blocks:
         if len(code_blocks) > 1:
             print(F"共发现 {len(code_blocks)} 段代码，会将它们串联起来.")
-        code_blocks = [code[7:] if code.startswith("python") else code for code in code_blocks]
-        full_code = "\n".join(code_blocks)
-        return full_code
+            # code_blocks = [code[7:] if code.startswith("python") else code for code in code_blocks]
+            full_code = "\n".join(code_blocks)
+            return full_code
+        else:
+            return code_blocks[0]
     else:
+        print(_response)
         return None
 
 

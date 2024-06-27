@@ -1,10 +1,40 @@
 import umap
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from transformers import AutoModel, AutoTokenizer, PreTrainedModel, PreTrainedTokenizerFast
+from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizerFast
 
 from util_plot import *
 from util_torch import *
+
+
+# 从大模型的 json 输出中解析出 dict
+# blablabla ```json
+# {
+#     "知识查找正确性": 1,
+#     "回答一致性": 1,
+#     "回答幻觉比例": 1,
+#     "回答正确性": 1,
+#     "逻辑性": 1,
+#     "通顺性": 1,
+#     "智能性": 0.9
+# }
+# ```
+def get_dict_from_llm_json_response(_response):
+    # noinspection PyBroadException
+    try:
+        if "```json" in _response:
+            json_blocks = JSON_CODE_BLOCK_REGEX.findall(_response)
+        else:
+            json_blocks = CODE_BLOCK_REGEX.findall(_response)
+
+        assert len(json_blocks) == 1, F"{len(json_blocks)}, {json_blocks}"
+        return json.loads(json_blocks[0])
+    except Exception:
+        print(_response)
+        return None
+
+
+get_python_code_from_llm_python_response = extract_python_code
 
 
 # 获得一个 tokenizer 的 all_special_tokens
@@ -23,11 +53,17 @@ def get_tokenizer_all_special_token(_tokenizer: PreTrainedTokenizerFast):
 
 # 从路径中获取 tokenizer, model
 # BGE_LARGE_CN_model_dir: {100: '[UNK]', 102: '[SEP]', 0: '[PAD]', 101: '[CLS]', 103: '[MASK]'}
-def get_tokenizer_and_model(_pretrained_model_name_or_path=BGE_LARGE_CN_model_dir, _gpu=True):
+def get_tokenizer_and_model(_pretrained_model_name_or_path=BGE_LARGE_CN_model_dir, _gpu=True, _using_causal_llm=True):
     # trust_remote_code 表示相信本地的代码，而不是表示同意下载远程代码，不要混淆
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=_pretrained_model_name_or_path,
                                               trust_remote_code=True)
-    model = AutoModel.from_pretrained(_pretrained_model_name_or_path, trust_remote_code=True)
+    # 对于 chatglm3，官方提示用 AutoModel，但没有试出来区别
+    if _using_causal_llm:
+        model = AutoModelForCausalLM.from_pretrained(_pretrained_model_name_or_path, torch_dtype="auto",
+                                                     trust_remote_code=True)
+    else:
+        model = AutoModel.from_pretrained(_pretrained_model_name_or_path, torch_dtype="auto", trust_remote_code=True)
+
     if _gpu:
         model = model.cuda()
 

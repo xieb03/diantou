@@ -1,11 +1,14 @@
 import glob
 
 import networkx as nx
+import streamlit as st
 import torch.cuda
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from torchinfo import summary
 
 from project_utils import *
 from util_langchain import *
+from util_llm import *
 
 
 def other_simple():
@@ -1934,6 +1937,7 @@ def check_decay_function():
             if len(data) == 0:
                 temp = _init / math.pow(t + 1, alpha)  # math.exp(-alpha * math.log(t + 1))
             else:
+                # noinspection PyUnresolvedReferences
                 temp = data[-1] / math.pow(t + 1, alpha)  # * math.exp(-alpha * math.log(t + 1))
             data.append(temp)
 
@@ -2043,9 +2047,6 @@ def check_streamlit():
         _init_chroma_db(chroma_db)
     else:
         assert_equal(len(chroma_db), 815)
-
-    import streamlit as st
-    from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 
     # 添加一个选择按钮来选择不同的模型
     # selected_method = st.sidebar.selectbox("选择模式", ["normal", "rag", "rag + memory"])
@@ -2227,6 +2228,94 @@ def check_bleu_score():
     assert_close(check_bleu, ideal_bleu)
 
 
+def check_llm_score():
+    collection_name = "check_streamlit"
+    langchain_embeddings = LangchainEmbeddings(embedding_model_path=BGE_LARGE_CN_model_dir)
+
+    chroma_db = Chroma(embedding_function=langchain_embeddings,
+                       persist_directory=CHROMADB_PATH,
+                       collection_name=collection_name,
+                       # 指定相似度用内积，支持 cosine, l2, ip
+                       collection_metadata={"hnsw:space": "ip"})
+
+    # 完整删除 collection，不光是 length = 0，而是完全不存在
+    # chroma_db.delete_collection()
+    if len(chroma_db) == 0:
+        _init_chroma_db(chroma_db)
+    else:
+        assert_equal(len(chroma_db), 815)
+
+    # llm = CHATGLM4LLM()
+    # llm = QWEN2LLM()
+    llm = get_langchain_openai_llm(model="gpt-4-turbo", temperature=0.2, real=False)
+
+    template = """抛开以前的知识，只能根据以下上下文来回答最后的问题，如果无法根据上下文来回答，就说你不知道，不要试图编造答
+                案。最多使用三句话。尽量使答案简明扼要。总是在回答的最后说“谢谢你的提问！”。
+                {context}
+                问题: {question}
+                """
+
+    chain_prompt = PromptTemplate(template=template)
+
+    rag_chain = RetrievalQA.from_chain_type(llm,
+                                            chain_type="stuff",
+                                            retriever=chroma_db.as_retriever(search_type="similarity",
+                                                                             search_kwargs={'k': 3}),
+                                            return_source_documents=True,
+                                            chain_type_kwargs={"prompt": chain_prompt})
+
+    question = "应该如何使用南瓜书？"
+    result = rag_chain({"query": question})
+    answer = result["result"]
+    knowledge = result["source_documents"]
+
+    print(answer)
+    print("-" * 30)
+    print(knowledge)
+    print("-" * 30)
+
+    prompt = '''
+    你是一个模型回答评估员。
+    接下来，我将给你一个问题、对应的知识片段以及模型根据知识片段对问题的回答。
+    请你依次评估以下维度模型回答的表现，分别给出打分：
+    ① 知识查找正确性。评估系统给定的知识片段是否能够对问题做出回答。如果知识片段不能做出回答，打分为0；如果知识片段可以做出回答，打分为1。
+    ② 回答一致性。评估系统的回答是否针对用户问题展开，是否有偏题、错误理解题意的情况，打分分值在0~1之间，0为完全偏题，1为完全切题。
+    ③ 回答幻觉比例。该维度需要综合系统回答与查找到的知识片段，评估系统的回答是否出现幻觉，打分分值在0~1之间,0为全部是模型幻觉，1为没有任何幻觉。
+    ④ 回答正确性。该维度评估系统回答是否正确，是否充分解答了用户问题，打分分值在0~1之间，0为完全不正确，1为完全正确。
+    ⑤ 逻辑性。该维度评估系统回答是否逻辑连贯，是否出现前后冲突、逻辑混乱的情况。打分分值在0~1之间，0为逻辑完全混乱，1为完全没有逻辑问题。
+    ⑥ 通顺性。该维度评估系统回答是否通顺、合乎语法。打分分值在0~1之间，0为语句完全不通顺，1为语句完全通顺没有任何语法问题。
+    ⑦ 智能性。该维度评估系统回答是否拟人化、智能化，是否能充分让用户混淆人工回答与智能回答。打分分值在0~1之间，0为非常明显的模型回答，1为与人工回答高度一致。
+
+    你应该是比较严苛的评估员，很少给出满分的高评估。
+    用户问题：
+    ~~~
+    {question}
+    ~~~
+    待评估的回答：
+    ~~~
+    {answer}
+    ~~~
+    给定的知识片段：
+    ~~~
+    {knowledge}
+    ~~~
+    你应该返回给我一个可直接解析的 json 结构 ，key是如上维度，value是每一个维度对应的评估打分。
+    不要输出任何其他内容。
+    '''
+    response = get_chat_completion_content(
+        user_prompt=prompt.format(question=question, answer=answer, knowledge=knowledge), model="gpt-4-turbo",
+        temperature=0.2, real=False)
+
+    # gpt-4-turbo: 南瓜书应该作为西瓜书的补充使用，主要用于查阅西瓜书中难以理解或未详细解释的公式和内容。在学习过程中，当遇到西瓜书中的公式或概念难以自行推导或理解时，可以参考南瓜书进行深入学习。如果南瓜书中缺少所需信息或发现错误，可以通过GitHub的Issues页面提出或联系作者进行反馈。谢谢你的提问！
+    #       {'① 知识查找正确性': 1, '② 回答一致性': 1, '③ 回答幻觉比例': 1, '④ 回答正确性': 1, '⑤ 逻辑性': 1, '⑥ 通顺性': 1, '⑦ 智能性': 0.9}
+    # glm4: 南瓜书应作为西瓜书的补充材料，在阅读西瓜书遇到难以理解或推导的公式时查阅，以辅助学习。谢谢你的提问！
+    #       {'① 知识查找正确性': 1, '② 回答一致性': 1, '③ 回答幻觉比例': 1, '④ 回答正确性': 1, '⑤ 逻辑性': 1, '⑥ 通顺性': 1, '⑦ 智能性': 0.9}
+    # qwen2: 南瓜书的最佳使用方法是以西瓜书为主线，当遇到自己推导不出来或者看不懂的公式时再来查阅南瓜书。
+    #       {'知识查找正确性': 1, '回答一致性': 1, '回答幻觉比例': 1, '回答正确性': 1, '逻辑性': 1, '通顺性': 1, '智能性': 0.9}
+    content = get_dict_from_llm_json_response(response)
+    print(content)
+
+
 @func_timer(arg=True)
 def main():
     # check_cpu()
@@ -2271,8 +2360,8 @@ def main():
     # check_streamlit()
 
     # check_select_score()
-
     # check_bleu_score()
+    # check_llm_score()
 
     pass
 

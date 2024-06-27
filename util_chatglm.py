@@ -1,10 +1,9 @@
 from peft import AutoPeftModelForCausalLM
-from transformers import AutoModel, AutoTokenizer, AutoModelForCausalLM
 from transformers.models.qwen2.modeling_qwen2 import Qwen2Model
 from transformers.models.qwen2.tokenization_qwen2_fast import Qwen2TokenizerFast
 
+from util_llm import *
 from util_path import *
-from util_torch import *
 
 
 # chatglm 的 chat 函数，内部调用 modeling_chatglm.py 中的 ChatGLMForConditionalGeneration 的 chat 函数
@@ -149,22 +148,14 @@ def load_chatglm_model_and_tokenizer(_pretrained_path=CHATGLM3_6B_model_dir, _us
         chatglm_tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path=tokenizer_dir, trust_remote_code=True
         )
+        if _cuda:
+            chatglm_model = chatglm_model.cuda()
     # 加载原始模型
     else:
         assert is_dir_exist(_pretrained_path), F"文件夹 '{_pretrained_path}' 不存在."
-        chatglm_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=_pretrained_path,
-                                                          trust_remote_code=True)
-        # 对于 chatglm3，官方提示用 AutoModel，但没有试出来区别
-        if _using_causal_llm:
-            chatglm_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=_pretrained_path,
-                                                                 torch_dtype="auto",
-                                                                 trust_remote_code=True).eval()
-        else:
-            chatglm_model = AutoModel.from_pretrained(pretrained_model_name_or_path=_pretrained_path,
-                                                      torch_dtype="auto",
-                                                      trust_remote_code=True).eval()
-    if _cuda:
-        chatglm_model = chatglm_model.cuda()
+        chatglm_tokenizer, chatglm_model = get_tokenizer_and_model(_pretrained_model_name_or_path=_pretrained_path,
+                                                                   _gpu=_cuda,
+                                                                   _using_causal_llm=_using_causal_llm)
 
     return chatglm_model, chatglm_tokenizer
 
@@ -196,7 +187,6 @@ def check_chatglm3(user_prompt):
 # 如果这个问题是基于某种特定的历史背景或故事情节，请提供更多的上下文信息，以便给出更准确的答案。在正常情况下，一个人当然可以参加自己的葬礼。
 def check_chatglm4(user_prompt):
     model, tokenizer = load_chatglm_model_and_tokenizer(_pretrained_path=GLM4_9B_CHAT_model_dir)
-    print(type(tokenizer))
     print_model_parameter_summary(model)
     print_gpu_memory_summary()
 
