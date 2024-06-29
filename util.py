@@ -291,6 +291,8 @@ def print_requirements():
         "jupyter_server,jupyterlab,"
         # spider
         "scrapy,selenium,urllib3,requests,"
+        # logger
+        "loguru,"
         # database
         "pymongo,redis,pymysql,sqlalchemy,chromadb"
     )

@@ -2316,6 +2316,48 @@ def check_llm_score():
     print(content)
 
 
+def check_loguru():
+    import loguru, base64
+    from loguru import logger
+
+    # filter 是一个过滤器。只有当日志消息来自名为 “my_module” 的模块时，这条处理器规则才会应用。
+    # 这意味着，只有 “my_module” 产生的日志消息才会被发送到 sys.stderr 并以指定的格式显示。
+    # 貌似只有默认的才有颜色，add 的都没有用颜色
+    # logger.remove(0)
+    # logger.add(sys.stderr, format="{time} {level} {message}", level="INFO", colorize=True)
+    logger.trace("trace")
+    logger.debug("debug")
+    logger.info("info")
+    logger.success("success")
+    logger.warning("warning")
+    logger.error("error")
+    logger.critical("critical")
+
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    def fetch_repo_readme(org_name, repo_name, token, export_dir):
+        headers = {
+            'Authorization': f'token {token}',
+        }
+        url = f'https://api.github.com/repos/{org_name}/{repo_name}/readme'
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            readme_content = response.json()['content']
+            # 解码base64内容
+            readme_content = base64.b64decode(readme_content).decode('utf-8')
+            # 使用 export_dir 确定保存 README 的文件路径
+            repo_dir = os.path.join(export_dir, repo_name)
+            if not os.path.exists(repo_dir):
+                os.makedirs(repo_dir)
+            readme_path = os.path.join(repo_dir, 'README.md')
+            with open(readme_path, 'w', encoding='utf-8') as file:
+                file.write(readme_content)
+        else:
+            loguru.logger.error(f"Error fetching README for {repo_name}: {response.status_code}")
+            loguru.logger.error(response.text)
+
+
 @func_timer(arg=True)
 def main():
     # check_cpu()
@@ -2362,6 +2404,8 @@ def main():
     # check_select_score()
     # check_bleu_score()
     # check_llm_score()
+
+    # check_loguru()
 
     pass
 
