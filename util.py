@@ -275,10 +275,10 @@ def print_requirements():
         # openai
         "openai,tiktoken,"
         # huggingface
-        "transformers,tokenizers,huggingface_hub,"
+        "transformers,sentence_transformers,tokenizers,huggingface_hub,"
         # modelscope
         "modelscope,"
-        "deepspeed,peft,rouge_chinese,mpi4py,datasets,jieba,ruamel_yaml,networkx,brotlipy,brotli,"
+        "deepspeed,peft,rouge_chinese,mpi4py,datasets,jieba,ruamel.yaml,networkx,brotlipy,brotli,"
         # data science
         "scikit-learn,numpy,pandas,matplotlib,seaborn,scipy,"
         # nltk
@@ -674,63 +674,65 @@ def delete_all_spaces_between_chinese(_str):
 
 
 def main():
-    # Last updated: 2024-06-23 13:13:01中国标准时间
+    # Last updated: 2024-07-13 16:43:22中国标准时间
     #
     # Python implementation: CPython
     # Python version       : 3.11.5
     # IPython version      : 8.15.0
     #
-    # pip                 : 23.2.1
-    # torch               : 2.3.0+cu121
-    # torchvision         : 0.18.0+cu121
-    # torchaudio          : 2.3.0+cu121
-    # torchdata           : 0.7.1
-    # torchtext           : 0.18.0
-    # openai              : 1.34.0
-    # tiktoken            : 0.7.0
-    # transformers        : 4.41.2
-    # tokenizers          : 0.19.1
-    # huggingface_hub     : 0.23.4
-    # modelscope          : 1.15.0
-    # deepspeed           : not installed
-    # peft                : 0.7.1
-    # rouge_chinese       : 1.0.3
-    # mpi4py              : 3.1.5
-    # datasets            : 2.18.0
-    # jieba               : 0.42.1
-    # ruamel_yaml         : 0.18.6
-    # networkx            : 3.3
-    # brotlipy            : not installed
-    # brotli              : 1.1.0
-    # scikit-learn        : 1.4.1.post1
-    # numpy               : 1.24.3
-    # pandas              : 2.2.1
-    # matplotlib          : 3.8.3
-    # seaborn             : 0.13.2
-    # scipy               : 1.11.1
-    # nltk                : 3.8.1
-    # langchain           : 0.2.5
-    # langchain_core      : 0.2.9
-    # langchain_openai    : 0.1.8
-    # langchain_community : 0.2.5
-    # langsmith           : 0.1.81
-    # langgraph           : 0.0.69
-    # pymupdf             : 1.24.5
-    # rapidocr_onnxruntime: 1.3.22
-    # unstructured        : 0.14.6
-    # flask               : 3.0.3
-    # streamlit           : 1.36.0
-    # jupyter_server      : 2.14.1
-    # jupyterlab          : 4.2.2
-    # scrapy              : 2.11.2
-    # selenium            : 4.21.0
-    # urllib3             : 2.2.2
-    # requests            : 2.31.0
-    # pymongo             : 4.7.3
-    # redis               : 5.0.5
-    # pymysql             : 1.1.1
-    # sqlalchemy          : 1.4.39
-    # chromadb            : 0.5.1
+    # pip                  : 23.2.1
+    # torch                : 2.3.0+cu121
+    # torchvision          : 0.18.0+cu121
+    # torchaudio           : 2.3.0+cu121
+    # torchdata            : 0.7.1
+    # torchtext            : 0.18.0
+    # openai               : 1.34.0
+    # tiktoken             : 0.7.0
+    # transformers         : 4.41.2
+    # sentence_transformers: 3.0.1
+    # tokenizers           : 0.19.1
+    # huggingface_hub      : 0.23.4
+    # modelscope           : 1.15.0
+    # deepspeed            : not installed
+    # peft                 : 0.7.1
+    # rouge_chinese        : 1.0.3
+    # mpi4py               : 3.1.5
+    # datasets             : 2.18.0
+    # jieba                : 0.42.1
+    # ruamel.yaml          : 0.18.6
+    # networkx             : 3.3
+    # brotlipy             : not installed
+    # brotli               : 1.1.0
+    # scikit-learn         : 1.4.1.post1
+    # numpy                : 1.24.3
+    # pandas               : 2.2.1
+    # matplotlib           : 3.8.3
+    # seaborn              : 0.13.2
+    # scipy                : 1.11.1
+    # nltk                 : 3.8.1
+    # langchain            : 0.2.5
+    # langchain_core       : 0.2.9
+    # langchain_openai     : 0.1.8
+    # langchain_community  : 0.2.5
+    # langsmith            : 0.1.81
+    # langgraph            : 0.0.69
+    # pymupdf              : 1.24.5
+    # rapidocr_onnxruntime : 1.3.22
+    # unstructured         : 0.14.6
+    # flask                : 3.0.3
+    # streamlit            : 1.36.0
+    # jupyter_server       : 2.14.1
+    # jupyterlab           : 4.2.2
+    # scrapy               : 2.11.2
+    # selenium             : 4.21.0
+    # urllib3              : 2.2.2
+    # requests             : 2.31.0
+    # loguru               : 0.7.2
+    # pymongo              : 4.7.3
+    # redis                : 5.0.5
+    # pymysql              : 1.1.1
+    # sqlalchemy           : 1.4.39
+    # chromadb             : 0.5.1
     #
     # conda environment: base
     #
