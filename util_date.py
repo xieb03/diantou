@@ -24,7 +24,7 @@ def get_datetime_from_timestamp(_timestamp):
         elif len(str(_timestamp)) == 19:
             _timestamp = _timestamp // 1000000000
         if len(str(_timestamp)) != 10:
-            raise ValueError(F"只支持 10(秒)、13(毫秒)、16(微妙)、19(纳秒)，不支持 {_timestamp}, length={len(_timestamp)}")
+            raise ValueError(F"只支持 10(秒)、13(毫秒)、16(微妙)、19(纳秒)，不支持 {_timestamp}, length={len(str(_timestamp))}")
     else:
         raise ValueError(type(_timestamp))
 

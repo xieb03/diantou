@@ -42,10 +42,14 @@ def seed_worker(worker_id):
 
 
 # 将一个 dict 的 所有 value 都放到 gpu 中，注意是原位修改
-def change_dict_value_to_gpu(_dict):
+def change_dict_value_to_gpu(_dict, _device=None):
     for k, v in _dict.items():
         assert isinstance(v, torch.Tensor)
-        _dict[k] = v.cuda()
+        if _device is None:
+            _dict[k] = v.cuda()
+        else:
+            _dict[k] = v.to(_device)
+    return _dict
 
 
 # 获取现存的整体情况
@@ -253,6 +257,11 @@ def get_tensor_norm(_x: torch.Tensor, _dim, _keepdim=True, _unbiased=False, _eps
 # 求指定维度上的均值
 def get_tensor_mean(_x: torch.Tensor, _dim, _keepdim=True):
     return _x.mean(dim=_dim, keepdim=_keepdim)
+
+
+def print_with_shape(_tensor):
+    print(F"shape = {_tensor.shape}")
+    print(_tensor)
 
 
 def main():

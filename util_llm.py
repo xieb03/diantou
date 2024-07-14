@@ -1,10 +1,23 @@
+from enum import Enum
+from enum import unique
+
 import umap
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.models.Normalize import Normalize
+from sentence_transformers.models.Pooling import Pooling
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizerFast
 
 from util_plot import *
 from util_torch import *
+
+
+@unique
+class PoolingStrategy(Enum):
+    pooling_mode_cls_token = 1
+    pooling_mode_mean_tokens = 2
+    pooling_mode_max_tokens = 3
 
 
 # 从大模型的 json 输出中解析出 dict
@@ -58,6 +71,8 @@ def get_tokenizer_and_model(_pretrained_model_name_or_path=BGE_LARGE_CN_model_di
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=_pretrained_model_name_or_path,
                                               trust_remote_code=True)
     # 对于 chatglm3，官方提示用 AutoModel，但没有试出来区别
+    # 对于生成式模型，必须用 AutoModelForCausalLM，对于 embedding 模型，必须用 AutoModel
+    # AutoModelForCausalLM 会将模型的原始输出外面再套一个计算概率的 layer
     if _using_causal_llm:
         model = AutoModelForCausalLM.from_pretrained(_pretrained_model_name_or_path, torch_dtype="auto",
                                                      trust_remote_code=True)
@@ -75,7 +90,7 @@ def get_tokenizer_and_model(_pretrained_model_name_or_path=BGE_LARGE_CN_model_di
 # 获得一句话的 embedding
 # _max_length=None，会用所有句子中的最大长度，相当于无限长的上限
 def get_sentence_embedding(_tokenizer: PreTrainedTokenizerFast, _model: PreTrainedModel, _sentences, _max_length=None,
-                           _gpu=True, _normalize=False):
+                           _gpu=True, _normalize=False, _pooling_strategy=PoolingStrategy.pooling_mode_cls_token):
     # max_length = 1 的时候也会用最长的，等价于 None
     assert _max_length is None or _max_length > 1, "max_length must be greater than 1"
     _model = _model.eval()
@@ -103,11 +118,11 @@ def get_sentence_embedding(_tokenizer: PreTrainedTokenizerFast, _model: PreTrain
     # 即使传入的 max_length 非常大，大于所有句子的实际 token_count，也会默认用实际情况的最大值来处理，即相当于 max_length 是保护，如果没超就不会额外处理，这样效率最高
     encoded_input_dict = _tokenizer(_sentences, padding=True, truncation=truncation, max_length=_max_length,
                                     return_tensors='pt')
-    # print(encoded_input_dict)
     if _gpu:
         _model = _model.cuda()
         change_dict_value_to_gpu(encoded_input_dict)
 
+    sentence_embeddings = None
     with torch.no_grad():
         # BaseModelOutputWithPoolingAndCrossAttentions(last_hidden_state=tensor([[[-0.0205,  0.0236,  0.0187,  ..., -0.5310, -0.6072,  0.8193],
         #          [ 0.0188,  0.2690,  0.1926,  ...,  0.1011, -0.3511,  0.9317],
@@ -119,15 +134,21 @@ def get_sentence_embedding(_tokenizer: PreTrainedTokenizerFast, _model: PreTrain
         #        device='cuda:0'), pooler_output=tensor([[ 0.0589, -0.2284, -0.1369,  ...,  0.3764, -0.1964,  0.3106],
         #         [ 0.1524, -0.2249, -0.5382,  ...,  0.2403,  0.2843,  0.0816]],
         #        device='cuda:0'), hidden_states=None, past_key_values=None, attentions=None, cross_attentions=None)
+        # 等价于 _model.forward(**encoded_input_dict)
         model_output = _model(**encoded_input_dict)
         # Perform pooling. In this case, cls pooling.
         # cls-pooling：直接取 [CLS] 的 embedding
         # mean-pooling：取每个 Token 的平均 embedding
         # max-pooling：对得到的每个 Embedding 取 max
-        # tensor([[-0.0205,  0.0236,  0.0187,  ..., -0.5310, -0.6072,  0.8193],
-        #         [ 0.1980,  0.2632, -0.8883,  ..., -0.2285,  0.3321, -0.4319]],
-        #        device='cuda:0')
-        sentence_embeddings = model_output[0][:, 0]
+        if _pooling_strategy == PoolingStrategy.pooling_mode_cls_token:
+            # tensor([[-0.0205,  0.0236,  0.0187,  ..., -0.5310, -0.6072,  0.8193],
+            #         [ 0.1980,  0.2632, -0.8883,  ..., -0.2285,  0.3321, -0.4319]],
+            #        device='cuda:0')
+            # model_output[0] 表示 last_hidden_state, (m_sample, n_token, embedding)
+            # [:, 0] 等价于 [:, 0, :]，即那所有 sample 的第 1 个 token 所有 embedding
+            sentence_embeddings = model_output[0][:, 0]
+        else:
+            raise NotImplementedError(F"暂时不支持 {_pooling_strategy}")
 
     if _normalize:
         # normalize embeddings
@@ -232,7 +253,7 @@ def check_sentence_compare():
 
     n_sample = len(input_text_lst_sim)
 
-    # (3, 1024)\
+    # (3, 1024)
     # numpy() 必须在 cpu() 之后才能调用，不能从 cuda 直接到 numpy()
     embeddings_array = np.array([embedding.cpu().numpy() for embedding in embeddings])
     assert_equal(embeddings_array.shape[0], n_sample)
@@ -280,17 +301,54 @@ def check_sentence_compare():
 
     # He could not desert his post at the power plant.
     # The power plant needed him at the time.
-    # tensor(0.8405, device='cuda:0')
+    # tensor(0.8603, device='cuda:0')
     print(in_1)
     print(in_2)
     print(compare(0, 1))
 
     # He could not desert his post at the power plant.
     # Desert plants can survive droughts.
-    # tensor(0.4408, device='cuda:0')
+    # tensor(0.3846, device='cuda:0')
     print(in_1)
     print(in_3)
     print(compare(0, 2))
+
+
+# noinspection PyProtectedMember
+def check_embedding_model(_model_dir=BGE_LARGE_EN_model_dir, _using_causal_llm=False):
+    sentences = ["He could not desert his post at the power plant."]
+
+    model = SentenceTransformer(_model_dir)
+
+    # 利用 SentenceTransformer 得到的 embedding 结果
+    # 通过 modules.json 查看，自动按照顺序，例如 embedding model, pooling, normalize 的顺序执行
+    st_embeddings = model.encode(sentences, convert_to_tensor=True)
+
+    _pooling_strategy = None
+    _normalize = False
+    for name, child in model.named_children():
+        print(name, child)
+        # 具体是哪种 pooling，是在 1_Pooling 文件夹里面指定的，通过 modules.json 查看
+        if isinstance(child, Pooling):
+            if child.pooling_mode_cls_token:
+                _pooling_strategy = PoolingStrategy.pooling_mode_cls_token
+            elif child.pooling_mode_mean_tokens:
+                _pooling_strategy = PoolingStrategy.pooling_mode_mean_tokens
+            elif child.pooling_mode_max_tokens:
+                _pooling_strategy = PoolingStrategy.pooling_mode_max_tokens
+            else:
+                raise NotImplementedError(F"pooling 策略暂时不支持 {child}!")
+        if isinstance(child, Normalize):
+            _normalize = True
+
+    print(F"pooling =: {_pooling_strategy}, normalize: {_normalize}")
+
+    # 手动计算得到 embedding
+    tokenizer, model = get_tokenizer_and_model(_model_dir, _using_causal_llm=_using_causal_llm)
+    manual_embeddings = get_sentence_embedding(tokenizer, model, sentences, _normalize=_normalize,
+                                               _pooling_strategy=_pooling_strategy)
+
+    assert_tensor_equal(st_embeddings, manual_embeddings)
 
 
 @func_timer(arg=True)
@@ -299,7 +357,10 @@ def main():
 
     # check_word_embeddings()
     # check_sentence_embeddings()
-    check_sentence_compare()
+    # check_sentence_compare()
+
+    check_embedding_model(BGE_LARGE_EN_model_dir)
+    check_embedding_model(BGE_LARGE_CN_model_dir)
 
 
 if __name__ == '__main__':
